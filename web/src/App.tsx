@@ -43,6 +43,7 @@ export default function App() {
   const [processingRevision, setProcessingRevision] = useState(0);
   const [processingApplied, setProcessingApplied] = useState(false);
   const [channels, setChannels] = useState<Channel[]>(INITIAL);
+  const [mainState,setMainState]=useState<Channel>({channel:0,fader:.5,on:true,updatedAt:null});
   const [status, setStatus] = useState<Status>({ mode:"simulation", connected:false, writesEnabled:false });
   const [socketOk, setSocketOk] = useState(false);
   const [selected, setSelected] = useState(1);
@@ -77,10 +78,10 @@ export default function App() {
     let active = true; let socket: WebSocket | undefined; let retry: ReturnType<typeof setTimeout> | undefined;
     async function fetchState() {
       try {
-        const [a,b] = await Promise.all([fetch("/api/status"),fetch("/api/channels")]);
+        const [a,b,m] = await Promise.all([fetch("/api/status"),fetch("/api/channels"),fetch("/api/main")]);
         if (!a.ok || !b.ok) throw new Error("API indisponible");
         const s = await a.json() as Status, cs = await b.json() as Channel[];
-        if (active) { setStatus(s); setChannels(cs); }
+        if (active) { setStatus(s); setChannels(cs); if(m.ok)setMainState(await m.json() as Channel); }
       } catch { if (active) setNotice("Le serveur XR18 est indisponible. Démarre le backend pour utiliser le mixeur."); }
     }
     function connect() {
@@ -88,10 +89,11 @@ export default function App() {
       socket = new WebSocket(`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
       socket.onopen = () => { if(active) { setSocketOk(true); setOnlineSince(new Date().toLocaleTimeString("fr-BE")); } };
       socket.onmessage = e => { try {
-        const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel};
+        const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel;main?:Channel};
         if (!active) return;
-        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); }
+        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main); }
         if (msg.type === "channel" && msg.state) updateChannel(msg.state);
+        if(msg.type==="main"&&msg.state)setMainState(msg.state);
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
       socket.onerror = () => socket?.close();
@@ -112,7 +114,28 @@ export default function App() {
     } catch(e) { setNotice((e as Error).message); }
     finally { setBusy(false); }
   }
-  function changeSlider(channel: number, value: number) { drag.current[channel] = value; setChannels(old => old.map(c => c.channel === channel ? {...c,fader:value} : c)); }
+  async function writeMixValue(endpoint:string,value:number|boolean){
+    if(!canWrite||busy)return;
+    setBusy(true);
+    try{
+      const response=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({value})});
+      const result=await response.json() as {error?:string};
+      if(!response.ok)throw Error(result.error??"Commande refusée");
+      if(!isSim)setNotice("Commande envoyée sans accusé matériel ; attendre la synchronisation OSC.");
+    }catch(e){setNotice((e as Error).message);}
+    finally{setBusy(false);}
+  }
+  function toggleChannelOn(ch:Channel){
+    if(!canWrite||busy)return;
+    if(!ch.on&&!window.confirm(`Réactiver le son du canal ${ch.channel} ? Vérifie le niveau des retours.`))return;
+    void writeMixValue(`/api/channels/${ch.channel}/on`,!ch.on);
+  }
+  function toggleMainOn(){
+    if(!canWrite||busy)return;
+    if(!mainState.on&&!window.confirm("Réactiver le mix principal L/R ? Vérifie le volume des enceintes."))return;
+    void writeMixValue("/api/main/on",!mainState.on);
+  }
+    function changeSlider(channel: number, value: number) { drag.current[channel] = value; setChannels(old => old.map(c => c.channel === channel ? {...c,fader:value} : c)); }
   function commitSlider(channel: number) { const v = drag.current[channel]; if(v !== undefined) { delete drag.current[channel]; void writeFader(channel,v); } }
   function resetFader(channel:number){if(!isSim||!canWrite||busy)return;changeSlider(channel,0.5);commitSlider(channel);}
   function saveScene() {
@@ -234,11 +257,11 @@ export default function App() {
               {visibleChannels.map(c=><div key={c.channel} className={selected===c.channel?"pro-channel picked":"pro-channel"} style={{"--ch-color":COLORS[c.channel-1]} as React.CSSProperties}>
                 <button className="pro-ch-select" onClick={()=>setSelected(c.channel)}><span>{c.channel}</span><Mic2 size={17}/><b>{labelFor(c.channel)}</b></button>
                 <span className="ch-type">{c.channel<=4?"INSTRUMENT":c.channel<=10?"BATTERIE":"ENTRÉE"}</span>
-                <button className={c.on?"ch-mute":"ch-mute muted"} disabled title="Mute en lecture seule">{c.on?"M":"MUTED"}</button>
+                <button className={c.on?"ch-mute":"ch-mute muted"} disabled={!canWrite||busy} aria-label={`${c.on?"Couper":"Réactiver"} ${labelFor(c.channel)}`} aria-pressed={!c.on} title={c.on?"Couper le canal":"Réactiver le canal"} onClick={()=>toggleChannelOn(c)}>{c.on?"M":"MUTED"}</button>
                 <div className="ch-fader-area"><div className="ch-meter" title="Vumètre non implémenté : aucune mesure réelle"><span>—</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" title="Double-cliquer pour revenir à 50 % en simulation uniquement" onDoubleClick={()=>resetFader(c.channel)} min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onPointerCancel={()=>commitSlider(c.channel)} onBlur={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
                 <span className="ch-value">{normalized(c.fader)}%</span><span className="ch-fader-hint">{c.fader===0?"−∞":`${(20*Math.log10(Math.max(c.fader,0.00001))).toFixed(1)} dB relatif`}</span><span className="ch-on">{c.on?"ON":"OFF"}</span><div className="ch-color"/>
               </div>)}
-              <div className="pro-channel master"><div className="pro-ch-select"><span>MAIN</span><Activity size={20}/><b>Main L/R</b></div><span className="ch-type">SORTIE</span><button disabled className="ch-mute">M</button><div className="ch-fader-area"><div className="ch-meter"><span>—</span></div><div className="master-placeholder">Lecture<br/>à venir</div></div><span className="ch-value">—</span><span className="ch-on">NON DISP.</span><div className="ch-color"/></div>
+              <div className="pro-channel master"><div className="pro-ch-select"><span>MAIN</span><Activity size={20}/><b>Main L/R</b></div><span className="ch-type">SORTIE</span><button disabled={!canWrite||busy} className={mainState.on?"ch-mute":"ch-mute muted"} onClick={toggleMainOn} aria-pressed={!mainState.on} title="Mute principal">{mainState.on?"M":"MUTED"}</button><div className="ch-fader-area"><div className="ch-meter"><span>—</span></div><input aria-label="Fader principal L/R" type="range" className="ch-slider" min="0" max="1" step=".01" value={mainState.fader} disabled={!canWrite||busy} onChange={e=>setMainState(s=>({...s,fader:Number(e.target.value)}))} onPointerUp={e=>void writeMixValue("/api/main/fader",Number(e.currentTarget.value))} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))void writeMixValue("/api/main/fader",Number(e.currentTarget.value));}}/></div><span className="ch-value">{normalized(mainState.fader)}%</span><span className="ch-on">{mainState.on?"ON":"MUTE"}</span><div className="ch-color"/></div>
             </div></div>
             <div className="studio-bottom-grid">
               <section className="studio-panel details"><div className="panel-title"><div><b>Canal {selected} — {labelFor(selected)}</b><small>Égaliseur et traitements</small></div><button onClick={()=>setTab("eq")}>Ouvrir l'EQ <ChevronDown size={14}/></button></div><div className="detail-body"><div className="eq-chart"><svg viewBox="0 0 560 175" preserveAspectRatio="none" aria-label="Aperçu illustratif de l'égaliseur, non connecté à la console"><defs><pattern id="grid" width="40" height="35" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 35" fill="none" stroke="#2a3a4b" strokeWidth="1"/></pattern></defs><rect width="560" height="175" fill="url(#grid)"/><path d="M0 90 C45 90 52 145 85 135 S120 90 165 90 S240 75 270 90 S345 112 385 90 S450 72 480 90 S530 100 560 90" fill="none" stroke="#55b5fb" strokeWidth="2.5"/><path d="M0 90H560" stroke="#46556a" strokeDasharray="3 4"/>{[85,165,270,385,480].map((x,i)=><circle key={i} cx={x} cy={[135,90,90,90,90][i]} r="5" fill={["#fb7469","#eab44d","#50d8a5","#55b5fb","#c58aff"][i]}/>)}</svg><small>Courbe illustrative uniquement — paramètres EQ non reliés à la XR18</small></div><div className="eq-mini">{["HPF","LOW","LOW MID","HIGH MID","HIGH"].map((name,i)=><div key={name}><span>{name}</span><b>{i===0?"80 Hz":i===1?"120 Hz":i===2?"600 Hz":i===3?"3.0 kHz":"10 kHz"}</b><small>Démo visuelle</small></div>)}</div></div></section>
