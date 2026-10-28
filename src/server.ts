@@ -16,6 +16,23 @@ const server = http.createServer(async (req, res) => {
   // Bound to loopback by default; no authentication yet. Do not expose this API.
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
+  if(req.method==="GET"&&path==="/api/main"){res.end(JSON.stringify(xr18.mainState()));return;}
+  const mixerWrite=/^\/api\/(?:channels\/(\d+)\/(on)|main\/(fader|on))$/.exec(path);
+  if(req.method==="POST"&&mixerWrite){
+    try{
+      let raw="";for await(const part of req){raw+=part;if(raw.length>1024)throw Error("Payload too large");}
+      const data:unknown=JSON.parse(raw);if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid body");
+      const value=(data as Record<string,unknown>).value;
+      if(mixerWrite[2]==="on"||mixerWrite[3]==="on"){
+        if(typeof value!=="boolean")throw Error("Boolean value required");
+        if(mixerWrite[1])xr18.setOn(Number(mixerWrite[1]),value);else xr18.setMainOn(value);
+      }else{
+        if(typeof value!=="number")throw Error("Numeric value required");
+        xr18.setMainFader(value);
+      }
+      res.end(JSON.stringify({ok:true,acknowledged:mode==="simulation"}));return;
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
+  }
   const earsMatch=/^\/api\/ears\/profiles(?:\/([a-f0-9-]+))?$/.exec(path);
   if(earsMatch){
     try{
@@ -106,8 +123,9 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404); res.end(JSON.stringify({ error: "Not found" }));
 });
 const wss = new WebSocketServer({ server, path: "/ws" });
-wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status() })));
+wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState() })));
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
+xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
