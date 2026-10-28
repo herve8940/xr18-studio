@@ -95,6 +95,7 @@ export default function App() {
         if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main); }
         if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
+        if(msg.type==="status"&&msg.status)setStatus(msg.status);
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
       socket.onerror = () => socket?.close();
