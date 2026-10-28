@@ -11,10 +11,11 @@ function padded(s: string): Buffer {
 }
 export function encodeOsc(address: string, args: OutgoingOscArg[] = []): Buffer {
   if (!address.startsWith("/")) throw new Error("OSC address must start with /");
-  const tags = "," + args.map(v => typeof v === "string" ? "s" : typeof v === "object" ? "f" : Number.isInteger(v) ? "i" : "f").join("");
+  const tags = "," + args.map(v => Buffer.isBuffer(v) ? "b" : typeof v === "string" ? "s" : typeof v === "object" ? "f" : Number.isInteger(v) ? "i" : "f").join("");
   const chunks = [padded(address), padded(tags)];
   for (const arg of args) {
-    if (typeof arg === "string") chunks.push(padded(arg));
+    if (Buffer.isBuffer(arg)) { const size=Buffer.alloc(4); size.writeInt32BE(arg.length); chunks.push(size,arg,Buffer.alloc((4-arg.length%4)%4)); }
+    else if (typeof arg === "string") chunks.push(padded(arg));
     else { const b = Buffer.alloc(4); if (typeof arg === "object") { if (!Number.isFinite(arg.value)) throw Error("Invalid OSC float"); b.writeFloatBE(arg.value); } else if (Number.isInteger(arg)) b.writeInt32BE(arg); else b.writeFloatBE(arg); chunks.push(b); }
   }
   return Buffer.concat(chunks);
@@ -52,3 +53,4 @@ export function decodeXAirMeterBlob(blob:Buffer, expectedCount:number):number[]{
   if(count!==expectedCount||blob.length!==4+count*2)throw Error("Unexpected X-Air meter blob layout");
   return Array.from({length:count},(_,i)=>Math.max(-128,Math.min(0,blob.readInt16LE(4+i*2)/256)));
 }
+

@@ -99,8 +99,8 @@ export default function App() {
         if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="status"&&msg.status)setStatus(msg.status);
-        if(msg.type==="meters"&&msg.state)setMeterState(msg.state as {channels:number[];updatedAt:string|null;available:boolean});
-        if(msg.type==="advanced"&&msg.state){const a=msg.state as {address:string;value:number|string;updatedAt:string};setAdvancedReadback(prev=>({...prev,[a.address]:{value:a.value,updatedAt:a.updatedAt}}));}
+        if(msg.type==="meters"&&msg.state)setMeterState(msg.state as unknown as {channels:number[];updatedAt:string|null;available:boolean});
+        if(msg.type==="advanced"&&msg.state){const a=msg.state as unknown as {address:string;value:number|string;updatedAt:string};setAdvancedReadback(prev=>({...prev,[a.address]:{value:a.value,updatedAt:a.updatedAt}}));}
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
       socket.onerror = () => socket?.close();
@@ -274,7 +274,7 @@ export default function App() {
                 <button className="pro-ch-select" onClick={()=>setSelected(c.channel)}><span>{c.channel}</span><Mic2 size={17}/><b>{labelFor(c.channel)}</b></button>
                 <span className="ch-type">{c.channel<=4?"INSTRUMENT":c.channel<=10?"BATTERIE":"ENTRÉE"}</span>
                 <button className={c.on?"ch-mute":"ch-mute muted"} disabled={!canWrite||busy} aria-label={`${c.on?"Couper":"Réactiver"} ${labelFor(c.channel)}`} aria-pressed={!c.on} title={c.on?"Couper le canal":"Réactiver le canal"} onClick={()=>toggleChannelOn(c)}>{c.on?"M":"MUTED"}</button>
-                <div className="ch-fader-area"><div className="ch-meter" title="Vumètre non implémenté : aucune mesure réelle"><span>—</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" title="Double-cliquer pour revenir à 50 % en simulation uniquement" onDoubleClick={()=>resetFader(c.channel)} min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onPointerCancel={()=>commitSlider(c.channel)} onBlur={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
+                <div className="ch-fader-area"><div className="ch-meter" title={meterState.available ? "Niveau reçu par OSC (dBFS)" : "Aucune mesure reçue"}><span>{meterState.available ? `${Math.round(meterState.channels[c.channel-1] ?? -128)} dB` : "—"}</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" title="Double-cliquer pour revenir à 50 % en simulation uniquement" onDoubleClick={()=>resetFader(c.channel)} min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onPointerCancel={()=>commitSlider(c.channel)} onBlur={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
                 <span className="ch-value">{normalized(c.fader)}%</span><span className="ch-fader-hint">{c.fader===0?"−∞":`${(20*Math.log10(Math.max(c.fader,0.00001))).toFixed(1)} dB relatif`}</span><span className="ch-on">{c.on?"ON":"OFF"}</span><div className="ch-color"/>
               </div>)}
               <div className="pro-channel master"><div className="pro-ch-select"><span>MAIN</span><Activity size={20}/><b>Main L/R</b></div><span className="ch-type">SORTIE</span><button disabled={!canWrite||busy} className={mainState.on?"ch-mute":"ch-mute muted"} onClick={toggleMainOn} aria-pressed={!mainState.on} title="Mute principal">{mainState.on?"M":"MUTED"}</button><div className="ch-fader-area"><div className="ch-meter"><span>—</span></div><input aria-label="Fader principal L/R" type="range" className="ch-slider" min="0" max="1" step=".01" value={mainState.fader} disabled={!canWrite||busy} onChange={e=>setMainState(s=>({...s,fader:Number(e.target.value)}))} onPointerUp={e=>void writeMixValue("/api/main/fader",Number(e.currentTarget.value))} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))void writeMixValue("/api/main/fader",Number(e.currentTarget.value));}}/></div><span className="ch-value">{normalized(mainState.fader)}%</span><span className="ch-on">{mainState.on?"ON":"MUTE"}</span><div className="ch-color"/></div>
@@ -300,3 +300,4 @@ export default function App() {
     </main>
   </div>;
 }
+

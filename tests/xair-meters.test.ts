@@ -13,7 +13,7 @@ test("malformed meter count or truncated blob is rejected",()=>{
   assert.throws(()=>decodeXAirMeterBlob(Buffer.alloc(3),40));
 });
 test("OSC blob argument decodes with padded binary payload",()=>{
-  const addr=Buffer.from("/meters/1\0\0","binary");
+  const addr=Buffer.from("/meters/1\0\0\0","binary");
   const tags=Buffer.from(",b\0\0","binary");
   const blob=Buffer.alloc(84);blob.writeUInt32LE(40,0);
   const len=Buffer.alloc(4);len.writeInt32BE(blob.length);
@@ -22,3 +22,4 @@ test("OSC blob argument decodes with padded binary payload",()=>{
   assert.ok(Buffer.isBuffer(decoded.args[0]));
   assert.equal(decodeXAirMeterBlob(decoded.args[0] as Buffer,40).length,40);
 });
+

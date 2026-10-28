@@ -141,7 +141,7 @@ const server = http.createServer(async (req, res) => {
 });
 const wss = new WebSocketServer({ server, path: "/ws" });
 wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() })));
-xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
+xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("advanced", state => {const message=JSON.stringify({type:"advanced",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
@@ -150,4 +150,9 @@ xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
 server.listen(port, "127.0.0.1", () => console.log(`XR18 Studio API on http://127.0.0.1:${port} (${mode})`));
-process.on("SIGINT", () => { xr18.close(); database.close(); server.close(); });
+const statusTimer=setInterval(()=>{const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
+statusTimer.unref();
+function shutdown(){clearInterval(statusTimer);xr18.close();database.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
+process.once("SIGINT",shutdown);
+process.once("SIGTERM",shutdown);
+
