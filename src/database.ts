@@ -27,7 +27,7 @@ export class StudioDatabase {
  listSongs():Song[]{return (this.db.prepare("SELECT id,title,artist,bpm,created_at AS createdAt FROM songs ORDER BY created_at DESC").all() as Song[]);}
  addSong(input:Record<string,unknown>):Song{
   const title=requiredText(input.title,"title");const artist=typeof input.artist==="string"?input.artist.trim().slice(0,200):"";
-  const bpm=input.bpm??120;if(!typeof bpm==="number"&&Number.isInteger(bpm)||Number(bpm)<20||Number(bpm)>300)throw Error("bpm must be 20..300");
+  const bpm=input.bpm??120;if((typeof bpm!=="number"||!Number.isInteger(bpm))||Number(bpm)<20||Number(bpm)>300)throw Error("bpm must be 20..300");
   const song={id:randomUUID(),title,artist,bpm:Number(bpm),createdAt:new Date().toISOString()};
   this.db.prepare("INSERT INTO songs(id,title,artist,bpm,created_at) VALUES(@id,@title,@artist,@bpm,@createdAt)").run(song);return song;
  }
