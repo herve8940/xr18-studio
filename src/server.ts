@@ -16,6 +16,20 @@ const server = http.createServer(async (req, res) => {
   // Bound to loopback by default; no authentication yet. Do not expose this API.
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
+  const earsMatch=/^\/api\/ears\/profiles(?:\/([a-f0-9-]+))?$/.exec(path);
+  if(earsMatch){
+    try{
+      if(req.method==="GET"&&!earsMatch[1]){res.end(JSON.stringify({profiles:database.listEarProfiles(),simulationOnly:true}));return;}
+      if(req.method==="DELETE"&&earsMatch[1]){const deleted=database.deleteEarProfile(earsMatch[1]);res.writeHead(deleted?200:404);res.end(JSON.stringify({ok:deleted}));return;}
+      if(req.method==="POST"&&!earsMatch[1]){
+        let raw="";for await(const part of req){raw+=part;if(raw.length>8000){res.writeHead(413);res.end(JSON.stringify({error:"Payload too large"}));return;}}
+        const data:unknown=JSON.parse(raw);if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid JSON body");
+        const profile=database.saveEarProfile(data as Record<string,unknown>);
+        res.writeHead(201);res.end(JSON.stringify({profile,simulationOnly:true,hardwareWrite:false}));return;
+      }
+      res.writeHead(405);res.end(JSON.stringify({error:"Method not allowed"}));return;
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
+  }
   // Rehearsal data is persisted in local SQLite. API is loopback-only and unauthenticated.
   const resource = /^\/api\/(songs|rehearsals|setlists)(?:\/([a-zA-Z0-9-]+))?$/.exec(path);
   if (resource) {

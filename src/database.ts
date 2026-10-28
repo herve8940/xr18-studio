@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 
 export interface Song { id:string; title:string; artist:string; bpm:number; createdAt:string }
 export interface Rehearsal { id:string; title:string; startsAt:string; notes:string; createdAt:string }
+export interface EarProfile {id:string;musician:string;bus:number;levels:number[];createdAt:string;updatedAt:string}
 export interface Setlist { id:string; name:string; songIds:string[]; createdAt:string }
 const requiredText=(v:unknown,label:string,max=200):string=>{
  if(typeof v!=="string"||!v.trim()||v.trim().length>max)throw Error(label+" required (max "+max+" chars)");
@@ -21,6 +22,7 @@ export class StudioDatabase {
    CREATE TABLE IF NOT EXISTS songs(id TEXT PRIMARY KEY,title TEXT NOT NULL,artist TEXT NOT NULL DEFAULT '',bpm INTEGER NOT NULL,created_at TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS rehearsals(id TEXT PRIMARY KEY,title TEXT NOT NULL,starts_at TEXT NOT NULL,notes TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS setlists(id TEXT PRIMARY KEY,name TEXT NOT NULL,created_at TEXT NOT NULL);
+   CREATE TABLE IF NOT EXISTS ear_profiles(id TEXT PRIMARY KEY,musician TEXT NOT NULL,bus INTEGER NOT NULL,levels_json TEXT NOT NULL,created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
    CREATE TABLE IF NOT EXISTS setlist_items(setlist_id TEXT NOT NULL REFERENCES setlists(id) ON DELETE CASCADE,song_id TEXT NOT NULL REFERENCES songs(id) ON DELETE CASCADE,position INTEGER NOT NULL,PRIMARY KEY(setlist_id,position));
   `);
  }
@@ -56,5 +58,22 @@ export class StudioDatabase {
   })();return setlist;
  }
  deleteSetlist(id:string){return this.db.prepare("DELETE FROM setlists WHERE id=?").run(id).changes>0;}
+ listEarProfiles():EarProfile[]{
+   const rows=this.db.prepare("SELECT id,musician,bus,levels_json,created_at AS createdAt,updated_at AS updatedAt FROM ear_profiles ORDER BY updated_at DESC").all() as (Omit<EarProfile,"levels">&{levels_json:string})[];
+   return rows.map(({levels_json,...row})=>({...row,levels:JSON.parse(levels_json) as number[]}));
+ }
+ saveEarProfile(input:Record<string,unknown>):EarProfile{
+   const musician=requiredText(input.musician,"musician",80);
+   const bus=input.bus;
+   if(typeof bus!=="number"||!Number.isInteger(bus)||bus<1||bus>6)throw Error("Bus must be 1..6");
+   const levels=input.levels;
+   if(!Array.isArray(levels)||levels.length!==16||levels.some(v=>typeof v!=="number"||!Number.isFinite(v)||v<0||v>1))throw Error("16 normalized channel levels (0..1) required");
+   const id=typeof input.id==="string"&&/^[a-f0-9-]{36}$/.test(input.id)?input.id:randomUUID();
+   const now=new Date().toISOString();
+   this.db.prepare(`INSERT INTO ear_profiles(id,musician,bus,levels_json,created_at,updated_at) VALUES(?,?,?,?,?,?)
+   ON CONFLICT(id) DO UPDATE SET musician=excluded.musician,bus=excluded.bus,levels_json=excluded.levels_json,updated_at=excluded.updated_at`).run(id,musician,bus,JSON.stringify(levels),now,now);
+   return this.listEarProfiles().find(p=>p.id===id)!;
+ }
+ deleteEarProfile(id:string){return this.db.prepare("DELETE FROM ear_profiles WHERE id=?").run(id).changes>0;}
  close(){this.db.close();}
 }
