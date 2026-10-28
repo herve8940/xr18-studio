@@ -15,6 +15,7 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   // Bound to loopback by default; no authentication yet. Do not expose this API.
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
+  if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
   if(req.method==="GET"&&path==="/api/main"){res.end(JSON.stringify(xr18.mainState()));return;}
   const mixerWrite=/^\/api\/(?:channels\/(\d+)\/(on)|main\/(fader|on))$/.exec(path);
@@ -127,9 +128,10 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404); res.end(JSON.stringify({ error: "Not found" }));
 });
 const wss = new WebSocketServer({ server, path: "/ws" });
-wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState() })));
+wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() })));
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
+xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("advanced", state => {const message=JSON.stringify({type:"advanced",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("connection", () => {const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("warning", warning => console.warn("[OSC]", warning));
