@@ -38,3 +38,13 @@ test("OSC float32 preserves exact integer endpoints",()=>{
     assert.equal(parsed.args[0],v);
   }
 });
+
+test("real hardware writes refuse disconnected and stale state for all control paths",()=>{
+  const xr=new XR18({mode:"real",host:"127.0.0.1",port:10024,enableWrites:true});
+  assert.equal(xr.status().connected,false);
+  assert.throws(()=>xr.setFader(1,.5),/stale|disconnected/i);
+  assert.throws(()=>xr.setOn(1,false),/not confirmed/i);
+  assert.throws(()=>xr.setMainFader(.5),/not confirmed/i);
+  assert.throws(()=>xr.setMainOn(false),/not confirmed/i);
+  xr.close();
+});

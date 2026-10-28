@@ -33,7 +33,7 @@ export class XR18 extends EventEmitter {
       if (rinfo.address !== this.host || rinfo.port !== this.port) return;
       try { this.handle(decodeOsc(data)); } catch (err) { this.emit("warning", String(err)); }
     });
-    this.socket.on("error", err => { this.connected = false; this.emit("warning", err.message); });
+    this.socket.on("error", err => { this.connected = false; this.emit("connection",{connected:false}); this.emit("warning", err.message); });
     await new Promise<void>((resolve, reject) => {
       this.socket!.once("listening", resolve);
       this.socket!.once("error", reject);
@@ -41,7 +41,7 @@ export class XR18 extends EventEmitter {
     });
     // XR18 remote update subscription; refresh every 8s (subscription nominally 10s).
     this.send("/xremote");
-    this.timer = setInterval(() => {this.send("/xremote"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
+    this.timer = setInterval(() => {this.send("/xremote"); this.send("/lr/mix/fader"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
     this.timer.unref();
     this.send("/lr/mix/fader");
     this.send("/lr/mix/on");
@@ -95,13 +95,13 @@ export class XR18 extends EventEmitter {
   }
   setMainFader(value:number){
     if(!Number.isFinite(value)||value<0||value>1)throw Error("Main fader must be 0..1");
-    if(this.mode==="real"&&(!this.writes||!this.connected))throw Error("Hardware writes disabled or console not confirmed");
+    if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send("/lr/mix/fader",[oscFloat(value)]);
     else {this.main.fader=value;this.main.updatedAt=new Date().toISOString();this.emit("main",{...this.main});}
   }
   setMainOn(on:boolean){
     if(typeof on!=="boolean")throw Error("Boolean on required");
-    if(this.mode==="real"&&(!this.writes||!this.connected))throw Error("Hardware writes disabled or console not confirmed");
+    if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send("/lr/mix/on",[on?1:0]);
     else {this.main.on=on;this.main.updatedAt=new Date().toISOString();this.emit("main",{...this.main});}
   }
