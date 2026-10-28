@@ -33,6 +33,10 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ok:true,acknowledged:mode==="simulation"}));return;
     }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
   }
+  if(req.method==="GET"&&path==="/api/osc/advanced"){res.end(JSON.stringify({values:xr18.advancedState(),readOnly:true,verifiedOnHardware:false}));return;}
+  const advancedMatch=/^\/api\/osc\/advanced\/channels\/(\d+)\/refresh$/.exec(path);
+  if(req.method==="POST"&&advancedMatch){try{xr18.refreshAdvanced(Number(advancedMatch[1]));res.end(JSON.stringify({ok:true,readOnly:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;}
+  if(req.method==="POST"&&path==="/api/osc/advanced/fx/refresh"){xr18.refreshFx();res.end(JSON.stringify({ok:true,readOnly:true}));return;}
   const earsMatch=/^\/api\/ears\/profiles(?:\/([a-f0-9-]+))?$/.exec(path);
   if(earsMatch){
     try{
@@ -126,6 +130,7 @@ const wss = new WebSocketServer({ server, path: "/ws" });
 wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState() })));
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
+xr18.on("advanced", state => {const message=JSON.stringify({type:"advanced",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("connection", () => {const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();

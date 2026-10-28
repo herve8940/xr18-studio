@@ -15,17 +15,27 @@ export class XR18 extends EventEmitter {
   private lastReplyAt: number | null = null;
   private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
+  private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
+  private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
   constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
     super(); this.mode = opts.mode; this.host = opts.host; this.port = opts.port;
     this.writes = opts.mode === "real" && opts.enableWrites;
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
+    for(let ch=1;ch<=16;ch++){
+      const prefix=`/ch/${String(ch).padStart(2,"0")}`;
+      for(const suffix of ["eq/on","eq/1/f","eq/1/g","eq/1/q","eq/2/f","eq/2/g","eq/2/q","eq/3/f","eq/3/g","eq/3/q","eq/4/f","eq/4/g","eq/4/q","dyn/on","dyn/thr","dyn/ratio","dyn/attack","dyn/release","gate/on","gate/thr","gate/attack","gate/release","mix/01/level","mix/02/level","mix/03/level","mix/04/level","mix/05/level","mix/06/level"]){this.advancedAddresses.add(`${prefix}/${suffix}`);}
+    }
+    for(let i=1;i<=4;i++)this.advancedAddresses.add(`/fx/${i}/type`);
   }
   status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
   private isLive(){return this.connected&&this.lastReplyAt!==null&&Date.now()-this.lastReplyAt<this.staleAfterMs;}
   listChannels() { return [...this.channels.values()]; }
   mainState() { return {...this.main}; }
+  advancedState(channel?:number){const prefix=channel===undefined?"":`/ch/${String(channel).padStart(2,"0")}/`;return Object.fromEntries([...this.advanced].filter(([address])=>address.startsWith(prefix)));}
+  refreshAdvanced(channel:number){if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");if(this.mode!=="real"||!this.isLive())return;const prefix=`/ch/${String(channel).padStart(2,"0")}/`;for(const address of this.advancedAddresses)if(address.startsWith(prefix))this.send(address);}
+  refreshFx(){if(this.mode!=="real"||!this.isLive())return;for(const address of this.advancedAddresses)if(address.startsWith("/fx/"))this.send(address);}
   async start(): Promise<void> {
     if (this.mode === "simulation") return;
     this.socket = dgram.createSocket("udp4");
@@ -59,6 +69,9 @@ export class XR18 extends EventEmitter {
   private handle(msg: OscMessage) {
     const match = /^\/ch\/(0[1-9]|1[0-6])\/mix\/(fader|on)$/.exec(msg.address);
     if (!match) {
+      if(this.advancedAddresses.has(msg.address)&&(typeof msg.args[0]==="number"||typeof msg.args[0]==="string")){
+        const state={value:msg.args[0],updatedAt:new Date().toISOString()};this.advanced.set(msg.address,state);this.connected=true;this.lastReplyAt=Date.now();this.emit("advanced",{address:msg.address,...state});return;
+      }
       if ((msg.address === "/lr/mix/fader" || msg.address === "/lr/mix/on") && typeof msg.args[0] === "number") {
         if(msg.address.endsWith("/fader") && msg.args[0]>=0 && msg.args[0]<=1) this.main.fader=msg.args[0];
         else if(msg.address.endsWith("/on")) this.main.on=msg.args[0]!==0;
