@@ -2,6 +2,7 @@ import { FX_PRESETS, type FxFamily } from "./fxPresets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, AudioLines, BookOpen, Cable, Check, ChevronDown, CircleAlert, Disc3, FolderOpen, Headphones, ListMusic, Mic2, Music2, Plus, Save, Settings2, ShieldCheck, SlidersHorizontal, Trash2, Wifi, WifiOff, Zap } from "lucide-react";
 import "./studio.css";
+import "./fx-library.css";
 
 type Channel = { channel: number; fader: number; on: boolean; updatedAt: string | null };
 type Status = { mode: "simulation" | "real"; connected: boolean; writesEnabled: boolean };
