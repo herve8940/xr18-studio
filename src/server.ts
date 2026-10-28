@@ -15,7 +15,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
   // Rehearsal data is persisted in local SQLite. API is loopback-only and unauthenticated.
-  const resource = /^\\/api\\/(songs|rehearsals|setlists)(?:\\/([a-zA-Z0-9-]+))?$/.exec(path);
+  const resource = /^\/api\/(songs|rehearsals|setlists)(?:\/([a-zA-Z0-9-]+))?$/.exec(path);
   if (resource) {
     const kind=resource[1],itemId=resource[2];
     try {
@@ -38,7 +38,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(405);res.end(JSON.stringify({error:"Method not allowed"}));return;
     } catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
   }
-  const processingMatch = /^\\/api\\/channels\\/(\\d+)\\/processing(?:\\/(preview|undo))?$/.exec(path);
+  const processingMatch = /^\/api\/channels\/(\d+)\/processing(?:\/(preview|undo))?$/.exec(path);
   if (processingMatch) {
     const channel = Number(processingMatch[1]);
     try {
