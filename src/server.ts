@@ -1,6 +1,8 @@
 import http from "node:http";
 import { WebSocketServer, WebSocket } from "ws";
 import { XR18 } from "./xr18.js";
+import { ProcessingStore } from "./processing.js";
+const processing = new ProcessingStore();
 const mode = process.env.XR18_MODE === "real" ? "real" : "simulation";
 const xr18 = new XR18({ mode, host: process.env.XR18_HOST ?? "192.168.1.100", port: Number(process.env.XR18_PORT ?? 10024), enableWrites: process.env.XR18_ENABLE_WRITES === "true" });
 const server = http.createServer(async (req, res) => {
@@ -10,6 +12,29 @@ const server = http.createServer(async (req, res) => {
   // Bound to loopback by default; no authentication yet. Do not expose this API.
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
+  const processingMatch = /^\\/api\\/channels\\/(\\d+)\\/processing(?:\\/(preview|undo))?$/.exec(path);
+  if (processingMatch) {
+    const channel = Number(processingMatch[1]);
+    try {
+      if (req.method === "GET" && !processingMatch[2]) { res.end(JSON.stringify({ state: processing.get(channel), simulationOnly: true })); return; }
+      if (req.method !== "POST") { res.writeHead(405); res.end(JSON.stringify({ error: "Method not allowed" })); return; }
+      let raw = "";
+      for await (const part of req) { raw += part; if (raw.length > 16000) { res.writeHead(413); res.end(JSON.stringify({ error: "Payload too large" })); return; } }
+      const body: unknown = JSON.parse(raw);
+      if (!body || typeof body !== "object") throw Error("Invalid JSON");
+      const data = body as Record<string,unknown>;
+      if (processingMatch[2] === "preview") { res.end(JSON.stringify(processing.preview(channel,data.processing))); return; }
+      if (mode !== "simulation") { res.writeHead(403); res.end(JSON.stringify({ error: "Processing hardware writes are not implemented or validated; simulation only" })); return; }
+      if (processingMatch[2] === "undo") {
+        if (!Number.isInteger(data.expectedRevision)) throw Error("expectedRevision required");
+        const state = processing.undo(channel,data.expectedRevision as number);
+        res.end(JSON.stringify({ state, simulationOnly: true })); return;
+      }
+      if (data.confirm !== true || !Number.isInteger(data.expectedRevision)) throw Error("Explicit confirmation and expectedRevision required");
+      const state = processing.apply(channel,data.processing,data.expectedRevision as number);
+      res.end(JSON.stringify({ state, simulationOnly: true })); return;
+    } catch(e) { const message=(e as Error).message;res.writeHead(message.includes("conflict")?409:400);res.end(JSON.stringify({ error: message }));return; }
+  }
   if (req.method === "POST" && /^\/api\/channels\/\d+\/fader$/.test(path)) {
     let raw = "";
     for await (const part of req) { raw += part; if (raw.length > 1024) { res.writeHead(413); res.end(JSON.stringify({ error: "Payload too large" })); return; } }
