@@ -46,6 +46,7 @@ export default function App() {
   const [mainState,setMainState]=useState<Channel>({channel:0,fader:.5,on:true,updatedAt:null});
   const [status, setStatus] = useState<Status>({ mode:"simulation", connected:false, writesEnabled:false });
   const [socketOk, setSocketOk] = useState(false);
+  const [lastOscUpdate,setLastOscUpdate]=useState<string|null>(null);
   const [selected, setSelected] = useState(1);
   const [store, setStore] = useState<Stored>(load);
   const [notice, setNotice] = useState("");
@@ -92,8 +93,8 @@ export default function App() {
         const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel;main?:Channel};
         if (!active) return;
         if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main); }
-        if (msg.type === "channel" && msg.state) updateChannel(msg.state);
-        if(msg.type==="main"&&msg.state)setMainState(msg.state);
+        if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
+        if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
       socket.onerror = () => socket?.close();
@@ -253,7 +254,7 @@ export default function App() {
         <div className="studio-work">
           {tab==="mixer" ? <>
             <div className="mixer-head"><div><span className="eyebrow-studio">CONSOLE NUMÉRIQUE · 16 ENTRÉES</span><h1>Console de mixage</h1></div><div className="read-status"><span className={canWrite?"led":"led offline"}/>{canWrite?"Faders actifs":"Lecture seule / déconnecté"}</div></div>
-            <div className="mixer-toolbar"><label className="mixer-search"><span>Rechercher un canal</span><input type="search" aria-label="Rechercher un canal" placeholder="Ex. chant, guitare, batterie…" value={mixerFilter} onChange={e=>setMixerFilter(e.target.value)}/></label><button type="button" aria-pressed={compactMixer} onClick={()=>setCompactMixer(v=>!v)}>{compactMixer?"Affichage normal":"Vue compacte"}</button><span>{visibleChannels.length} / {channels.length} entrées</span></div><div className="pro-mixer-scroll"><div className={compactMixer?"pro-mixer compact":"pro-mixer"}>
+            <div className="mixer-toolbar"><span title="Les niveaux affichés sont des positions de fader, pas des mesures audio">Niveaux de fader ≠ vumètres audio</span>{lastOscUpdate&&<span>Dernière synchronisation : {new Date(lastOscUpdate).toLocaleTimeString("fr-BE")}</span>}<label className="mixer-search"><span>Rechercher un canal</span><input type="search" aria-label="Rechercher un canal" placeholder="Ex. chant, guitare, batterie…" value={mixerFilter} onChange={e=>setMixerFilter(e.target.value)}/></label><button type="button" aria-pressed={compactMixer} onClick={()=>setCompactMixer(v=>!v)}>{compactMixer?"Affichage normal":"Vue compacte"}</button><span>{visibleChannels.length} / {channels.length} entrées</span></div><div className="pro-mixer-scroll"><div className={compactMixer?"pro-mixer compact":"pro-mixer"}>
               {visibleChannels.map(c=><div key={c.channel} className={selected===c.channel?"pro-channel picked":"pro-channel"} style={{"--ch-color":COLORS[c.channel-1]} as React.CSSProperties}>
                 <button className="pro-ch-select" onClick={()=>setSelected(c.channel)}><span>{c.channel}</span><Mic2 size={17}/><b>{labelFor(c.channel)}</b></button>
                 <span className="ch-type">{c.channel<=4?"INSTRUMENT":c.channel<=10?"BATTERIE":"ENTRÉE"}</span>
