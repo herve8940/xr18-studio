@@ -1,6 +1,6 @@
 import dgram from "node:dgram";
 import { EventEmitter } from "node:events";
-import { decodeOsc, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
+import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
 
 export type Mode = "simulation" | "real";
 export interface ChannelState { channel: number; fader: number; on: boolean; updatedAt: string | null }
@@ -15,6 +15,8 @@ export class XR18 extends EventEmitter {
   private lastReplyAt: number | null = null;
   private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
+  private meters:{channels:number[];updatedAt:string}|null=null;
+  meterState(){return this.meters?{...this.meters,available:true}:{channels:[],updatedAt:null,available:false};}
   private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
   private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
@@ -51,7 +53,8 @@ export class XR18 extends EventEmitter {
     });
     // XR18 remote update subscription; refresh every 8s (subscription nominally 10s).
     this.send("/xremote");
-    this.timer = setInterval(() => {this.send("/xremote"); this.send("/lr/mix/fader"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
+    this.send("/meters",["/meters/1",2]);
+    this.timer = setInterval(() => {this.send("/xremote");this.send("/meters",["/meters/1",2]); this.send("/lr/mix/fader"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
     this.timer.unref();
     this.send("/lr/mix/fader");
     this.send("/lr/mix/on");
@@ -67,6 +70,11 @@ export class XR18 extends EventEmitter {
     this.socket.send(b, this.port, this.host, err => { if (err) this.emit("warning", err.message); });
   }
   private handle(msg: OscMessage) {
+    if(msg.address==="/meters/1"&&Buffer.isBuffer(msg.args[0])){
+      const levels=decodeXAirMeterBlob(msg.args[0],40);
+      this.meters={channels:levels.slice(0,16),updatedAt:new Date().toISOString()};
+      this.connected=true;this.lastReplyAt=Date.now();this.emit("meters",this.meterState());return;
+    }
     const match = /^\/ch\/(0[1-9]|1[0-6])\/mix\/(fader|on)$/.exec(msg.address);
     if (!match) {
       if(this.advancedAddresses.has(msg.address)&&(typeof msg.args[0]==="number"||typeof msg.args[0]==="string")){
