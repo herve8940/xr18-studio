@@ -37,6 +37,23 @@ export class XR18 extends EventEmitter {
   mainState() { return {...this.main}; }
   advancedState(channel?:number){const prefix=channel===undefined?"":`/ch/${String(channel).padStart(2,"0")}/`;return Object.fromEntries([...this.advanced].filter(([address])=>address.startsWith(prefix)));}
   refreshAdvanced(channel:number){if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");if(this.mode!=="real"||!this.isLive())return;const prefix=`/ch/${String(channel).padStart(2,"0")}/`;for(const address of this.advancedAddresses)if(address.startsWith(prefix))this.send(address);}
+  /** Direct OSC write, explicit operator opt-in; never update local state until hardware echoes. */
+  writeAdvanced(address:string,value:number){
+    if(this.mode!=="real"||!this.writes||!this.isLive())throw Error("Real XR18 connection and write opt-in required");
+    if(!this.advancedAddresses.has(address))throw Error("OSC parameter not allowlisted");
+    if(!Number.isFinite(value))throw Error("Invalid numeric value");
+    const eq=/^\/ch\/(0[1-9]|1[0-6])\/eq\/(?:[1-4]\/([fgq])|on)$/.exec(address);
+    const dyn=/^\/ch\/(0[1-9]|1[0-6])\/(dyn|gate)\/(on|thr|ratio|attack|release)$/.exec(address);
+    const send=/^\/ch\/(0[1-9]|1[0-6])\/mix\/0[1-6]\/level$/.test(address);
+    // The X-Air OSC protocol uses normalized floats for continuous parameters.
+    // Toggle writes use OSC integer; processing ranges must be validated on real hardware.
+    const isToggle=address.endsWith("/on");
+    if(isToggle){if(value!==0&&value!==1)throw Error("Toggle must be 0 or 1");}
+    else if(!(eq||dyn||send)||value<0||value>1)throw Error("Only normalized 0..1 processing and send writes supported");
+    if(address.startsWith("/fx/"))throw Error("FX algorithm writes require hardware verification");
+    this.send(address,[isToggle?value:oscFloat(value)]);
+    this.emit("advanced-write-requested",{address,value,at:new Date().toISOString()});
+  }
   refreshFx(){if(this.mode!=="real"||!this.isLive())return;for(const address of this.advancedAddresses)if(address.startsWith("/fx/"))this.send(address);}
   async start(): Promise<void> {
     if (this.mode === "simulation") return;
