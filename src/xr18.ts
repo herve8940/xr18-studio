@@ -1,6 +1,6 @@
 import dgram from "node:dgram";
 import { EventEmitter } from "node:events";
-import { decodeOsc, encodeOsc, type OscMessage } from "./osc.js";
+import { decodeOsc, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
 
 export type Mode = "simulation" | "real";
 export interface ChannelState { channel: number; fader: number; on: boolean; updatedAt: string | null }
@@ -44,7 +44,7 @@ export class XR18 extends EventEmitter {
       this.send(`/ch/${String(i).padStart(2, "0")}/mix/on`);
     }
   }
-  private send(address: string, args: (number | string)[] = []) {
+  private send(address: string, args: OutgoingOscArg[] = []) {
     if (!this.socket) return;
     const b = encodeOsc(address, args);
     this.socket.send(b, this.port, this.host, err => { if (err) this.emit("warning", err.message); });
