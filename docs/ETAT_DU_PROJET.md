@@ -1,47 +1,13 @@
-# État de développement — XR18 Studio
+# Version de bureau — état vérifié
 
-## Livré en code (à valider par CI et en navigateur)
-- Backend Node.js/TypeScript : encodeur/décodeur OSC simple, client UDP, lecture des faders et mutes des canaux 1 à 16, simulation, HTTP et WebSocket.
-- Frontend React/TypeScript/Tailwind : console sombre responsive, 16 faders, sélection de canal, affichage de l'état, navigation.
-- Prototypes locaux : éditeur EQ **visuel uniquement**, préparation de 6 mixes in-ear **sans OSC**, bibliothèque de morceaux, setlist, notes de répétition, snapshots de faders simulés.
-- Données de répétition, setlist et snapshots stockées dans localStorage du navigateur. Non synchronisées, non sauvegardées sur serveur.
-- CI GitHub Actions pour compilation et tests.
+La branche release/desktop-finalization rassemble les développements jusqu’à la PR 20.
 
-## Non livré / non validé
-- Lecture réelle des noms/couleurs, EQ, gate, compresseur, bus, FX, routage, DCA, main, vumètres.
-- Réglage matériel des mutes et autres paramètres, écriture sécurisée avec permissions.
-- Authentification, rôles, SQLite, MCP, ReaCue, automatisations, vraies scènes XR18, PWA.
-- Validation sur une XR18 réelle.
-- L'échelle graphique et la courbe EQ sont **illustratives**, pas des mesures audio.
-- La disposition et les noms des 16 entrées sont des exemples, pas les paramètres de la console.
+Vérifié : compilation TypeScript backend et frontend ; 20 tests automatisés réussis ; CI GitHub réussie. Application Windows assemblée avec module SQLite Windows. L’installation et l’exécution sur un PC Windows restent à vérifier.
 
-## Sécurité
-- Simulation par défaut.
-- Ne pas activer les écritures matérielles.
-- Ne pas exposer le backend ou le frontend sur Internet.
-- Aucun usage en concert ou pour les in-ear réels tant que les protections ne sont pas testées.
+Connexion : menu Connexion, puis Simulation, XR18 lecture seule ou XR18 contrôle. Pour une connexion réelle, choisir un fichier .txt contenant uniquement l’adresse IPv4 de la console (exemple 192.168.1.100). L’application redémarre après le choix et conserve ce réglage. Le contrôle demande une confirmation.
 
-## Démarrage
-Deux terminaux à la racine du dépôt, sur la branche `feature/studio-pro-dashboard` :
+Disponible : faders et mutes de 16 entrées et master, lecture des niveaux OSC, lecture/écriture directe de paramètres avancés autorisés, bibliothèque de presets de préparation, morceaux, répétitions, setlists et profils in-ear SQLite, MCP en lecture seule.
 
-Terminal 1 :
-```sh
-npm install
-npm run dev
-```
+Limites : presets de traitement, snapshots et mixes personnels ne constituent pas des scènes matérielles complètes. Application automatique des presets FX, routage, DCA, authentification multiutilisateur, ReaCue et validation physique XR18 non terminés. Les noms des tranches sont des exemples. Le backend reste limité à l’ordinateur local.
 
-Terminal 2 :
-```sh
-cd web
-npm install
-npm run dev
-```
-
-Ouvrir `http://127.0.0.1:5173`.
-
-## Prochaines étapes
-1. Faire passer CI et tester le navigateur.
-2. Renforcer les tests OSC et la détection de déconnexion.
-3. Implémenter les paramètres XR18 vérifiés en lecture seule.
-4. Ajouter SQLite, authentification, rôles et garde-fous avant toute écriture réelle.
-5. Intégrer progressivement le MCP et ReaCue.
+Téléchargements des installeurs : ouvrir la page Actions du dépôt, exécution Desktop packages, puis Artifacts (connexion GitHub nécessaire). Les builds Windows, macOS et Linux sont indépendants.
