@@ -6,7 +6,7 @@ import {ProcessingStore,validateProcessing,type ProcessingState} from './process
 import {LibraryStore} from './library-store.js';
 export type Fx={slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]};
 export function validateFx(input:unknown):Fx{
- const f=input as Fx;if(!f||!Number.isInteger(f.slot)||f.slot<1||f.slot>4||!Number.isInteger(f.algorithm)||f.algorithm<0||f.algorithm>127||!Array.isArray(f.parameters)||f.parameters.length>64||f.parameters.some(p=>!p||!['i','f'].includes(p.type)||!Number.isFinite(p.value)||(p.type==='f'&&(p.value<0||p.value>1))||(p.type==='i'&&(!Number.isInteger(p.value)||p.value<0||p.value>127))))throw Error('Preset FX invalide : slot 1..4, algorithme entier et paramètres OSC typés requis');return structuredClone(f);
+ const f=input as Fx;if(!f||!Number.isInteger(f.slot)||f.slot<1||f.slot>4||!Number.isInteger(f.algorithm)||f.algorithm<0||f.algorithm>60||!Array.isArray(f.parameters)||f.parameters.length>64||f.parameters.some(p=>!p||!['i','f'].includes(p.type)||!Number.isFinite(p.value)||(p.type==='f'&&(p.value<0||p.value>1))||(p.type==='i'&&(!Number.isInteger(p.value)||p.value<0||p.value>127))))throw Error('Preset FX invalide : slot 1..4, algorithme entier et paramètres OSC typés requis');return structuredClone(f);
 }
 export type Scene={version:1;scope:'application';channels:ChannelState[];main:ChannelState;processing:ProcessingState[];fx:Fx[];advanced:Record<string,{value:number|string;updatedAt:string}>};
 export class ShowControl {
