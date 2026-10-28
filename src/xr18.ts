@@ -12,6 +12,8 @@ export class XR18 extends EventEmitter {
   private readonly port: number;
   private readonly writes: boolean;
   private connected = false;
+  private lastReplyAt: number | null = null;
+  private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
   constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
@@ -20,7 +22,8 @@ export class XR18 extends EventEmitter {
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
   }
-  status() { return { mode: this.mode, connected: this.connected, writesEnabled: this.writes, host: this.mode === "real" ? this.host : undefined, lastValuesAreVerified: false }; }
+  status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
+  private isLive(){return this.connected&&this.lastReplyAt!==null&&Date.now()-this.lastReplyAt<this.staleAfterMs;}
   listChannels() { return [...this.channels.values()]; }
   mainState() { return {...this.main}; }
   async start(): Promise<void> {
@@ -38,7 +41,7 @@ export class XR18 extends EventEmitter {
     });
     // XR18 remote update subscription; refresh every 8s (subscription nominally 10s).
     this.send("/xremote");
-    this.timer = setInterval(() => this.send("/xremote"), 8000);
+    this.timer = setInterval(() => {this.send("/xremote"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
     this.timer.unref();
     this.send("/lr/mix/fader");
     this.send("/lr/mix/on");
@@ -60,7 +63,7 @@ export class XR18 extends EventEmitter {
         if(msg.address.endsWith("/fader") && msg.args[0]>=0 && msg.args[0]<=1) this.main.fader=msg.args[0];
         else if(msg.address.endsWith("/on")) this.main.on=msg.args[0]!==0;
         else return;
-        this.main.updatedAt=new Date().toISOString();this.connected=true;this.emit("main",{...this.main});
+        this.main.updatedAt=new Date().toISOString();this.connected=true;this.lastReplyAt=Date.now();this.emit("main",{...this.main});
       }
       return;
     }
@@ -71,7 +74,7 @@ export class XR18 extends EventEmitter {
     else if (key === "on") state.on = msg.args[0] !== 0;
     else return;
     state.updatedAt = new Date().toISOString();
-    this.connected = true;
+    this.connected = true; this.lastReplyAt=Date.now();
     this.emit("state", { ...state });
   }
   /** 0..1 normalized fader, not dB. Read-only unless explicit real-write opt-in. */
@@ -79,14 +82,14 @@ export class XR18 extends EventEmitter {
     if (!Number.isInteger(channel) || channel < 1 || channel > 16) throw new Error("Channel must be 1..16");
     if (!Number.isFinite(value) || value < 0 || value > 1) throw new Error("Fader must be 0..1");
     if (this.mode === "real" && !this.writes) throw new Error("Hardware writes disabled");
-    if (this.mode === "real" && !this.connected) throw new Error("Console state not confirmed; refusing write");
+    if (this.mode === "real" && !this.isLive()) throw new Error("Console state stale or disconnected; refusing write");
     if (this.mode === "real") this.send(`/ch/${String(channel).padStart(2, "0")}/mix/fader`, [oscFloat(value)]);
     else { const state = this.channels.get(channel)!; state.fader = value; state.updatedAt = new Date().toISOString(); this.emit("state", { ...state }); }
   }
   setOn(channel:number,on:boolean) {
     if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");
     if(typeof on!=="boolean")throw Error("Boolean on required");
-    if(this.mode==="real"&&(!this.writes||!this.connected))throw Error("Hardware writes disabled or console not confirmed");
+    if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send(`/ch/${String(channel).padStart(2,"0")}/mix/on`,[on?1:0]);
     else {const state=this.channels.get(channel)!;state.on=on;state.updatedAt=new Date().toISOString();this.emit("state",{...state});}
   }
