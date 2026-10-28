@@ -1,0 +1,43 @@
+const { app, BrowserWindow, dialog, shell } = require("electron");
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
+const { mkdirSync } = require("node:fs");
+let win;
+app.whenReady().then(async () => {
+  try {
+    const dataPath=app.getPath("userData");
+    mkdirSync(dataPath,{recursive:true});
+    process.env.XR18_MODE="simulation"; // Never start hardware writes from a packaged app.
+    process.env.XR18_ENABLE_WRITES="false";
+    process.env.HTTP_PORT="3000";
+    process.env.XR18_DB_PATH=path.join(dataPath,"xr18-studio.db");
+    process.env.XR18_WEB_DIST=app.isPackaged
+      ?path.join(process.resourcesPath,"web-dist")
+      :path.join(app.getAppPath(),"web","dist");
+    const backend=path.join(app.getAppPath(),"dist","src","server.js");
+    await import(pathToFileURL(backend).href);
+    let ready=false;
+    for(let i=0;i<80;i++){
+      try{const response=await fetch("http://127.0.0.1:3000/api/status");if(response.ok){ready=true;break;}}catch{}
+      await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    if(!ready)throw Error("Le serveur local XR18 n'a pas démarré.");
+    win=new BrowserWindow({
+      width:1440,height:900,minWidth:800,minHeight:600,
+      backgroundColor:"#0d1621",
+      webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true}
+    });
+    win.webContents.setWindowOpenHandler(({url})=>{
+      if(url.startsWith("https://"))void shell.openExternal(url);
+      return {action:"deny"};
+    });
+    win.webContents.on("will-navigate",(event,url)=>{
+      if(!url.startsWith("http://127.0.0.1:3000/"))event.preventDefault();
+    });
+    await win.loadURL("http://127.0.0.1:3000/");
+  } catch(error) {
+    dialog.showErrorBox("XR18 Studio — démarrage impossible",String(error));
+    app.quit();
+  }
+});
+app.on("window-all-closed",()=>app.quit());
