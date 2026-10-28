@@ -66,6 +66,8 @@ export default function App() {
   const [hp, setHp] = useState(true);
   const [onlineSince, setOnlineSince] = useState("");
   const [busy, setBusy] = useState(false);
+  const [mixerFilter,setMixerFilter]=useState("");
+  const [compactMixer,setCompactMixer]=useState(false);
   const drag = useRef<Record<number, number>>({});
   const channelRef = useRef(channels);
   useEffect(() => { channelRef.current = channels; }, [channels]);
@@ -112,6 +114,7 @@ export default function App() {
   }
   function changeSlider(channel: number, value: number) { drag.current[channel] = value; setChannels(old => old.map(c => c.channel === channel ? {...c,fader:value} : c)); }
   function commitSlider(channel: number) { const v = drag.current[channel]; if(v !== undefined) { delete drag.current[channel]; void writeFader(channel,v); } }
+  function resetFader(channel:number){if(!canWrite||busy)return;changeSlider(channel,0.5);commitSlider(channel);}
   function saveScene() {
     if (status.mode !== "simulation") { setNotice("Sauvegarde locale depuis une XR18 réelle désactivée tant que les lectures ne sont pas entièrement validées."); return; }
     const name = sceneName.trim() || `Snapshot ${new Date().toLocaleString("fr-BE")}`;
@@ -209,6 +212,7 @@ export default function App() {
   const setlist = useMemo(()=>store.setlist.map(key=>store.songs.find(s=>s.id===key)).filter((s):s is Song=>Boolean(s)),[store]);
   const isSim = status.mode === "simulation";
   const current = channels[selected-1] ?? channels[0]!;
+  const visibleChannels=useMemo(()=>channels.filter(ch=>`${ch.channel} ${labelFor(ch.channel)}`.toLocaleLowerCase("fr").includes(mixerFilter.trim().toLocaleLowerCase("fr"))),[channels,mixerFilter]);
   return <div className="studio">
     <aside className="studio-side">
       <div className="studio-logo"><span className="logo-mark"><AudioLines size={22}/></span><div><b>XR18 <em>Studio</em></b><small>Mixage · Répétitions · MCP</small></div></div>
@@ -226,13 +230,13 @@ export default function App() {
         <div className="studio-work">
           {tab==="mixer" ? <>
             <div className="mixer-head"><div><span className="eyebrow-studio">CONSOLE NUMÉRIQUE · 16 ENTRÉES</span><h1>Console de mixage</h1></div><div className="read-status"><span className={canWrite?"led":"led offline"}/>{canWrite?"Faders actifs":"Lecture seule / déconnecté"}</div></div>
-            <div className="pro-mixer-scroll"><div className="pro-mixer">
-              {channels.map(c=><div key={c.channel} className={selected===c.channel?"pro-channel picked":"pro-channel"} style={{"--ch-color":COLORS[c.channel-1]} as React.CSSProperties}>
+            <div className="mixer-toolbar"><label className="mixer-search"><span>Rechercher un canal</span><input type="search" aria-label="Rechercher un canal" placeholder="Ex. chant, guitare, batterie…" value={mixerFilter} onChange={e=>setMixerFilter(e.target.value)}/></label><button type="button" aria-pressed={compactMixer} onClick={()=>setCompactMixer(v=>!v)}>{compactMixer?"Affichage normal":"Vue compacte"}</button><span>{visibleChannels.length} / {channels.length} entrées</span></div><div className="pro-mixer-scroll"><div className={compactMixer?"pro-mixer compact":"pro-mixer"}>
+              {visibleChannels.map(c=><div key={c.channel} className={selected===c.channel?"pro-channel picked":"pro-channel"} style={{"--ch-color":COLORS[c.channel-1]} as React.CSSProperties}>
                 <button className="pro-ch-select" onClick={()=>setSelected(c.channel)}><span>{c.channel}</span><Mic2 size={17}/><b>{labelFor(c.channel)}</b></button>
                 <span className="ch-type">{c.channel<=4?"INSTRUMENT":c.channel<=10?"BATTERIE":"ENTRÉE"}</span>
                 <button className={c.on?"ch-mute":"ch-mute muted"} disabled title="Mute en lecture seule">{c.on?"M":"MUTED"}</button>
-                <div className="ch-fader-area"><div className="ch-meter" title="Vumètre non implémenté : aucune mesure réelle"><span>—</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
-                <span className="ch-value">{normalized(c.fader)}%</span><span className="ch-on">{c.on?"ON":"OFF"}</span><div className="ch-color"/>
+                <div className="ch-fader-area"><div className="ch-meter" title="Vumètre non implémenté : aucune mesure réelle"><span>—</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" title="Double-cliquer pour revenir à 50 % (simulation ou commande autorisée)" onDoubleClick={()=>resetFader(c.channel)} min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onPointerCancel={()=>commitSlider(c.channel)} onBlur={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
+                <span className="ch-value">{normalized(c.fader)}%</span><span className="ch-fader-hint">{c.fader===0?"−∞":`${(20*Math.log10(Math.max(c.fader,0.00001))).toFixed(1)} dB relatif`}</span><span className="ch-on">{c.on?"ON":"OFF"}</span><div className="ch-color"/>
               </div>)}
               <div className="pro-channel master"><div className="pro-ch-select"><span>MAIN</span><Activity size={20}/><b>Main L/R</b></div><span className="ch-type">SORTIE</span><button disabled className="ch-mute">M</button><div className="ch-fader-area"><div className="ch-meter"><span>—</span></div><div className="master-placeholder">Lecture<br/>à venir</div></div><span className="ch-value">—</span><span className="ch-on">NON DISP.</span><div className="ch-color"/></div>
             </div></div>
