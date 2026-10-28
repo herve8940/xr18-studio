@@ -1,17 +1,21 @@
 /** Minimal OSC encoder/decoder for XR18 scalar messages. Not a full OSC implementation. */
 export type OscArg = number | string;
 export interface OscMessage { address: string; args: OscArg[] }
+/** Explicit OSC float32, including whole-number values 0 and 1. */
+export interface OscFloat { oscType: "f"; value: number }
+export type OutgoingOscArg = OscArg | OscFloat;
+export const oscFloat = (value: number): OscFloat => ({ oscType: "f", value });
 function padded(s: string): Buffer {
   const raw = Buffer.from(s + "\0", "utf8");
   return Buffer.concat([raw, Buffer.alloc((4 - raw.length % 4) % 4)]);
 }
-export function encodeOsc(address: string, args: OscArg[] = []): Buffer {
+export function encodeOsc(address: string, args: OutgoingOscArg[] = []): Buffer {
   if (!address.startsWith("/")) throw new Error("OSC address must start with /");
-  const tags = "," + args.map(v => typeof v === "string" ? "s" : Number.isInteger(v) ? "i" : "f").join("");
+  const tags = "," + args.map(v => typeof v === "string" ? "s" : typeof v === "object" ? "f" : Number.isInteger(v) ? "i" : "f").join("");
   const chunks = [padded(address), padded(tags)];
   for (const arg of args) {
     if (typeof arg === "string") chunks.push(padded(arg));
-    else { const b = Buffer.alloc(4); if (Number.isInteger(arg)) b.writeInt32BE(arg); else b.writeFloatBE(arg); chunks.push(b); }
+    else { const b = Buffer.alloc(4); if (typeof arg === "object") { if (!Number.isFinite(arg.value)) throw Error("Invalid OSC float"); b.writeFloatBE(arg.value); } else if (Number.isInteger(arg)) b.writeInt32BE(arg); else b.writeFloatBE(arg); chunks.push(b); }
   }
   return Buffer.concat(chunks);
 }
