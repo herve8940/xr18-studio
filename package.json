@@ -72,8 +72,7 @@
     },
     "linux": {
       "target": [
-        "AppImage",
-        "deb"
+        "AppImage"
       ],
       "category": "AudioVideo",
       "artifactName": "XR18-Studio-Linux-${version}-${arch}.${ext}"
