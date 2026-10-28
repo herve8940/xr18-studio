@@ -6,11 +6,14 @@ const net = require("node:net");
 let win;
 app.whenReady().then(async () => {
   try {
+    const smoke=process.argv.includes("--smoke-test");
+    if(smoke&&process.env.XR18_SMOKE_DATA)app.setPath("userData",process.env.XR18_SMOKE_DATA);
     const dataPath=app.getPath("userData");
     mkdirSync(dataPath,{recursive:true});
     const configPath=path.join(dataPath,"connection.json");
     let config={mode:"simulation",host:"192.168.1.100",enableWrites:false};
     try { const saved=JSON.parse(readFileSync(configPath,"utf8")); if(saved.mode==="real" && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(saved.host)) config={mode:"real",host:saved.host,enableWrites:saved.enableWrites===true}; } catch {}
+    if(smoke)config={mode:"simulation",host:"127.0.0.1",enableWrites:false};
     process.env.XR18_MODE=config.mode;
     process.env.XR18_HOST=config.host;
     process.env.XR18_ENABLE_WRITES=String(config.enableWrites);
@@ -45,11 +48,12 @@ app.whenReady().then(async () => {
     await import(pathToFileURL(backend).href);
     let ready=false;
     for(let i=0;i<80;i++){
-      try{const response=await fetch(`http://127.0.0.1:${port}/api/status`);if(response.ok){ready=true;break;}}catch{}
+      try{const response=await fetch(`http://127.0.0.1:${port}/api/auth`);if(response.ok){ready=true;break;}}catch{}
       await new Promise(resolve=>setTimeout(resolve,250));
     }
     if(!ready)throw Error("Le serveur local XR18 n'a pas démarré.");
     win=new BrowserWindow({
+      show:!smoke,
       width:1440,height:900,minWidth:800,minHeight:600,
       backgroundColor:"#0d1621",
       webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true}
@@ -62,10 +66,20 @@ app.whenReady().then(async () => {
       if(!url.startsWith(`http://127.0.0.1:${port}/`))event.preventDefault();
     });
     await win.loadURL(`http://127.0.0.1:${port}/`);
+    if(smoke){
+      await new Promise(resolve=>setTimeout(resolve,1000));
+      const rendered=await win.webContents.executeJavaScript('document.body.textContent.includes("XR18")');
+      if(!rendered)throw Error("Interface XR18 non rendue");
+      const auth=await fetch(`http://127.0.0.1:${port}/api/auth`);
+      if(!auth.ok)throw Error("Authentification locale indisponible");
+      app.exit(0);
+    }
   } catch(error) {
+    if(process.argv.includes("--smoke-test")){console.error(error);app.exit(1);return;}
     dialog.showErrorBox("XR18 Studio — démarrage impossible",String(error));
     app.quit();
   }
 });
 app.on("window-all-closed",()=>app.quit());
+
 

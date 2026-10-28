@@ -5,15 +5,42 @@ import { WebSocketServer, WebSocket } from "ws";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
+import { Access, permitted, sameOrigin } from "./access.js";
+import { LibraryStore } from "./library-store.js";
+import { ShowControl } from "./show-control.js";
+import { StudioApi, body } from "./studio-api.js";
 const database = new StudioDatabase();
 const processing = new ProcessingStore();
 const mode = process.env.XR18_MODE === "real" ? "real" : "simulation";
 const xr18 = new XR18({ mode, host: process.env.XR18_HOST ?? "192.168.1.100", port: Number(process.env.XR18_PORT ?? 10024), enableWrites: process.env.XR18_ENABLE_WRITES === "true" });
+const dbPath=process.env.XR18_DB_PATH??"data/xr18-studio.db";
+const access=new Access(dbPath), library=new LibraryStore(dbPath);
+const show=new ShowControl(xr18,processing,library);
+const studioApi=new StudioApi(xr18,access,library,show);
 const server = http.createServer(async (req, res) => {
+  let ownsWriteLock=false;
+  try {
   const path = new URL(req.url ?? "/", "http://localhost").pathname;
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
-  // Bound to loopback by default; no authentication yet. Do not expose this API.
+  if(!sameOrigin(req)){res.writeHead(403);res.end(JSON.stringify({error:"Origine refusée"}));return;}
+  if(path==='/api/auth'&&req.method==='GET'){res.end(JSON.stringify({enabled:access.enabled(),user:access.user(req)}));return;}
+  if(path==='/api/auth/setup'&&req.method==='POST'){
+    try{const d=await body(req);if(access.enabled())throw Error('Comptes déjà configurés');access.create(d.name,d.password,'admin',[]);for(const ws of wss.clients)ws.terminate();res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/auth/login'&&req.method==='POST'){
+    try{const d=await body(req);const token=access.login(d.name,d.password);res.setHeader('Set-Cookie',`xr18_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200`);res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(401);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/auth/logout'&&req.method==='POST'){access.logout(req);res.setHeader('Set-Cookie','xr18_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');for(const ws of wss.clients)ws.terminate();res.end(JSON.stringify({ok:true}));return;}
+  const user=access.user(req);
+  if(path.startsWith('/api/')&&(!user||!permitted(user,req.method??'GET',path))){res.writeHead(user?403:401);res.end(JSON.stringify({error:user?'Droits insuffisants':'Connexion requise'}));return;}
+  if(path.startsWith('/api/')&&req.method!=='GET'){
+    if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
+    studioApi.busy=true;ownsWriteLock=true;
+    access.log(user!,`${req.method} ${path}`);
+    if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library'))show.manualOverride();
+  }
+  if(user&&await studioApi.handle(req,res,path,user))return;
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
@@ -138,9 +165,12 @@ const server = http.createServer(async (req, res) => {
     }
   }
   res.writeHead(404); res.end(JSON.stringify({ error: "Not found" }));
+  } catch(e) {if(!res.headersSent)res.writeHead(500);res.end(JSON.stringify({error:(e as Error).message}));}
+  finally {if(ownsWriteLock)studioApi.busy=false;}
 });
-const wss = new WebSocketServer({ server, path: "/ws" });
-wss.on("connection", ws => ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() })));
+const wss = new WebSocketServer({ server, path: "/ws", verifyClient:({req},done)=>done(sameOrigin(req)&&!!access.user(req),401) });
+const wsRequests=new WeakMap<WebSocket,http.IncomingMessage>();
+wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() }));});
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
@@ -150,9 +180,10 @@ xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
 server.listen(port, "127.0.0.1", () => console.log(`XR18 Studio API on http://127.0.0.1:${port} (${mode})`));
-const statusTimer=setInterval(()=>{const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
+const statusTimer=setInterval(()=>{for(const ws of wss.clients){const req=wsRequests.get(ws);if(!req||!access.user(req))ws.terminate();}const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
 statusTimer.unref();
-function shutdown(){clearInterval(statusTimer);xr18.close();database.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
+function shutdown(){clearInterval(statusTimer);xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
 process.once("SIGINT",shutdown);
 process.once("SIGTERM",shutdown);
+
 

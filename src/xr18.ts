@@ -87,6 +87,7 @@ export class XR18 extends EventEmitter {
     this.socket.send(b, this.port, this.host, err => { if (err) this.emit("warning", err.message); });
   }
   private handle(msg: OscMessage) {
+    this.emit("osc-reply",msg);
     if(msg.address==="/meters/1"&&Buffer.isBuffer(msg.args[0])){
       const levels=decodeXAirMeterBlob(msg.args[0],40);
       this.meters={channels:levels.slice(0,16),updatedAt:new Date().toISOString()};
@@ -143,5 +144,34 @@ export class XR18 extends EventEmitter {
     if(this.mode==="real")this.send("/lr/mix/on",[on?1:0]);
     else {this.main.on=on;this.main.updatedAt=new Date().toISOString();this.emit("main",{...this.main});}
   }
+  restoreAdvanced(values:Record<string,{value:number|string;updatedAt:string}>){
+    if(this.mode!=='simulation')throw Error('Simulation uniquement');
+    for(const [address,state] of Object.entries(values))if(!this.advancedAddresses.has(address)||!Number.isFinite(Number(state.value)))throw Error('Paramètre avancé invalide');
+    this.advanced.clear();for(const [address,state] of Object.entries(values)){this.advanced.set(address,structuredClone(state));this.emit('advanced',{address,...state});}
+  }
+  setMonitor(bus:number,channel:number,value:number){
+    const address=`/ch/${String(channel).padStart(2,'0')}/mix/${String(bus).padStart(2,'0')}/level`;
+    if(this.mode==='real')this.writeAdvanced(address,value);else {const state={value,updatedAt:new Date().toISOString()};this.advanced.set(address,state);this.emit('advanced',{address,...state});}
+  }
+  async query(address:string):Promise<OscMessage>{
+    if(this.mode!=="real"||!this.isLive())throw Error("XR18 déconnectée");
+    return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{if(msg.address!==address)return;clearTimeout(timer);this.off("osc-reply",done);resolve(msg);};const timer=setTimeout(()=>{this.off("osc-reply",done);reject(Error("Pas de réponse XR18 : "+address));},1500);this.on("osc-reply",done);this.send(address);});
+  }
+  async node(path:string):Promise<string>{
+    if(this.mode!=='real'||!this.isLive())throw Error('XR18 déconnectée');
+    return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&a.startsWith(path+' '));if(typeof text!=='string')return;clearTimeout(timer);this.off('osc-reply',done);resolve(text.trim());};const timer=setTimeout(()=>{this.off('osc-reply',done);reject(Error('Nœud XR18 absent : '+path));},1000);this.on('osc-reply',done);this.send('/node',[path.slice(1)]);});
+  }
+  async applyNative(commands:{address:string;type:'f'|'i'|'s';value:number|string}[]){
+    if(process.env.XR18_EXPERIMENTAL_SCENES!=="true"||!this.writes||!this.isLive())throw Error('Rappel matériel expérimental désactivé ou XR18 déconnectée');
+    for(const c of commands){if(!this.isLive())throw Error('Rappel interrompu : XR18 déconnectée, état potentiellement partiel');this.send(c.address,[c.type==='f'?oscFloat(c.value as number):c.value]);await new Promise(resolve=>setTimeout(resolve,5));}
+  }
+  async applyFx(f:{slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]}){
+    if(process.env.XR18_EXPERIMENTAL_FX!=="true")throw Error("FX matériels expérimentaux désactivés ; validation physique requise");
+    if(!this.writes||!this.isLive())throw Error("Écritures désactivées ou XR18 déconnectée");
+    const write=async(address:string,value:number,type:'f'|'i')=>{if(!this.isLive())throw Error("XR18 déconnectée pendant application FX");this.send(address,[type==='f'?oscFloat(value):value]);await new Promise(resolve=>setTimeout(resolve,40));const reply=await this.query(address);if(typeof reply.args[0]!=="number"||Math.abs(reply.args[0]-value)>0.0001)throw Error("FX partiellement envoyé : lecture différente sur "+address);};
+    await write(`/fx/${f.slot}/type`,f.algorithm,'i');
+    for(const [i,p] of f.parameters.entries())await write(`/fx/${f.slot}/par/${String(i+1).padStart(2,'0')}`,p.value,p.type);
+  }
   close() { if (this.timer) clearInterval(this.timer); this.socket?.close(); this.connected = false; }
 }
+
