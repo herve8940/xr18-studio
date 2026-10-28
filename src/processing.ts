@@ -10,7 +10,7 @@ export function validateProcessing(v:unknown):ProcessingInput{
  for(const b of v.eq){if(!checkKeys(b,["frequencyHz","gainDb","q","type"])||!finite(b.frequencyHz,20,20000)||!finite(b.gainDb,-15,15)||!finite(b.q,.1,10)||!["peak","lowShelf","highShelf"].includes(String(b.type)))throw Error("Invalid EQ band");}
  const c=v.compressor;if(!checkKeys(c,["enabled","thresholdDb","ratio","attackMs","releaseMs","makeupDb","targetReductionDb"])||typeof c.enabled!=="boolean"||(c.thresholdDb!==null&&!finite(c.thresholdDb,-90,0))||!finite(c.ratio,1,20)||!finite(c.attackMs,.1,200)||!finite(c.releaseMs,10,3000)||!finite(c.makeupDb,-18,18)||typeof c.targetReductionDb!=="string"||c.targetReductionDb.length>50)throw Error("Invalid compressor");
  const g=v.gate;if(!checkKeys(g,["enabled","mode","thresholdDb","attackMs","holdMs","releaseMs","rangeDb"])||typeof g.enabled!=="boolean"||!["gate","expander"].includes(String(g.mode))||(g.thresholdDb!==null&&!finite(g.thresholdDb,-90,0))||!finite(g.attackMs,.1,200)||!finite(g.holdMs,0,2000)||!finite(g.releaseMs,10,3000)||!finite(g.rangeDb,0,80))throw Error("Invalid gate");
- return v as ProcessingInput;
+ return v as unknown as ProcessingInput;
 }
 export class ProcessingStore{
  private states=new Map<number,ProcessingState>();
