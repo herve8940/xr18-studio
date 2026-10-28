@@ -22,7 +22,7 @@ test("real mode is read-only by default", () => {
 test("fader endpoints use explicit OSC float32 typetag",()=>{
  for(const value of [0,1]){
   const packet=encodeOsc("/ch/01/mix/fader",[oscFloat(value)]);
-  assert.equal(packet.includes(Buffer.from(",f\\0")),true);
+  assert.equal(packet.includes(Buffer.from([44,102,0])),true);
   assert.equal(decodeOsc(packet).args[0],value);
  }
 });
