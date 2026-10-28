@@ -47,6 +47,7 @@ export default function App() {
   const [status, setStatus] = useState<Status>({ mode:"simulation", connected:false, writesEnabled:false });
   const [socketOk, setSocketOk] = useState(false);
   const [lastOscUpdate,setLastOscUpdate]=useState<string|null>(null);
+  const [meterState,setMeterState]=useState<{channels:number[];updatedAt:string|null;available:boolean}>({channels:[],updatedAt:null,available:false});
   const [advancedReadback,setAdvancedReadback]=useState<Record<string,{value:number|string;updatedAt:string}>>({});
   const [selected, setSelected] = useState(1);
   const [store, setStore] = useState<Stored>(load);
@@ -91,12 +92,13 @@ export default function App() {
       socket = new WebSocket(`${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}/ws`);
       socket.onopen = () => { if(active) { setSocketOk(true); setOnlineSince(new Date().toLocaleTimeString("fr-BE")); } };
       socket.onmessage = e => { try {
-        const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel;main?:Channel};
+        const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel;main?:Channel;meters?:{channels:number[];updatedAt:string|null;available:boolean}};
         if (!active) return;
-        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main); }
+        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main);if(msg.meters)setMeterState(msg.meters); }
         if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="status"&&msg.status)setStatus(msg.status);
+        if(msg.type==="meters"&&msg.state)setMeterState(msg.state as {channels:number[];updatedAt:string|null;available:boolean});
         if(msg.type==="advanced"&&msg.state){const a=msg.state as {address:string;value:number|string;updatedAt:string};setAdvancedReadback(prev=>({...prev,[a.address]:{value:a.value,updatedAt:a.updatedAt}}));}
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
@@ -278,7 +280,7 @@ export default function App() {
             </div></div>
             <div className="studio-bottom-grid">
               <section className="studio-panel details"><div className="panel-title"><div><b>Canal {selected} — {labelFor(selected)}</b><small>Égaliseur et traitements</small></div><button onClick={()=>setTab("eq")}>Ouvrir l'EQ <ChevronDown size={14}/></button></div><div className="detail-body"><div className="eq-chart"><svg viewBox="0 0 560 175" preserveAspectRatio="none" aria-label="Aperçu illustratif de l'égaliseur, non connecté à la console"><defs><pattern id="grid" width="40" height="35" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 35" fill="none" stroke="#2a3a4b" strokeWidth="1"/></pattern></defs><rect width="560" height="175" fill="url(#grid)"/><path d="M0 90 C45 90 52 145 85 135 S120 90 165 90 S240 75 270 90 S345 112 385 90 S450 72 480 90 S530 100 560 90" fill="none" stroke="#55b5fb" strokeWidth="2.5"/><path d="M0 90H560" stroke="#46556a" strokeDasharray="3 4"/>{[85,165,270,385,480].map((x,i)=><circle key={i} cx={x} cy={[135,90,90,90,90][i]} r="5" fill={["#fb7469","#eab44d","#50d8a5","#55b5fb","#c58aff"][i]}/>)}</svg><small>Courbe illustrative uniquement — paramètres EQ non reliés à la XR18</small></div><div className="eq-mini">{["HPF","LOW","LOW MID","HIGH MID","HIGH"].map((name,i)=><div key={name}><span>{name}</span><b>{i===0?"80 Hz":i===1?"120 Hz":i===2?"600 Hz":i===3?"3.0 kHz":"10 kHz"}</b><small>Démo visuelle</small></div>)}</div></div></section>
-              <section className="studio-panel"><div className="panel-title"><div><b>Vumètres</b><small>Mesures en temps réel</small></div><Activity size={17}/></div><div className="meter-empty"><Activity size={30}/><b>En attente des données OSC</b><span>Aucune mesure audio simulée ou inventée.</span></div></section>
+              <section className="studio-panel"><div className="panel-title"><div><b>Vumètres</b><small>Mesures en temps réel</small></div><Activity size={17}/></div><div className="meter-empty">{status.mode==="real"&&status.connected&&meterState.available&&meterState.updatedAt&&Date.now()-Date.parse(meterState.updatedAt)<5000?<div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(8,minmax(0,1fr))",gap:6}}>{meterState.channels.map((db,i)=><div key={i} title={`Canal ${i+1}: ${db.toFixed(1)} dBFS`} style={{minWidth:0}}><div style={{height:76,display:"flex",alignItems:"end",background:"#142334",borderRadius:4,overflow:"hidden"}}><div style={{width:"100%",height:`${Math.max(0,Math.min(100,(db+80)/80*100))}%`,background:db>-6?"#f87171":db>-18?"#eab44d":"#34d399"}}/></div><small>{i+1}</small></div>)}</div>:<><Activity size={30}/><b>Vumètres indisponibles</b><span>En attente de mesures OSC réelles récentes.</span></>}</div></section>
               <section className="studio-panel"><div className="panel-title"><div><b>Scènes rapides</b><small>Snapshots locaux</small></div><Save size={16}/></div><div className="quick-scenes">{store.scenes.slice(0,4).map(s=><button key={s.id} onClick={()=>void recallScene(s)}><Disc3 size={16}/>{s.name}</button>)}{store.scenes.length===0&&<p>Aucune scène enregistrée.</p>}<button className="quick-add" onClick={()=>setPage("scenes")}><Plus size={16}/> Nouvelle scène</button></div></section>
             </div>
           </> : <section className="studio-panel tab-panel"><div className="tab-heading"><div><span className="eyebrow-studio">CANAL {selected} · {labelFor(selected)}</span><h1>{TABS.find(t=>t.id===tab)?.name}</h1></div><span className="safety-pill"><ShieldCheck size={14}/> Démonstration</span></div>
