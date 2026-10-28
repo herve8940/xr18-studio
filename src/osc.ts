@@ -1,5 +1,5 @@
 /** Minimal OSC encoder/decoder for XR18 scalar messages. Not a full OSC implementation. */
-export type OscArg = number | string;
+export type OscArg = number | string | Buffer;
 export interface OscMessage { address: string; args: OscArg[] }
 /** Explicit OSC float32, including whole-number values 0 and 1. */
 export interface OscFloat { oscType: "f"; value: number }
@@ -35,11 +35,20 @@ export function decodeOsc(b: Buffer): OscMessage {
   if (!tags.startsWith(",")) throw new Error("Invalid OSC typetag");
   const args: OscArg[] = [];
   for (const tag of tags.slice(1)) {
-    if (tag === "s") { const [v, next] = readString(b, pos); args.push(v); pos = next; }
+    if (tag === "b") {if(pos+4>b.length)throw Error("Truncated OSC blob length");const size=b.readInt32BE(pos);pos+=4;if(size<0||size>65536||pos+size>b.length)throw Error("Invalid OSC blob size");args.push(Buffer.from(b.subarray(pos,pos+size)));pos+=(size+3)&~3;if(pos>b.length)throw Error("Invalid OSC blob padding");}
+    else if (tag === "s") { const [v, next] = readString(b, pos); args.push(v); pos = next; }
     else if (tag === "f" || tag === "i") {
       if (pos + 4 > b.length) throw new Error("Truncated OSC number");
       args.push(tag === "i" ? b.readInt32BE(pos) : b.readFloatBE(pos)); pos += 4;
     } else throw new Error("Unsupported OSC tag: " + tag);
   }
   return { address, args };
+}
+
+/** X-Air meter blob: LE uint32 count, then signed LE int16 levels at 1/256 dBFS. */
+export function decodeXAirMeterBlob(blob:Buffer, expectedCount:number):number[]{
+  if(blob.length<4)throw Error("Meter blob too short");
+  const count=blob.readUInt32LE(0);
+  if(count!==expectedCount||blob.length!==4+count*2)throw Error("Unexpected X-Air meter blob layout");
+  return Array.from({length:count},(_,i)=>Math.max(-128,Math.min(0,blob.readInt16LE(4+i*2)/256)));
 }
