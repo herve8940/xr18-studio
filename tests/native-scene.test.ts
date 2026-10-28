@@ -1,0 +1,7 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {compileNativeScene} from '../src/native-scene.js';
+test('native scene compiler converts faders, quoted names, types and normalized EQ',()=>{const p=compileNativeScene('/ch/01/config "Chant lead" 9 In01 U01\n/ch/01/mix OFF -10 ON +0\n/ch/01/eq/1 PEQ 1k +3 2.0');const get=(a:string)=>p.commands.find(c=>c.address===a)!;assert.equal(get('/ch/01/config/name').value,'Chant lead');assert.equal(get('/ch/01/mix/fader').type,'f');assert.equal(get('/ch/01/mix/fader').value,.5);assert.equal(get('/ch/01/mix/on').value,0);assert.equal(get('/ch/01/eq/1/g').value,.6);});
+test('native scene compiler rejects arbitrary commands, out of range and malformed lines before any writes',()=>{for(const text of ['/arbitrary/path ON','/ch/01/mix ON 50 ON +0','/ch/01/config "unclosed 9 In01 U01','/ch/01/mix ON -oo','/ch/01/eq/1 PEQ 2000 +90 2'])assert.throws(()=>compileNativeScene(text));});
+test('native scene identifies 48V, handles opaque FX tokens and orders type before parameters',()=>{const p=compileNativeScene('/fx/1/par 0.25 1 FEM\n/fx/1 HALL OFF\n/headamp/01 +0 ON');assert.equal(p.phantom.length,1);assert.equal(p.opaqueFx[0]!.tokens[2],'FEM');assert.equal(p.commands.some(c=>c.address.includes('/par/')),false);});
+test('native GEQ fields use the correct leaf path',()=>{const p=compileNativeScene('/lr/geq '+Array(31).fill('0').join(' '));assert.equal(p.commands[0]!.address,'/lr/geq/20');assert.equal(p.commands[0]!.value,.5);});

@@ -11,3 +11,10 @@ Disponible : faders et mutes de 16 entrées et master, lecture des niveaux OSC, 
 Limites : presets de traitement, snapshots et mixes personnels ne constituent pas des scènes matérielles complètes. Application automatique des presets FX, routage, DCA, authentification multiutilisateur, ReaCue et validation physique XR18 non terminés. Les noms des tranches sont des exemples. Le backend reste limité à l’ordinateur local.
 
 Téléchargements des installeurs : ouvrir la page Actions du dépôt, exécution Desktop packages, puis Artifacts (connexion GitHub nécessaire). Les builds Windows, macOS et Linux sont indépendants.
+
+
+## Incrément scènes / FX / comptes / ReaCue
+
+Voir `docs/SHOW_CONTROL.md` : comptes locaux avec contrôle HTTP et WebSocket, rôles par bus, bibliothèque SQLite, scènes applicatives avec sauvegarde préalable et prévisualisation, archives natives .scn, presets FX OSC typés, point d'entrée et client Python ReaCue. Rappel de scènes applicatives et ReaCue testés en simulation. FX matériel expérimental désactivé par défaut.
+
+Toujours à valider ou terminer : essais physiques XR18, correspondances musicales des paramètres FX, rappel matériel complet des .scn, déclencheur dans ReaCue existant, accès simultané depuis plusieurs appareils et essai sur le PC Windows utilisateur. Un test de lancement du paquet installé est ajouté au workflow Windows ; attendre son résultat avant d'en annoncer la réussite.

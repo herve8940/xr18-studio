@@ -13,6 +13,7 @@ export function validateProcessing(v:unknown):ProcessingInput{
  return v as unknown as ProcessingInput;
 }
 export class ProcessingStore{
+ restore(states:ProcessingState[]){const previous=new Map(this.states);this.states.clear();this.history.clear();for(const p of states){const desired=validateProcessing({hpfHz:p.hpfHz,eq:p.eq,compressor:p.compressor,gate:p.gate});this.states.set(p.channel,{...desired,channel:p.channel,revision:(previous.get(p.channel)?.revision??0)+1,updatedAt:new Date().toISOString()});}}
  private states=new Map<number,ProcessingState>();
  private history=new Map<number,ProcessingState[]>();
  private checked(channel:number){if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");}
@@ -25,3 +26,4 @@ export class ProcessingStore{
  }
  undo(channel:number,expectedRevision:number){this.checked(channel);const old=this.states.get(channel);if(!old||old.revision!==expectedRevision)throw Error("Revision conflict");const versions=this.history.get(channel)??[];const previous=versions.shift();if(!previous)throw Error("No previous revision");this.history.set(channel,versions);const state={...structuredClone(previous),revision:old.revision+1,updatedAt:new Date().toISOString()};this.states.set(channel,state);return state;}
 }
+

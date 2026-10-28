@@ -45,7 +45,8 @@
       "dist/src/**/*",
       "node_modules/**/*",
       "package.json",
-      "!**/*.map"
+      "!**/*.map",
+      "THIRD_PARTY_NOTICES.txt"
     ],
     "extraResources": [
       {
