@@ -1,0 +1,85 @@
+const { app, BrowserWindow, dialog, shell, Menu } = require("electron");
+const path = require("node:path");
+const { pathToFileURL } = require("node:url");
+const { mkdirSync, readFileSync, writeFileSync } = require("node:fs");
+const net = require("node:net");
+let win;
+app.whenReady().then(async () => {
+  try {
+    const smoke=process.argv.includes("--smoke-test");
+    if(smoke&&process.env.XR18_SMOKE_DATA)app.setPath("userData",process.env.XR18_SMOKE_DATA);
+    const dataPath=app.getPath("userData");
+    mkdirSync(dataPath,{recursive:true});
+    const configPath=path.join(dataPath,"connection.json");
+    let config={mode:"simulation",host:"192.168.1.100",enableWrites:false};
+    try { const saved=JSON.parse(readFileSync(configPath,"utf8")); if(saved.mode==="real" && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(saved.host)) config={mode:"real",host:saved.host,enableWrites:saved.enableWrites===true}; } catch {}
+    if(smoke)config={mode:"simulation",host:"127.0.0.1",enableWrites:false};
+    process.env.XR18_MODE=config.mode;
+    process.env.XR18_HOST=config.host;
+    process.env.XR18_ENABLE_WRITES=String(config.enableWrites);
+    const changeConnection=async(mode,enableWrites=false)=>{
+      let host=config.host;
+      if(mode==="real") {
+        const result=await dialog.showOpenDialog({title:"Choisir un fichier texte contenant uniquement l’adresse IPv4 de la XR18",properties:["openFile"],filters:[{name:"Adresse XR18",extensions:["txt"]}]});
+        if(result.canceled)return;
+        host=readFileSync(result.filePaths[0],"utf8").trim();
+        if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(host)||host.split(".").some(n=>Number(n)>255)){dialog.showErrorBox("Adresse invalide","Le fichier doit contenir une adresse IPv4 valide.");return;}
+        if(enableWrites){const answer=await dialog.showMessageBox({type:"warning",buttons:["Annuler","Activer"],defaultId:0,cancelId:0,message:"Activer les commandes sur la XR18 ?",detail:"Les faders, mutes et paramètres OSC modifient immédiatement le son. Commencez avec les sorties à faible niveau."});if(answer.response!==1)return;}
+      }
+      writeFileSync(configPath,JSON.stringify({mode,host,enableWrites},null,2));app.relaunch();app.exit(0);
+    };
+    Menu.setApplicationMenu(Menu.buildFromTemplate([{label:"Connexion",submenu:[
+      {label:"Simulation",click:()=>void changeConnection("simulation")},
+      {label:"XR18 — lecture seule…",click:()=>void changeConnection("real")},
+      {label:"XR18 — contrôle…",click:()=>void changeConnection("real",true)},
+      {type:"separator"},{role:"quit",label:"Quitter"}
+    ]},{label:"Affichage",submenu:[{role:"reload"},{role:"togglefullscreen"}]}]));
+    const port = await new Promise((resolve,reject)=>{
+      const probe=net.createServer();
+      probe.once("error",reject);
+      probe.listen(0,"127.0.0.1",()=>{const address=probe.address();const freePort=typeof address==="object"?address.port:0;probe.close(()=>resolve(freePort));});
+    });
+    process.env.HTTP_PORT=String(port);
+    process.env.XR18_DB_PATH=path.join(dataPath,"xr18-studio.db");
+    process.env.XR18_WEB_DIST=app.isPackaged
+      ?path.join(process.resourcesPath,"web-dist")
+      :path.join(app.getAppPath(),"web","dist");
+    const backend=path.join(app.getAppPath(),"dist","src","server.js");
+    await import(pathToFileURL(backend).href);
+    let ready=false;
+    for(let i=0;i<80;i++){
+      try{const response=await fetch(`http://127.0.0.1:${port}/api/auth`);if(response.ok){ready=true;break;}}catch{}
+      await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    if(!ready)throw Error("Le serveur local XR18 n'a pas démarré.");
+    win=new BrowserWindow({
+      show:!smoke,
+      width:1440,height:900,minWidth:800,minHeight:600,
+      backgroundColor:"#0d1621",
+      webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true}
+    });
+    win.webContents.setWindowOpenHandler(({url})=>{
+      if(url.startsWith("https://"))void shell.openExternal(url);
+      return {action:"deny"};
+    });
+    win.webContents.on("will-navigate",(event,url)=>{
+      if(!url.startsWith(`http://127.0.0.1:${port}/`))event.preventDefault();
+    });
+    await win.loadURL(`http://127.0.0.1:${port}/`);
+    if(smoke){
+      await new Promise(resolve=>setTimeout(resolve,1000));
+      const rendered=await win.webContents.executeJavaScript('document.body.textContent.includes("XR18")');
+      if(!rendered)throw Error("Interface XR18 non rendue");
+      const auth=await fetch(`http://127.0.0.1:${port}/api/auth`);
+      if(!auth.ok)throw Error("Authentification locale indisponible");
+      app.exit(0);
+    }
+  } catch(error) {
+    if(process.argv.includes("--smoke-test")){console.error(error);app.exit(1);return;}
+    dialog.showErrorBox("XR18 Studio — démarrage impossible",String(error));
+    app.quit();
+  }
+});
+app.on("window-all-closed",()=>app.quit());
+
+

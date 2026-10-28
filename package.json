@@ -1,0 +1,86 @@
+{
+  "name": "xr18-studio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "setup": "npm install && npm --prefix web install",
+    "studio": "concurrently --kill-others -n API,WEB -c blue,green \"npm run dev\" \"npm --prefix web run dev\"",
+    "build:all": "npm run build && npm --prefix web run build",
+    "desktop:dev": "npm run build:all && electron .",
+    "desktop:package": "npm run build:all && electron-builder --publish never",
+    "mcp": "tsx src/mcp.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.0",
+    "better-sqlite3": "^12.11.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "concurrently": "^9.1.2",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  },
+  "main": "desktop/main.cjs",
+  "build": {
+    "appId": "be.xr18.studio",
+    "productName": "XR18 Studio",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "desktop/**/*",
+      "dist/src/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "!**/*.map",
+      "THIRD_PARTY_NOTICES.txt"
+    ],
+    "extraResources": [
+      {
+        "from": "web/dist",
+        "to": "web-dist"
+      }
+    ],
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "npmRebuild": true,
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "XR18-Studio-Windows-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.music",
+      "artifactName": "XR18-Studio-macOS-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "AudioVideo",
+      "artifactName": "XR18-Studio-Linux-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

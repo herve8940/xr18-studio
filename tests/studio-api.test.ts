@@ -1,0 +1,27 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import net from 'node:net';
+import {WebSocket} from 'ws';
+test('HTTP and websocket auth, guest denial and complete simulation recall',async()=>{
+ const directory=await mkdtemp(join(tmpdir(),'xr18-api-'));const probe=net.createServer();await new Promise<void>(r=>probe.listen(0,'127.0.0.1',r));const port=(probe.address() as net.AddressInfo).port;await new Promise<void>(r=>probe.close(()=>r()));
+ const child=spawn(process.execPath,['--import','tsx','src/server.ts'],{env:{...process.env,HTTP_PORT:String(port),XR18_DB_PATH:join(directory,'test.db'),XR18_MODE:'simulation'},stdio:['ignore','pipe','pipe']});let logs='';child.stdout.on('data',d=>logs+=d);child.stderr.on('data',d=>logs+=d);
+ const base=`http://127.0.0.1:${port}`;let cookie='';
+ const call=(path:string,data?:unknown,method=data?'POST':'GET')=>fetch(base+path,{method,headers:{'Content-Type':'application/json',...(cookie?{Cookie:cookie}:{})},body:data?JSON.stringify(data):undefined});
+ try{
+  let ready=false;for(let i=0;i<100;i++){try{if((await call('/api/auth')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,50));}assert.ok(ready,logs);
+  assert.equal((await call('/api/auth/setup',{name:'Admin',password:'very-long-password'})).status,200);
+  assert.equal((await call('/api/channels')).status,401);
+  await new Promise<void>((resolve,reject)=>{const ws=new WebSocket(base.replace('http','ws')+'/ws');ws.once('unexpected-response',(_req,res)=>{assert.equal(res.statusCode,401);res.resume();resolve();});ws.once('open',()=>{ws.close();reject(Error('Anonymous WS allowed'));});ws.once('error',()=>{});});
+  let login=await call('/api/auth/login',{name:'Admin',password:'very-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;assert.equal((await call('/api/channels')).status,200);
+  const created=await (await call('/api/library',{kind:'scene',name:'First'})).json() as {id:string};assert.ok(created.id);
+  await call('/api/channels/1/fader',{value:.2});const preview=await (await call('/api/library/'+created.id+'/preview',{})).json() as {token:string};assert.equal((await call('/api/library/'+created.id+'/apply',{token:preview.token,confirm:true})).status,200);
+  const channels=await (await call('/api/channels')).json() as {fader:number}[];assert.equal(channels[0]!.fader,.5);
+  await call('/api/users',{name:'Guest',password:'guest-long-password',role:'guest',buses:[]});await call('/api/auth/logout',{});assert.equal((await call('/api/channels')).status,401);
+  login=await call('/api/auth/login',{name:'Guest',password:'guest-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
+  assert.equal((await call('/api/channels/1/fader',{value:.9})).status,403);assert.equal((await call('/api/users')).status,403);assert.equal((await call('/api/channels')).status,200);
+ }finally{child.kill('SIGTERM');await new Promise(r=>child.once('exit',r));await rm(directory,{recursive:true,force:true});}
+});
