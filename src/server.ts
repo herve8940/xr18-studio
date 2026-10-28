@@ -1,4 +1,6 @@
 import http from "node:http";
+import { readFile, stat } from "node:fs/promises";
+import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
@@ -71,6 +73,21 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ ok: true, note: mode === "real" ? "OSC command sent, not acknowledged" : "Simulation updated" }));
     } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: (e as Error).message })); }
     return;
+  }
+  // Serve the prebuilt web UI in desktop / production mode; API stays loopback-only.
+  if (req.method === "GET" && process.env.XR18_WEB_DIST && !path.startsWith("/api/")) {
+    const root=resolve(process.env.XR18_WEB_DIST);
+    const requested=resolve(root,"."+path);
+    if(requested===root||requested.startsWith(root+sep)){
+      try{
+        const target=(await stat(requested)).isFile()?requested:resolve(root,"index.html");
+        const bytes=await readFile(target);
+        const mime:Record<string,string>={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon",".woff2":"font/woff2"};
+        res.setHeader("Content-Type",mime[extname(target)]??"application/octet-stream");
+        res.setHeader("Content-Security-Policy","default-src 'self'; connect-src 'self' ws://127.0.0.1:*; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'");
+        res.end(bytes);return;
+      }catch{ /* Fall through to 404. */ }
+    }
   }
   res.writeHead(404); res.end(JSON.stringify({ error: "Not found" }));
 });
