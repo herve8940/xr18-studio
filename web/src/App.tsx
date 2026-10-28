@@ -52,6 +52,11 @@ export default function App() {
   const [songTitle, setSongTitle] = useState("");
   const [songArtist, setSongArtist] = useState("");
   const [songBpm, setSongBpm] = useState(120);
+  const [savedSetlists, setSavedSetlists] = useState<{id:string;name:string;songIds:string[]}[]>([]);
+  const [rehearsals, setRehearsals] = useState<{id:string;title:string;startsAt:string;notes:string}[]>([]);
+  const [rehearsalTitle, setRehearsalTitle] = useState("");
+  const [rehearsalDate, setRehearsalDate] = useState("");
+  const [setlistName, setSetlistName] = useState("");
   const [earBus, setEarBus] = useState(1);
   const [earValues, setEarValues] = useState<Record<number, number[]>>({});
   const [eq, setEq] = useState([0,2,-1,1]);
@@ -149,10 +154,43 @@ export default function App() {
     } catch(e) {setNotice((e as Error).message); }
   }
   useEffect(()=>{let active=true;setProcessingDraft(null);setProcessingApplied(false);setProcessingRevision(0);fetch(`/api/channels/${selected}/processing`).then(r=>r.json()).then((data:{state?:{revision:number}})=>{if(active)setProcessingRevision(data.state?.revision??0);}).catch(()=>{});return()=>{active=false;};},[selected]);
-  function addSong() {
-    if(!songTitle.trim()) return;
-    setStore(s=>({...s,songs:[...s.songs,{id:id(),title:songTitle.trim(),artist:songArtist.trim(),bpm:songBpm}]}));
-    setSongTitle("");setSongArtist("");setSongBpm(120);
+  async function api<T>(path:string,method="GET",payload?:unknown):Promise<T>{
+    const response=await fetch(path,{method,headers:{"Content-Type":"application/json"},body:payload===undefined?undefined:JSON.stringify(payload)});
+    const data=await response.json() as T & {error?:string};
+    if(!response.ok)throw Error(data.error??"Erreur API");
+    return data;
+  }
+  const refreshLibrary=useCallback(async()=>{
+    try{
+      const [songs,lists,reps]=await Promise.all([
+        api<Song[]>("/api/songs"),api<{id:string;name:string;songIds:string[]}[]>("/api/setlists"),
+        api<{id:string;title:string;startsAt:string;notes:string}[]>("/api/rehearsals")]);
+      setStore(s=>({...s,songs}));setSavedSetlists(lists);setRehearsals(reps);
+    }catch{ /* Backend may be starting. Existing local content remains available. */ }
+  },[]);
+  useEffect(()=>{void refreshLibrary();},[refreshLibrary,socketOk]);
+  async function addSong() {
+    if(!songTitle.trim())return;
+    try{
+      const song=await api<Song>("/api/songs","POST",{title:songTitle.trim(),artist:songArtist.trim(),bpm:songBpm});
+      setStore(s=>({...s,songs:[...s.songs,song]}));setSongTitle("");setSongArtist("");setSongBpm(120);
+      setNotice("Morceau enregistré dans SQLite.");
+    }catch(e){setNotice((e as Error).message);}
+  }
+  async function deleteSong(songId:string){
+    if(!window.confirm("Supprimer ce morceau du répertoire et des setlists enregistrées ?"))return;
+    try{await api("/api/songs/"+songId,"DELETE");setStore(s=>({...s,songs:s.songs.filter(x=>x.id!==songId),setlist:s.setlist.filter(x=>x!==songId)}));await refreshLibrary();}
+    catch(e){setNotice((e as Error).message);}
+  }
+  async function saveSetlist(){
+    if(!setlistName.trim()||store.setlist.length===0){setNotice("Renseigne un nom et ajoute au moins un morceau.");return;}
+    try{await api("/api/setlists","POST",{name:setlistName.trim(),songIds:store.setlist});setSetlistName("");await refreshLibrary();setNotice("Setlist enregistrée dans SQLite.");}
+    catch(e){setNotice((e as Error).message);}
+  }
+  async function saveRehearsal(){
+    if(!rehearsalTitle.trim()||!rehearsalDate){setNotice("Renseigne le nom et la date de répétition.");return;}
+    try{await api("/api/rehearsals","POST",{title:rehearsalTitle.trim(),startsAt:new Date(rehearsalDate).toISOString(),notes:store.notes});setRehearsalTitle("");await refreshLibrary();setNotice("Répétition enregistrée dans SQLite.");}
+    catch(e){setNotice((e as Error).message);}
   }
   const setlist = useMemo(()=>store.setlist.map(key=>store.songs.find(s=>s.id===key)).filter((s):s is Song=>Boolean(s)),[store]);
   const isSim = status.mode === "simulation";
@@ -196,8 +234,8 @@ export default function App() {
       </> : <div className="studio-work other-page">
         <div className="page-heading-studio"><span className="eyebrow-studio">XR18 STUDIO</span><h1>{MENU.find(x=>x.page===page)?.name}</h1><p>{page==="ears"?"Mix personnel par musicien":page==="rehearsals"?"Notes et préparation de répétition":page==="setlists"?"Répertoire et ordre de passage":page==="scenes"?"Sauvegarde locale des réglages simulés":"Connexion et sécurité"}</p></div>
         {page==="ears" && <section className="studio-panel pad"><div className="panel-title"><div><b>Mix personnel — prototype</b><small>Choisissez un bus pour préparer un retour</small></div><Headphones size={19}/></div><div className="bus-picker">{[1,2,3,4,5,6].map(bus=><button key={bus} className={earBus===bus?"active":""} onClick={()=>setEarBus(bus)}>Bus {bus}</button>)}</div><p className="disclaimer">Les niveaux ci-dessous sont uniquement stockés en mémoire dans cette page. Aucun envoi OSC vers les bus de la XR18.</p><div className="ear-grid">{channels.map(c=><label key={c.channel}><span>{labelFor(c.channel)}</span><input type="range" min="0" max="100" value={(earValues[earBus]??Array(16).fill(50))[c.channel-1]} onChange={e=>setEarValues(old=>({...old,[earBus]:(old[earBus]??Array(16).fill(50)).map((v,i)=>i===c.channel-1?Number(e.target.value):v)}))}/><b>{(earValues[earBus]??Array(16).fill(50))[c.channel-1]}%</b></label>)}</div></section>}
-        {page==="rehearsals" && <section className="studio-panel pad"><div className="panel-title"><div><b>Préparation de répétition</b><small>Notes sauvegardées localement dans le navigateur</small></div><BookOpen size={18}/></div><label className="field">Objectifs et notes<textarea rows={9} value={store.notes} onChange={e=>setStore(s=>({...s,notes:e.target.value}))} placeholder="Ex. travailler le refrain de Plug In Baby, préparer le mix sans chanteur..."/></label><span className="disclaimer">Sauvegarde automatique sur cet appareil. La synchronisation multi-musiciens et le calendrier viendront ensuite.</span></section>}
-        {page==="setlists" && <div className="two-panels"><section className="studio-panel pad"><div className="panel-title"><div><b>Répertoire</b><small>{store.songs.length} morceaux</small></div><Music2 size={18}/></div><div className="song-form"><input placeholder="Titre du morceau" value={songTitle} onChange={e=>setSongTitle(e.target.value)}/><input placeholder="Artiste" value={songArtist} onChange={e=>setSongArtist(e.target.value)}/><input type="number" min="20" max="300" value={songBpm} onChange={e=>setSongBpm(Number(e.target.value))}/><button onClick={addSong}><Plus size={16}/> Ajouter</button></div><div className="song-list">{store.songs.map(song=><div key={song.id}><div><b>{song.title}</b><small>{song.artist} · {song.bpm} BPM</small></div><button onClick={()=>setStore(s=>({...s,setlist:[...s.setlist,song.id]}))}>+ Setlist</button><button title="Supprimer" onClick={()=>setStore(s=>({...s,songs:s.songs.filter(x=>x.id!==song.id),setlist:s.setlist.filter(x=>x!==song.id)}))}><Trash2 size={15}/></button></div>)}</div></section><section className="studio-panel pad"><div className="panel-title"><div><b>Setlist active</b><small>{setlist.length} morceaux</small></div><ListMusic size={18}/></div><div className="song-list">{setlist.map((song,i)=><div key={i}><span className="song-order">{i+1}</span><div><b>{song.title}</b><small>{song.artist}</small></div><button onClick={()=>setStore(s=>({...s,setlist:s.setlist.filter((_,j)=>j!==i)}))}><Trash2 size={15}/></button></div>)}{setlist.length===0&&<p>Ajoute des morceaux depuis le répertoire.</p>}</div></section></div>}
+        {page==="rehearsals" && <section className="studio-panel pad"><div className="panel-title"><div><b>Préparation de répétition</b><small>Notes sauvegardées localement dans le navigateur</small></div><BookOpen size={18}/></div><label className="field">Objectifs et notes<textarea rows={9} value={store.notes} onChange={e=>setStore(s=>({...s,notes:e.target.value}))} placeholder="Ex. travailler le refrain de Plug In Baby, préparer le mix sans chanteur..."/></label><div className="rehearsal-form"><input placeholder="Nom de la répétition" value={rehearsalTitle} onChange={e=>setRehearsalTitle(e.target.value)}/><input aria-label="Date et heure" type="datetime-local" value={rehearsalDate} onChange={e=>setRehearsalDate(e.target.value)}/><button onClick={()=>void saveRehearsal()}><Save size={15}/> Enregistrer dans SQLite</button></div><div className="song-list">{rehearsals.map(r=><div key={r.id}><div><b>{r.title}</b><small>{new Date(r.startsAt).toLocaleString("fr-BE")} · {r.notes.slice(0,100)}</small></div></div>)}</div><span className="disclaimer">Les répétitions enregistrées sont conservées sur le serveur SQLite. Le brouillon de notes reste stocké dans ce navigateur.</span></section>}
+        {page==="setlists" && <div className="two-panels"><section className="studio-panel pad"><div className="panel-title"><div><b>Répertoire</b><small>{store.songs.length} morceaux</small></div><Music2 size={18}/></div><div className="song-form"><input placeholder="Titre du morceau" value={songTitle} onChange={e=>setSongTitle(e.target.value)}/><input placeholder="Artiste" value={songArtist} onChange={e=>setSongArtist(e.target.value)}/><input type="number" min="20" max="300" value={songBpm} onChange={e=>setSongBpm(Number(e.target.value))}/><button onClick={addSong}><Plus size={16}/> Ajouter</button></div><div className="song-list">{store.songs.map(song=><div key={song.id}><div><b>{song.title}</b><small>{song.artist} · {song.bpm} BPM</small></div><button onClick={()=>setStore(s=>({...s,setlist:[...s.setlist,song.id]}))}>+ Setlist</button><button title="Supprimer" onClick={()=>void deleteSong(song.id)}><Trash2 size={15}/></button></div>)}</div></section><section className="studio-panel pad"><div className="panel-title"><div><b>Setlist active</b><small>{setlist.length} morceaux</small></div><ListMusic size={18}/></div><div className="song-list">{setlist.map((song,i)=><div key={i}><span className="song-order">{i+1}</span><div><b>{song.title}</b><small>{song.artist}</small></div><button onClick={()=>setStore(s=>({...s,setlist:s.setlist.filter((_,j)=>j!==i)}))}><Trash2 size={15}/></button></div>)}{setlist.length===0&&<p>Ajoute des morceaux depuis le répertoire.</p>}</div><div className="rehearsal-form"><input placeholder="Nom de la setlist" value={setlistName} onChange={e=>setSetlistName(e.target.value)}/><button onClick={()=>void saveSetlist()}><Save size={15}/> Sauvegarder</button></div><div className="song-list">{savedSetlists.map(s=><div key={s.id}><div><b>{s.name}</b><small>{s.songIds.length} morceaux</small></div><button onClick={()=>setStore(old=>({...old,setlist:s.songIds}))}>Charger</button><button title="Supprimer" onClick={async()=>{if(!window.confirm("Supprimer la setlist enregistrée ?"))return;try{await api("/api/setlists/"+s.id,"DELETE");await refreshLibrary();}catch(e){setNotice((e as Error).message);}}}><Trash2 size={15}/></button></div>)}</div></section></div>}
         {page==="scenes" && <section className="studio-panel pad"><div className="panel-title"><div><b>Snapshots locaux</b><small>Faders simulés uniquement — aucun rappel matériel</small></div><Disc3 size={18}/></div><div className="scene-form"><input placeholder="Nom de la scène (ex. Répétition)" value={sceneName} onChange={e=>setSceneName(e.target.value)}/><button disabled={!isSim} onClick={saveScene}><Save size={16}/> Enregistrer</button></div><div className="song-list">{store.scenes.map(scene=><div key={scene.id}><div><b>{scene.name}</b><small>{new Date(scene.created).toLocaleString("fr-BE")} · 16 faders</small></div><button disabled={!isSim||!canWrite} onClick={()=>void recallScene(scene)}>Rappeler</button><button title="Supprimer" onClick={()=>setStore(s=>({...s,scenes:s.scenes.filter(x=>x.id!==scene.id)}))}><Trash2 size={15}/></button></div>)}</div><p className="disclaimer">Ce sont des snapshots applicatifs stockés dans ce navigateur, pas des scènes internes XR18. Les mutes, bus, effets et traitements ne sont pas sauvegardés.</p></section>}
         {page==="settings" && <section className="studio-panel pad"><div className="panel-title"><div><b>État du système</b><small>Paramètres de sécurité</small></div><Cable size={18}/></div><div className="settings-rows"><div><span>Mode d'exécution</span><b>{isSim?"Simulation":"Console réelle"}</b></div><div><span>WebSocket</span><b>{socketOk?"Connecté":"Déconnecté"}</b></div><div><span>Réponse OSC</span><b>{status.connected?"Reçue / simulation":"Non confirmée"}</b></div><div><span>Écritures matérielles</span><b>{!isSim&&status.writesEnabled?"Activées sur backend":"Désactivées"}</b></div><div><span>Accès distant</span><b>Non configuré</b></div></div><p className="disclaimer">Pour changer le mode de connexion, configurez les variables d'environnement du backend. N'activez pas les écritures réelles avant validation du protocole et des protections auditives.</p></section>}
       </div>}
