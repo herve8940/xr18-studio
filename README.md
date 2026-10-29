@@ -10,11 +10,11 @@
 
 ---
 
-# XR18 Studio
+## Développement / Development
 
 Application de mixage XR18 pour Windows, macOS et Linux : simulation, connexion OSC, contrôles de console, scènes, effets, retours personnels, répétitions, ReaCue et MCP.
 
-Version 0.3.0 candidate : compilation et tests automatisés ; validation sur la console physique requise avant utilisation en concert.
+Version 1.0.0 : compilation et tests automatisés ; validation sur la console physique requise avant utilisation en concert.
 
 ```sh
 npm run setup
