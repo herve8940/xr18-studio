@@ -1,3 +1,7 @@
+# État de la version 2.0 bêta
+
+Voir [le périmètre et les limites actuelles](RELEASE_2_0.md). Les sections ci-dessous décrivent la base historique de la version 1.0.
+
 # XR18 Studio 1.0.0 — état du développement
 
 Cette version expose les 2 636 paramètres du catalogue XR18 connu. Les essais sur émulateur ne constituent pas une qualification matérielle ni une validation pour le concert.

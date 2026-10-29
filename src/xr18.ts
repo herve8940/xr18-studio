@@ -1,5 +1,6 @@
 import {PARAMETERS,descriptor,validateWire,defaultWire,type Value} from "./parameters.js";
 import dgram from "node:dgram";
+import {METER_BANKS} from './meter-banks.js';
 import { EventEmitter } from "node:events";
 import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
 
@@ -76,6 +77,9 @@ export class XR18 extends EventEmitter {
   private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
   private meters:{channels:number[];updatedAt:string}|null=null;
+  private meterBanks=new Map<string,{values:number[];updatedAt:string}>();
+  analysisState(){return Object.entries(METER_BANKS).map(([id,spec])=>{const state=this.meterBanks.get(id);const available=!!state&&this.mode==='real'&&this.isLive()&&Date.now()-Date.parse(state.updatedAt)<5000;return {id,...spec,available,values:available?state!.values:[],updatedAt:available?state!.updatedAt:null};});}
+  private subscribeMeters(){for(const id of Object.keys(METER_BANKS))this.send('/meters',[id]);}
   meterState(){return this.meters&&Date.now()-Date.parse(this.meters.updatedAt)<5000?{...this.meters,available:true}:{channels:[],updatedAt:null,available:false};}
   private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
   private readonly advancedAddresses = new Set<string>();
@@ -120,8 +124,8 @@ export class XR18 extends EventEmitter {
     });
     // XR18 remote update subscription; refresh every 8s (subscription nominally 10s).
     this.send("/xremote");
-    this.send("/meters",["/meters/1",2]);
-    this.timer = setInterval(() => {this.send("/xremote");this.send("/meters",["/meters/1",2]); this.send("/lr/mix/fader"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
+    this.subscribeMeters();
+    this.timer = setInterval(() => {this.send("/xremote");this.subscribeMeters(); this.send("/lr/mix/fader"); if(this.connected&&!this.isLive()){this.connected=false;this.emit("connection",{connected:false});}}, 8000);
     this.timer.unref();
     this.send("/lr/mix/fader");
     this.send("/lr/mix/on");
@@ -141,10 +145,12 @@ export class XR18 extends EventEmitter {
   private handle(msg: OscMessage) {
     this.emit("osc-reply",msg);
     if(PARAMETERS[msg.address]){try{this.remember(msg.address,validateWire(msg.address,msg.args[0]));}catch{return;}}
-    if(msg.address==="/meters/1"&&Buffer.isBuffer(msg.args[0])){
-      const levels=decodeXAirMeterBlob(msg.args[0],40);
-      this.meters={channels:levels.slice(0,16),updatedAt:new Date().toISOString()};
-      this.connected=true;this.lastReplyAt=Date.now();this.emit("meters",this.meterState());return;
+    if(METER_BANKS[msg.address]&&Buffer.isBuffer(msg.args[0])){
+      const levels=decodeXAirMeterBlob(msg.args[0],METER_BANKS[msg.address]!.count,false),updatedAt=new Date().toISOString();
+      this.meterBanks.set(msg.address,{values:levels,updatedAt});
+      this.connected=true;this.lastReplyAt=Date.now();
+      if(msg.address==='/meters/1'){this.meters={channels:levels.slice(0,16).map(v=>Math.max(-128,Math.min(0,v))),updatedAt};this.emit('meters',this.meterState());}
+      return;
     }
     const match = /^\/ch\/(0[1-9]|1[0-6])\/mix\/(fader|on)$/.exec(msg.address);
     if (!match) {
@@ -216,6 +222,17 @@ export class XR18 extends EventEmitter {
       this.on('osc-reply',done);this.once('transport-closed',closed);this.send(address);
     });
   }
+  writeSnapshotCommand(address:string,value:number|string){
+    if(this.mode!=='real'||!this.writes||!this.isLive())throw Error('Contrôle XR18 réel requis');
+    const command=/^\/snap\/(load|save|delete)$/.test(address);
+    if(command){if(typeof value!=='number'||!Number.isInteger(value)||value<1||value>64)throw Error('Emplacement invalide');}
+    else if(address==='/snap/name'||/^\/snap\/(0[1-9]|[1-5]\d|6[0-4])\/name$/.test(address)){
+      if(typeof value!=='string'||Buffer.byteLength(value,'utf8')>31||/[\x00-\x1f\x7f]/.test(value))throw Error('Nom invalide');
+    }else if(/^\/snap\/(0[1-9]|[1-5]\d|6[0-4])\/scope$/.test(address)){
+      if(typeof value!=='string'||!/^[-+]{59}$/.test(value))throw Error('Périmètre invalide');
+    }else throw Error('Commande snapshot non autorisée');
+    this.send(address,[value]);
+  }
   async node(path:string):Promise<string>{
     if(this.mode!=='real'||!this.isLive())throw Error('XR18 déconnectée');
     return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&a.startsWith(path+' '));if(typeof text!=='string')return;clearTimeout(timer);this.off('osc-reply',done);resolve(text.trim());};const timer=setTimeout(()=>{this.off('osc-reply',done);reject(Error('Nœud XR18 absent : '+path));},1000);this.on('osc-reply',done);this.send('/node',[path.slice(1)]);});
@@ -251,7 +268,7 @@ export class XR18 extends EventEmitter {
     this.close();
     this.currentMode=opts.mode;this.host=opts.host;this.port=opts.port;
     this.writes=opts.mode==='real'&&opts.enableWrites;
-    this.lastReplyAt=null;this.meters=null;this.advanced.clear();this.parameterValues.clear();this.fxValues.clear();
+    this.lastReplyAt=null;this.meters=null;this.meterBanks.clear();this.advanced.clear();this.parameterValues.clear();this.fxValues.clear();
     for(let i=1;i<=16;i++)this.channels.set(i,{channel:i,fader:.5,on:true,updatedAt:null});
     this.main={channel:0,fader:.5,on:true,updatedAt:null};
     this.connected=opts.mode==='simulation';
@@ -259,7 +276,7 @@ export class XR18 extends EventEmitter {
     try { await this.start(); } catch(e) { this.close();this.emit('connection');throw e; }
   }
   close() {
-    this.generation++;this.emit("transport-closed");
+    this.generation++;this.cancelOperations();this.emit("transport-closed");
     if(this.timer)clearInterval(this.timer);this.timer=undefined;
     const socket=this.socket;this.socket=undefined;
     if(socket){socket.removeAllListeners('message');try{socket.close();}catch{}}
