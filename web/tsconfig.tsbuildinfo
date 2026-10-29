@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/ConnectionPanel.tsx","./src/ConsolePanel.tsx","./src/FxConsole.tsx","./src/InputGainPanel.tsx","./src/MixerSyncPanel.tsx","./src/MonitorPanel.tsx","./src/SoundCoach.tsx","./src/StudioControl.tsx","./src/XAirMixer.tsx","./src/fxPresets.ts","./src/main.tsx","./src/processingPresets.ts","./src/xairMath.ts","./vite.config.ts"],"version":"5.9.3"}
