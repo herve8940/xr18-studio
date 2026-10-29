@@ -1,7 +1,15 @@
+import {SoundCoach,identifySymptom} from "./sound-coach.js";
+import {askConnectedCoach} from "./coach-ai.js";
+import {PARAMETERS,fromWire,type Value} from "./parameters.js";
+import {processingCommands} from "./processing-osc.js";
 import http from "node:http";
+import https from "node:https";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
+import {discoverXR18} from "./discovery.js";
+import {ConnectionManager,loadConnection} from "./connection.js";
+import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
@@ -11,13 +19,21 @@ import { ShowControl } from "./show-control.js";
 import { StudioApi, body } from "./studio-api.js";
 const database = new StudioDatabase();
 const processing = new ProcessingStore();
-const mode = process.env.XR18_MODE === "real" ? "real" : "simulation";
-const xr18 = new XR18({ mode, host: process.env.XR18_HOST ?? "192.168.1.100", port: Number(process.env.XR18_PORT ?? 10024), enableWrites: process.env.XR18_ENABLE_WRITES === "true" });
 const dbPath=process.env.XR18_DB_PATH??"data/xr18-studio.db";
+const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
+const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.100',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
+const xr18 = new XR18(config);
+const connection=new ConnectionManager(xr18,configPath,config);
+let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
 const access=new Access(dbPath), library=new LibraryStore(dbPath);
 const show=new ShowControl(xr18,processing,library);
+const coach=new SoundCoach(xr18,show.console,library);
+let aiRequestAt=0;
 const studioApi=new StudioApi(xr18,access,library,show);
-const server = http.createServer(async (req, res) => {
+const listenHost=process.env.XR18_HTTP_HOST??'127.0.0.1';
+const tls=process.env.XR18_TLS_CERT&&process.env.XR18_TLS_KEY?{cert:await readFile(process.env.XR18_TLS_CERT),key:await readFile(process.env.XR18_TLS_KEY)}:undefined;
+if(!['127.0.0.1','localhost'].includes(listenHost)&&(!tls||!access.enabled()))throw Error('Accès réseau : HTTPS et comptes configurés requis.');
+const handler: http.RequestListener = async (req, res) => {
   let ownsWriteLock=false;
   try {
   const path = new URL(req.url ?? "/", "http://localhost").pathname;
@@ -29,18 +45,85 @@ const server = http.createServer(async (req, res) => {
     try{const d=await body(req);if(access.enabled())throw Error('Comptes déjà configurés');access.create(d.name,d.password,'admin',[]);for(const ws of wss.clients)ws.terminate();res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/auth/login'&&req.method==='POST'){
-    try{const d=await body(req);const token=access.login(d.name,d.password);res.setHeader('Set-Cookie',`xr18_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200`);res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(401);res.end(JSON.stringify({error:(e as Error).message}));}return;
+    try{const d=await body(req);const token=access.login(d.name,d.password);res.setHeader('Set-Cookie',`xr18_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${tls?"; Secure":""}`);res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(401);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/auth/logout'&&req.method==='POST'){access.logout(req);res.setHeader('Set-Cookie','xr18_session=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');for(const ws of wss.clients)ws.terminate();res.end(JSON.stringify({ok:true}));return;}
   const user=access.user(req);
   if(path.startsWith('/api/')&&(!user||!permitted(user,req.method??'GET',path))){res.writeHead(user?403:401);res.end(JSON.stringify({error:user?'Droits insuffisants':'Connexion requise'}));return;}
-  if(path.startsWith('/api/')&&req.method!=='GET'){
+  if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
+  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/undo'].includes(path);
+  if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
+    const coachMetadata=path.startsWith('/api/coach/')&&path!=='/api/coach/apply';
+    if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
     if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
-    if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library'))show.manualOverride();
+    if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
   }
-  if(user&&await studioApi.handle(req,res,path,user))return;
+  if(path==='/api/discovery'&&req.method==='GET'){
+    try{discoveryPending??=discoverXR18().finally(()=>{discoveryPending=undefined;});res.end(JSON.stringify({devices:await discoveryPending}));}
+    catch(e){res.writeHead(503);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/connection'&&req.method==='POST'){
+    try{const data=await body(req);const status=await connection.change(data);res.end(JSON.stringify({status}));}
+    catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/coach'&&req.method==='GET'){res.end(JSON.stringify({...coach.catalog(),role:user!.role}));return;}
+  if(path==='/api/coach/advice'&&req.method==='GET'){
+    try{const q=new URL(req.url!,'http://localhost').searchParams;res.end(JSON.stringify(coach.advice(Number(q.get('channel')),String(q.get('symptom')))));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path.startsWith('/api/coach/')&&req.method==='POST'){
+    try{const d=await body(req);let result:unknown;
+      if(path==='/api/coach/profile')result=coach.saveProfile(d.profile);
+      else if(path==='/api/coach/prepare')result=await coach.prepare(d.channel===undefined?undefined:Number(d.channel));
+      else if(path==='/api/coach/suggest')result=await coach.suggest(Number(d.channel),String(d.symptom));
+      else if(path==='/api/coach/apply'){if(d.confirm!==true)throw Error('Confirmation requise');result=await coach.apply(d.token,d.confirm);}
+      else if(path==='/api/coach/undo')result=await coach.undo();
+      else if(path==='/api/coach/measure')result=await coach.measure(Number(d.channel));
+      else if(path==='/api/coach/ask'){
+        if(typeof d.message!=='string'||!d.message.trim()||d.message.length>2000)throw Error('Question de 1 à 2 000 caractères requise');
+        const channel=Number(d.channel),input=coach.profile().inputs.find(i=>i.channel===channel);
+        if(!input)throw Error('Choisir un instrument de la préparation');
+        if(d.external===true){if(d.consent!==true)throw Error('Accord explicite requis avant envoi à OpenAI');if(Date.now()-aiRequestAt<5000)throw Error('Attendre quelques secondes entre deux demandes IA');aiRequestAt=Date.now();result={source:'openai',...await askConnectedCoach(d.message,{source:input.source,mode:xr18.mode,connected:xr18.status().connected},d.consent)};}
+        else{const symptom=identifySymptom(d.message);result=symptom?{source:'local',symptom,...coach.advice(channel,symptom)}:{source:'local',answer:'Je peux t’aider à préparer le groupe, vérifier les niveaux et tester une correction à la fois. Décris ce qui te gêne : son brouillon, agressif, notes coupées, saturation, bruit ou voix difficile à distinguer.',check:'Choisis d’abord le canal et l’instrument, puis explique ce que tu entends. Je ne reçois aucun audio par OSC.',measuredAudio:false};}
+      }else throw Error('Action du conseiller inconnue');
+      res.end(JSON.stringify(result));
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/fx'&&req.method==='GET'){try{res.end(JSON.stringify(await xr18.readFx(Number(new URL(req.url!,'http://localhost').searchParams.get('slot')))));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;}
+  if(path==='/api/console/parameters'&&req.method==='GET'){
+    const prefix=new URL(req.url!,'http://localhost').searchParams.get('prefix')??'/ch/01/';
+    res.end(JSON.stringify({parameters:show.console.catalog(prefix),status:xr18.status()}));return;
+  }
+  if(path==='/api/console/refresh'&&req.method==='POST'){
+    const d=await body(req);try{await xr18.refreshParameters(String(d.prefix));res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/preview'&&req.method==='POST'){
+    try{const d=await body(req);res.end(JSON.stringify(await show.console.preview(d.values)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/apply'&&req.method==='POST'){
+    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/mute-all'&&req.method==='POST'){
+    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');const values:Record<string,Value>={};for(let i=1;i<=16;i++)values[`/ch/${String(i).padStart(2,'0')}/mix/on`]=0;const p=await show.console.preview(values,true);res.end(JSON.stringify(await show.console.apply(p.token)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+    const monitorProfiles=/^\/api\/monitor\/([1-6])\/profiles(?:\/([a-f0-9-]+)\/(apply))?$/.exec(path);
+  if(monitorProfiles){
+    try{const bus=Number(monitorProfiles[1]);
+      if(req.method==='GET'&&!monitorProfiles[2]){res.end(JSON.stringify(database.listEarProfiles().filter(p=>p.bus===bus)));return;}
+      if(req.method==='POST'){
+        const data=await body(req);
+        if(!monitorProfiles[2]){const levels=[];for(let channel=1;channel<=16;channel++)levels.push(await xr18.readParameter(`/ch/${String(channel).padStart(2,'0')}/mix/${String(bus).padStart(2,'0')}/level`));res.end(JSON.stringify(database.saveEarProfile({musician:data.name,bus,levels})));return;}
+        if(data.confirm!==true)throw Error('Confirmation requise');
+        const profile=database.listEarProfiles().find(p=>p.id===monitorProfiles[2]&&p.bus===bus);if(!profile||profile.levels.some(v=>v>.75))throw Error('Profil absent ou au-dessus du plafond');
+        const values:Record<string,Value>={};for(let channel=1;channel<=16;channel++)values[`/ch/${String(channel).padStart(2,'0')}/mix/${String(bus).padStart(2,'0')}/level`]=profile.levels[channel-1]!;
+        const before:Record<string,Value>={};for(const a of Object.keys(values))before[a]=await xr18.readParameter(a);library.save('parameter-backup','Avant rappel retour',before);
+        for(let step=1;step<=15;step++){const ramp=Object.fromEntries(Object.entries(values).map(([a,v])=>[a,Number(before[a])+(Number(v)-Number(before[a]))*step/15]));await xr18.applyParameters(ramp);await new Promise(r=>setTimeout(r,30));}
+        res.end(JSON.stringify({ok:true}));return;
+      }
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
+  }
+    if(user&&await studioApi.handle(req,res,path,user))return;
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
@@ -58,7 +141,7 @@ const server = http.createServer(async (req, res) => {
         if(typeof value!=="number")throw Error("Numeric value required");
         xr18.setMainFader(value);
       }
-      res.end(JSON.stringify({ok:true,acknowledged:mode==="simulation"}));return;
+      res.end(JSON.stringify({ok:true,acknowledged:xr18.mode==="simulation"}));return;
     }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
   }
   if(req.method==="POST"&&path==="/api/osc/advanced/write"){
@@ -126,8 +209,14 @@ const server = http.createServer(async (req, res) => {
       const body: unknown = JSON.parse(raw);
       if (!body || typeof body !== "object") throw Error("Invalid JSON");
       const data = body as Record<string,unknown>;
+      if(xr18.mode==='real'){
+        if(processingMatch[2]==='undo')throw Error('Restaurer la sauvegarde des paramètres depuis la bibliothèque');
+        if(processingMatch[2]==='preview'){const plan=processingCommands(channel,data.processing);const preview=await show.console.preview(plan.values,true);res.end(JSON.stringify({...preview,ratio:plan.ratio,preservedThresholds:plan.preservedThresholds}));return;}
+        if(data.confirm!==true)throw Error('Confirmation requise');
+        const result=await show.console.apply(data.token);res.end(JSON.stringify({...result,state:{revision:Date.now()}}));return;
+      }
       if (processingMatch[2] === "preview") { res.end(JSON.stringify(processing.preview(channel,data.processing))); return; }
-      if (mode !== "simulation") { res.writeHead(403); res.end(JSON.stringify({ error: "Processing hardware writes are not implemented or validated; simulation only" })); return; }
+      if (xr18.mode !== "simulation") { res.writeHead(403); res.end(JSON.stringify({ error: "Processing hardware writes are not implemented or validated; simulation only" })); return; }
       if (processingMatch[2] === "undo") {
         if (!Number.isInteger(data.expectedRevision)) throw Error("expectedRevision required");
         const state = processing.undo(channel,data.expectedRevision as number);
@@ -145,7 +234,7 @@ const server = http.createServer(async (req, res) => {
       const body: unknown = JSON.parse(raw);
       if (!body || typeof body !== "object" || !("value" in body) || typeof body.value !== "number") throw new Error("Numeric value required");
       xr18.setFader(Number(path.split("/")[3]), body.value);
-      res.end(JSON.stringify({ ok: true, note: mode === "real" ? "OSC command sent, not acknowledged" : "Simulation updated" }));
+      res.end(JSON.stringify({ ok: true, note: xr18.mode === "real" ? "OSC command sent, not acknowledged" : "Simulation updated" }));
     } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: (e as Error).message })); }
     return;
   }
@@ -159,7 +248,7 @@ const server = http.createServer(async (req, res) => {
         const bytes=await readFile(target);
         const mime:Record<string,string>={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon",".woff2":"font/woff2"};
         res.setHeader("Content-Type",mime[extname(target)]??"application/octet-stream");
-        res.setHeader("Content-Security-Policy","default-src 'self'; connect-src 'self' ws://127.0.0.1:*; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'");
+        res.setHeader("Content-Security-Policy","default-src 'self'; connect-src 'self' ws://127.0.0.1:* wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; font-src 'self' data:; object-src 'none'; frame-ancestors 'none'");
         res.end(bytes);return;
       }catch{ /* Fall through to 404. */ }
     }
@@ -167,10 +256,13 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(404); res.end(JSON.stringify({ error: "Not found" }));
   } catch(e) {if(!res.headersSent)res.writeHead(500);res.end(JSON.stringify({error:(e as Error).message}));}
   finally {if(ownsWriteLock)studioApi.busy=false;}
-});
+};
+const server=tls?https.createServer(tls,handler):http.createServer(handler);
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient:({req},done)=>done(sameOrigin(req)&&!!access.user(req),401) });
 const wsRequests=new WeakMap<WebSocket,http.IncomingMessage>();
-wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() }));});
+wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState(),parameters:xr18.parameterState() }));});
+xr18.on('reset',()=>{const message=JSON.stringify({type:'snapshot',channels:xr18.listChannels(),status:xr18.status(),main:xr18.mainState(),meters:xr18.meterState(),parameters:xr18.parameterState()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
+xr18.on('parameter',state=>{const message=JSON.stringify({type:'parameter',state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
@@ -179,11 +271,12 @@ xr18.on("connection", () => {const message=JSON.stringify({type:"status",status:
 xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
-server.listen(port, "127.0.0.1", () => console.log(`XR18 Studio API on http://127.0.0.1:${port} (${mode})`));
+server.listen(port, listenHost, () => console.log(`XR18 Studio API on ${tls?"https":"http"}://${listenHost}:${port} (${xr18.mode})`));
 const statusTimer=setInterval(()=>{for(const ws of wss.clients){const req=wsRequests.get(ws);if(!req||!access.user(req))ws.terminate();}const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
 statusTimer.unref();
 function shutdown(){clearInterval(statusTimer);xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
 process.once("SIGINT",shutdown);
 process.once("SIGTERM",shutdown);
+
 
 

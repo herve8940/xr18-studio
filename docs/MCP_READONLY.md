@@ -37,3 +37,8 @@ Le chemin SQLite doit pointer vers **la même base** que celle de l'application.
 - L'accès MCP donne accès aux données locales du groupe ; ne connecter qu'un assistant autorisé.
 - Le SDK est un ajout de dépendance non validé par compilation.
 - Les commandes et installateurs ne sont pas testés dans cette étape, conformément à la demande.
+
+
+## Version 0.2.0
+
+Le périmètre lecture seule de ce document décrit la version initiale. La version 0.2.0 ajoute des outils de prévisualisation et d’écriture confirmée via le backend authentifié, sans transport OSC supplémentaire. Voir `FONCTIONS_0_2.md`, section MCP, pour les outils et variables de connexion.

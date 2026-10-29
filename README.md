@@ -1,22 +1,34 @@
+# XR18 Studio 1.0
+
+[🇫🇷 Guide utilisateur illustré](docs/USER_GUIDE_FR.md) · [🇬🇧 Illustrated user guide](docs/USER_GUIDE_EN.md) · [Télécharger / Download](https://github.com/herve8940/xr18-studio-/releases/latest)
+
+**FR** — Assistant de mixage pour Behringer XR18 : parcours guidé, console, retours, effets et scènes. Installateurs autonomes Windows, Mac Intel / Apple Silicon et Linux. Interface en français ; guides bilingues. Voir les [notes et limites de la 1.0](docs/RELEASE_1_0.md), notamment la validation matérielle encore nécessaire.
+
+**EN** — Behringer XR18 mixing assistant with a guided workflow, console, monitors, effects and scenes. Self-contained Windows, Intel / Apple Silicon Mac and Linux installers. French interface; bilingual guides. Read the [1.0 release notes and limitations](docs/RELEASE_1_0.md), including pending physical hardware validation.
+
+![16 entrées / 16 inputs](docs/images/console.png)
+
+---
+
 # XR18 Studio
 
-Application locale de gestion de la console Behringer X Air XR18, des retours in-ear, des répétitions et des setlists, avec serveur MCP et intégration ReaCue prévue.
+Application de mixage XR18 pour Windows, macOS et Linux : simulation, connexion OSC, contrôles de console, scènes, effets, retours personnels, répétitions, ReaCue et MCP.
 
-## Objectifs
+Version 0.3.0 candidate : compilation et tests automatisés ; validation sur la console physique requise avant utilisation en concert.
 
-- Rendre le pilotage de la XR18 simple et sécurisé, sans retirer ses fonctions avancées.
-- Proposer une interface web responsive adaptée aux musiciens.
-- Centraliser les commandes OSC/UDP dans un moteur partagé par le backend, l'interface et le MCP.
-- Fonctionner en local sans dépendance obligatoire à l'IA.
+```sh
+npm run setup
+npm run studio
+```
 
-## Architecture cible
+Backend et interface compilés : `npm run build:all`. Application de bureau : `npm run desktop:package`. Les installateurs sont produits par GitHub Actions.
 
-React + TypeScript + Tailwind CSS / Node.js + TypeScript / WebSocket / OSC UDP / MCP / SQLite.
+- [Mon ingé son : parcours guidé et dialogue](docs/INGE_SON.md)
+- [État vérifié et limites](docs/ETAT_DU_PROJET.md)
+- [Guide des fonctions, HTTPS, ReaCue et MCP](docs/FONCTIONS_0_2.md)
+- [Connexion en un clic](docs/CONNEXION_XR18.md)
+- [Installation de bureau](docs/INSTALLATION_CLE_EN_MAIN.md)
 
-## État
+Le moteur OSC est unique ; l’interface, les clients musiciens et MCP passent par son API et ses droits. Une connexion ou une lecture ne change pas le mixage. Les scènes natives `.scn` avec FX textuels opaques restent archivables, mais leur rappel est refusé ; les scènes complètes JSON version 2 conservent directement les vecteurs OSC typés.
 
-Initialisation du dépôt. Aucune fonctionnalité XR18 n'est encore validée sur la console réelle.
-
-## Sécurité
-
-Ne jamais exposer directement la console à Internet. Toute commande sensible doit être protégée, confirmée et journalisée.
+L’accueil ouvre le mode guidé « Mon ingé son » : préparation du groupe, balance pas à pas, conseils en langage courant, prévisualisation et annulation. Le conseiller local fonctionne sans clé API. Le dialogue OpenAI facultatif nécessite une configuration et un accord d’envoi ; il ne pilote jamais directement la console.

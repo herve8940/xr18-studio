@@ -59,3 +59,8 @@ Créer une association unique (identifiant morceau, section, cible scène/FX). A
 Le workflow Desktop packages installe maintenant le paquet NSIS sur le runner Windows, puis lance l'exécutable installé avec `--smoke-test` : démarrage backend, base SQLite et rendu de l'interface. Le test utilise un profil temporaire en simulation. Une réussite CI confirme ce démarrage dans le runner, pas le fonctionnement sur le PC de l'utilisateur ni sur la XR18 réelle.
 
 Validation locale : `npm test`, `npm run build:all`, compilation Python du pont. Voir les résultats de la PR pour les vérifications effectivement exécutées.
+
+
+## Version 0.2.0
+
+Les restrictions de rappel applicatif et d’automatisation décrites ci-dessus concernent les scènes version 1. Les scènes complètes JSON version 2 couvrent le catalogue de paramètres connu, les routages, les DCA et les vecteurs FX typés. Leur rappel, les FX et les automatismes ReaCue dédiés disposent désormais d’un chemin matériel contrôlé. Le rappel natif `.scn` avec FX textuels opaques reste bloqué. Voir `FONCTIONS_0_2.md` et `ETAT_DU_PROJET.md` pour l’état actuel et les limites.

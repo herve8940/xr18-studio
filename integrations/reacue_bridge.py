@@ -9,6 +9,9 @@ import os
 import sys
 import urllib.request
 import urllib.parse
+import time
+import pathlib
+import argparse
 
 
 class XR18StudioClient:
@@ -32,10 +35,41 @@ class XR18StudioClient:
         return self.post('/api/reacue/event', {'eventId': event_id, 'songId': song_id, 'section': section})
 
 
+def watch(client, filename):
+    """Follow only new region events. Never replay a previous concert on startup."""
+    path = pathlib.Path(filename)
+    offset = path.stat().st_size if path.exists() else 0
+    while True:
+        if path.exists():
+            if path.stat().st_size < offset:
+                offset = 0
+            with path.open('r', encoding='utf-8') as stream:
+                stream.seek(offset)
+                while True:
+                    before = stream.tell()
+                    line = stream.readline()
+                    if not line or not line.endswith('\n'):
+                        stream.seek(before)
+                        break
+                    event = json.loads(line)
+                    # A failure stops the bridge; operator reviews partial changes before restart.
+                    result = client.section(event['songId'], event['section'], event['eventId'])
+                    print(json.dumps(result, ensure_ascii=False), flush=True)
+                offset = stream.tell()
+        time.sleep(0.1)
+
+
 if __name__ == '__main__':
-    if len(sys.argv) != 4:
-        raise SystemExit('Usage: reacue_bridge.py SONG_ID SECTION EVENT_ID')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('event', nargs='*', help='SONG_ID SECTION EVENT_ID')
+    parser.add_argument('--watch', metavar='JSONL', help='Outbox emitted by XR18_Studio_Regions.lua')
+    args = parser.parse_args()
     client = XR18StudioClient()
     if os.environ.get('XR18_STUDIO_USER'):
         client.login()
-    print(json.dumps(client.section(*sys.argv[1:]), ensure_ascii=False))
+    if args.watch:
+        watch(client, args.watch)
+    elif len(args.event) == 3:
+        print(json.dumps(client.section(*args.event), ensure_ascii=False))
+    else:
+        parser.error('Provide --watch FILE or SONG_ID SECTION EVENT_ID')

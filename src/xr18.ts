@@ -1,3 +1,4 @@
+import {PARAMETERS,descriptor,validateWire,defaultWire,type Value} from "./parameters.js";
 import dgram from "node:dgram";
 import { EventEmitter } from "node:events";
 import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
@@ -5,23 +6,82 @@ import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscAr
 export type Mode = "simulation" | "real";
 export interface ChannelState { channel: number; fader: number; on: boolean; updatedAt: string | null }
 export class XR18 extends EventEmitter {
-  readonly mode: Mode;
+  private currentMode: Mode;
+  get mode(): Mode { return this.currentMode; }
   private socket?: dgram.Socket;
   private timer?: NodeJS.Timeout;
-  private readonly host: string;
-  private readonly port: number;
-  private readonly writes: boolean;
+  private host: string;
+  private port: number;
+  private writes: boolean;
+  private parameterValues=new Map<string,{value:Value;updatedAt:string}>();
+  private generation=0;
+  private operationEpoch=0;
+  cancelOperations(){this.operationEpoch++;}
+  operationId(){return this.operationEpoch;}
+  private fxValues=new Map<number,{slot:number;algorithm:number;parameters:{type:"f"|"i";value:number}[]}>();
+  parameterState(){return Object.fromEntries(this.parameterValues);}
+  private remember(address:string,value:Value){
+    const state={value,updatedAt:new Date().toISOString()};this.parameterValues.set(address,state);this.emit('parameter',{address,...state});
+  }
+  async readParameter(address:string):Promise<Value>{
+    const p=descriptor(address);
+    if(this.mode==='simulation'){
+      const c=/^\/ch\/(\d{2})\/mix\/(fader|on)$/.exec(address);
+      if(c){const state=this.channels.get(Number(c[1]))!;return c[2]==='fader'?state.fader:state.on?1:0;}
+      if(address==='/lr/mix/fader')return this.main.fader;if(address==='/lr/mix/on')return this.main.on?1:0;
+      return this.parameterValues.get(address)?.value??defaultWire(p);
+    }
+    const reply=await this.query(address);const value=validateWire(address,reply.args[0]);this.remember(address,value);return value;
+  }
+  async refreshParameters(prefix:string){
+    if(!prefix.startsWith('/')||prefix.length<3)throw Error('Groupe requis');
+    const addresses=Object.keys(PARAMETERS).filter(a=>a===prefix||a.startsWith(prefix+'/'));
+    if(!addresses.length||addresses.length>500)throw Error('Choisir un groupe de 1 à 500 paramètres');
+    const generation=this.generation;
+    for(let offset=0;offset<addresses.length;offset+=8){
+      if(generation!==this.generation)throw Error('Connexion modifiée');
+      await Promise.all(addresses.slice(offset,offset+8).map(async a=>{const v=await this.readParameter(a);if(this.mode==='simulation')this.remember(a,v);}));
+      await new Promise(r=>setTimeout(r,10));
+    }
+    return this.parameterState();
+  }
+  async writeParameter(address:string,value:Value,allowPhantom=false){
+    const checked=validateWire(address,value),p=descriptor(address);
+    if(address.endsWith('/phantom')&&!allowPhantom)throw Error('Confirmation 48 V requise');
+    if(this.mode==='simulation'){
+      const fxType=/^\/fx\/([1-4])\/type$/.exec(address);if(fxType&&this.fxValues.get(Number(fxType[1]))?.algorithm!==checked)this.fxValues.set(Number(fxType[1]),{slot:Number(fxType[1]),algorithm:checked as number,parameters:[]});
+      this.remember(address,checked);if(this.advancedAddresses.has(address)){const state={value:checked,updatedAt:new Date().toISOString()};this.advanced.set(address,state);this.emit('advanced',{address,...state});}
+      const c=/^\/ch\/(\d{2})\/mix\/(fader|on)$/.exec(address);
+      if(c){if(c[2]==='fader')this.setFader(Number(c[1]),checked as number);else this.setOn(Number(c[1]),checked===1);}
+      if(address==='/lr/mix/fader')this.setMainFader(checked as number);
+      if(address==='/lr/mix/on')this.setMainOn(checked===1);
+      return checked;
+    }
+    if(!this.writes||!this.isLive())throw Error('Écritures désactivées ou XR18 déconnectée');
+    const generation=this.generation;
+    // Request readback after sending, never update optimistically.
+    this.send(address,[p.type==='f'?oscFloat(checked as number):checked]);
+    const observed=await this.readParameter(address);
+    if(generation!==this.generation)throw Error('Connexion modifiée pendant écriture');
+    if(typeof observed==='number'&&typeof checked==='number'?Math.abs(observed-checked)>.003:observed!==checked)throw Error('Lecture différente : '+address);
+    return observed;
+  }
+  async applyParameters(values:Record<string,Value>,allowPhantom=false){
+    for(const [a,v] of Object.entries(values)){validateWire(a,v);if(a.endsWith('/phantom')&&!allowPhantom)throw Error('Confirmation 48 V requise');}
+    const generation=this.generation,operation=this.operationEpoch;
+    for(const [a,v] of Object.entries(values)){if(generation!==this.generation||operation!==this.operationEpoch)throw Error('Opération interrompue');await this.writeParameter(a,v,allowPhantom);}
+  }
   private connected = false;
   private lastReplyAt: number | null = null;
   private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
   private meters:{channels:number[];updatedAt:string}|null=null;
-  meterState(){return this.meters?{...this.meters,available:true}:{channels:[],updatedAt:null,available:false};}
+  meterState(){return this.meters&&Date.now()-Date.parse(this.meters.updatedAt)<5000?{...this.meters,available:true}:{channels:[],updatedAt:null,available:false};}
   private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
   private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
   constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
-    super(); this.mode = opts.mode; this.host = opts.host; this.port = opts.port;
+    super(); this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
     this.writes = opts.mode === "real" && opts.enableWrites;
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
@@ -31,7 +91,7 @@ export class XR18 extends EventEmitter {
     }
     for(let i=1;i<=4;i++)this.advancedAddresses.add(`/fx/${i}/type`);
   }
-  status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
+  status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, port:this.port, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
   private isLive(){return this.connected&&this.lastReplyAt!==null&&Date.now()-this.lastReplyAt<this.staleAfterMs;}
   listChannels() { return [...this.channels.values()]; }
   mainState() { return {...this.main}; }
@@ -39,20 +99,9 @@ export class XR18 extends EventEmitter {
   refreshAdvanced(channel:number){if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");if(this.mode!=="real"||!this.isLive())return;const prefix=`/ch/${String(channel).padStart(2,"0")}/`;for(const address of this.advancedAddresses)if(address.startsWith(prefix))this.send(address);}
   /** Direct OSC write, explicit operator opt-in; never update local state until hardware echoes. */
   writeAdvanced(address:string,value:number){
-    if(this.mode!=="real"||!this.writes||!this.isLive())throw Error("Real XR18 connection and write opt-in required");
-    if(!this.advancedAddresses.has(address))throw Error("OSC parameter not allowlisted");
-    if(!Number.isFinite(value))throw Error("Invalid numeric value");
-    const eq=/^\/ch\/(0[1-9]|1[0-6])\/eq\/(?:[1-4]\/([fgq])|on)$/.exec(address);
-    const dyn=/^\/ch\/(0[1-9]|1[0-6])\/(dyn|gate)\/(on|thr|ratio|attack|release)$/.exec(address);
-    const send=/^\/ch\/(0[1-9]|1[0-6])\/mix\/0[1-6]\/level$/.test(address);
-    // The X-Air OSC protocol uses normalized floats for continuous parameters.
-    // Toggle writes use OSC integer; processing ranges must be validated on real hardware.
-    const isToggle=address.endsWith("/on");
-    if(isToggle){if(value!==0&&value!==1)throw Error("Toggle must be 0 or 1");}
-    else if(!(eq||dyn||send)||value<0||value>1)throw Error("Only normalized 0..1 processing and send writes supported");
-    if(address.startsWith("/fx/"))throw Error("FX algorithm writes require hardware verification");
-    this.send(address,[isToggle?value:oscFloat(value)]);
-    this.emit("advanced-write-requested",{address,value,at:new Date().toISOString()});
+    if(this.mode!=='real'||!this.writes||!this.isLive())throw Error('Real XR18 connection and write opt-in required');
+    if(!this.advancedAddresses.has(address)||address.startsWith('/fx/'))throw Error('OSC parameter not allowlisted');
+    validateWire(address,value);const p=descriptor(address);this.send(address,[p.type==='f'?oscFloat(value):value]);
   }
   refreshFx(){if(this.mode!=="real"||!this.isLive())return;for(const address of this.advancedAddresses)if(address.startsWith("/fx/"))this.send(address);}
   async start(): Promise<void> {
@@ -62,7 +111,8 @@ export class XR18 extends EventEmitter {
       if (rinfo.address !== this.host || rinfo.port !== this.port) return;
       try { this.handle(decodeOsc(data)); } catch (err) { this.emit("warning", String(err)); }
     });
-    this.socket.on("error", err => { this.connected = false; this.emit("connection",{connected:false}); this.emit("warning", err.message); });
+    const transport=this.socket;
+    this.socket.on("error", err => { if(this.socket!==transport)return; this.connected = false; this.emit("connection",{connected:false}); this.emit("warning", err.message); });
     await new Promise<void>((resolve, reject) => {
       this.socket!.once("listening", resolve);
       this.socket!.once("error", reject);
@@ -79,6 +129,8 @@ export class XR18 extends EventEmitter {
     for (let i = 1; i <= 16; i++) {
       this.send(`/ch/${String(i).padStart(2, "0")}/mix/fader`);
       this.send(`/ch/${String(i).padStart(2, "0")}/mix/on`);
+      for(const suffix of ['config/name','config/color','mix/pan'])this.send(`/ch/${String(i).padStart(2,'0')}/${suffix}`);
+      this.send(`/headamp/${String(i).padStart(2,'0')}/gain`);
     }
   }
   private send(address: string, args: OutgoingOscArg[] = []) {
@@ -88,6 +140,7 @@ export class XR18 extends EventEmitter {
   }
   private handle(msg: OscMessage) {
     this.emit("osc-reply",msg);
+    if(PARAMETERS[msg.address]){try{this.remember(msg.address,validateWire(msg.address,msg.args[0]));}catch{return;}}
     if(msg.address==="/meters/1"&&Buffer.isBuffer(msg.args[0])){
       const levels=decodeXAirMeterBlob(msg.args[0],40);
       this.meters={channels:levels.slice(0,16),updatedAt:new Date().toISOString()};
@@ -123,39 +176,45 @@ export class XR18 extends EventEmitter {
     if (this.mode === "real" && !this.writes) throw new Error("Hardware writes disabled");
     if (this.mode === "real" && !this.isLive()) throw new Error("Console state stale or disconnected; refusing write");
     if (this.mode === "real") this.send(`/ch/${String(channel).padStart(2, "0")}/mix/fader`, [oscFloat(value)]);
-    else { const state = this.channels.get(channel)!; state.fader = value; state.updatedAt = new Date().toISOString(); this.emit("state", { ...state }); }
+    else { const state = this.channels.get(channel)!; state.fader = value; state.updatedAt = new Date().toISOString(); this.remember(`/ch/${String(channel).padStart(2,"0")}/mix/fader`,value);this.emit("state", { ...state }); }
   }
   setOn(channel:number,on:boolean) {
     if(!Number.isInteger(channel)||channel<1||channel>16)throw Error("Channel must be 1..16");
     if(typeof on!=="boolean")throw Error("Boolean on required");
     if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send(`/ch/${String(channel).padStart(2,"0")}/mix/on`,[on?1:0]);
-    else {const state=this.channels.get(channel)!;state.on=on;state.updatedAt=new Date().toISOString();this.emit("state",{...state});}
+    else {const state=this.channels.get(channel)!;state.on=on;state.updatedAt=new Date().toISOString();this.remember(`/ch/${String(channel).padStart(2,"0")}/mix/on`,on?1:0);this.emit("state",{...state});}
   }
   setMainFader(value:number){
     if(!Number.isFinite(value)||value<0||value>1)throw Error("Main fader must be 0..1");
     if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send("/lr/mix/fader",[oscFloat(value)]);
-    else {this.main.fader=value;this.main.updatedAt=new Date().toISOString();this.emit("main",{...this.main});}
+    else {this.main.fader=value;this.main.updatedAt=new Date().toISOString();this.remember("/lr/mix/fader",value);this.emit("main",{...this.main});}
   }
   setMainOn(on:boolean){
     if(typeof on!=="boolean")throw Error("Boolean on required");
     if(this.mode==="real"&&(!this.writes||!this.isLive()))throw Error("Hardware writes disabled or console not confirmed");
     if(this.mode==="real")this.send("/lr/mix/on",[on?1:0]);
-    else {this.main.on=on;this.main.updatedAt=new Date().toISOString();this.emit("main",{...this.main});}
+    else {this.main.on=on;this.main.updatedAt=new Date().toISOString();this.remember("/lr/mix/on",on?1:0);this.emit("main",{...this.main});}
   }
   restoreAdvanced(values:Record<string,{value:number|string;updatedAt:string}>){
     if(this.mode!=='simulation')throw Error('Simulation uniquement');
     for(const [address,state] of Object.entries(values))if(!this.advancedAddresses.has(address)||!Number.isFinite(Number(state.value)))throw Error('Paramètre avancé invalide');
     this.advanced.clear();for(const [address,state] of Object.entries(values)){this.advanced.set(address,structuredClone(state));this.emit('advanced',{address,...state});}
   }
-  setMonitor(bus:number,channel:number,value:number){
+  async setMonitor(bus:number,channel:number,value:number){
     const address=`/ch/${String(channel).padStart(2,'0')}/mix/${String(bus).padStart(2,'0')}/level`;
-    if(this.mode==='real')this.writeAdvanced(address,value);else {const state={value,updatedAt:new Date().toISOString()};this.advanced.set(address,state);this.emit('advanced',{address,...state});}
+    return this.writeParameter(address,value);
   }
   async query(address:string):Promise<OscMessage>{
     if(this.mode!=="real"||!this.isLive())throw Error("XR18 déconnectée");
-    return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{if(msg.address!==address)return;clearTimeout(timer);this.off("osc-reply",done);resolve(msg);};const timer=setTimeout(()=>{this.off("osc-reply",done);reject(Error("Pas de réponse XR18 : "+address));},1500);this.on("osc-reply",done);this.send(address);});
+    return new Promise((resolve,reject)=>{
+      const cleanup=()=>{clearTimeout(timer);this.off('osc-reply',done);this.off('transport-closed',closed);};
+      const closed=()=>{cleanup();reject(Error('Connexion modifiée'));};
+      const done=(msg:OscMessage)=>{if(msg.address!==address)return;cleanup();resolve(msg);};
+      const timer=setTimeout(()=>{cleanup();reject(Error('Pas de réponse XR18 : '+address));},1500);
+      this.on('osc-reply',done);this.once('transport-closed',closed);this.send(address);
+    });
   }
   async node(path:string):Promise<string>{
     if(this.mode!=='real'||!this.isLive())throw Error('XR18 déconnectée');
@@ -165,13 +224,47 @@ export class XR18 extends EventEmitter {
     if(process.env.XR18_EXPERIMENTAL_SCENES!=="true"||!this.writes||!this.isLive())throw Error('Rappel matériel expérimental désactivé ou XR18 déconnectée');
     for(const c of commands){if(!this.isLive())throw Error('Rappel interrompu : XR18 déconnectée, état potentiellement partiel');this.send(c.address,[c.type==='f'?oscFloat(c.value as number):c.value]);await new Promise(resolve=>setTimeout(resolve,5));}
   }
-  async applyFx(f:{slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]}){
-    if(process.env.XR18_EXPERIMENTAL_FX!=="true")throw Error("FX matériels expérimentaux désactivés ; validation physique requise");
-    if(!this.writes||!this.isLive())throw Error("Écritures désactivées ou XR18 déconnectée");
-    const write=async(address:string,value:number,type:'f'|'i')=>{if(!this.isLive())throw Error("XR18 déconnectée pendant application FX");this.send(address,[type==='f'?oscFloat(value):value]);await new Promise(resolve=>setTimeout(resolve,40));const reply=await this.query(address);if(typeof reply.args[0]!=="number"||Math.abs(reply.args[0]-value)>0.0001)throw Error("FX partiellement envoyé : lecture différente sur "+address);};
-    await write(`/fx/${f.slot}/type`,f.algorithm,'i');
-    for(const [i,p] of f.parameters.entries())await write(`/fx/${f.slot}/par/${String(i+1).padStart(2,'0')}`,p.value,p.type);
+  async readFx(slot:number){
+    if(!Number.isInteger(slot)||slot<1||slot>4)throw Error('Slot FX 1..4 requis');
+    if(this.mode==='simulation')return structuredClone(this.fxValues.get(slot)??{slot,algorithm:0,parameters:[]});
+    const algorithm=await this.readParameter(`/fx/${slot}/type`);const reply=await this.query(`/fx/${slot}/par`);
+    if(typeof algorithm!=='number'||!reply.args.length||reply.args.length>64||!reply.tags||!/^[fi]+$/.test(reply.tags))throw Error('Vecteur FX typé absent');
+    const parameters=reply.args.map((v,i)=>{if(typeof v!=='number'||!Number.isFinite(v))throw Error('Paramètre FX invalide');return {type:reply.tags![i] as 'f'|'i',value:v};});
+    const result={slot,algorithm,parameters};this.fxValues.set(slot,result);return structuredClone(result);
   }
-  close() { if (this.timer) clearInterval(this.timer); this.socket?.close(); this.connected = false; }
+  async applyFx(f:{slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]}){
+    if(!Number.isInteger(f.slot)||f.slot<1||f.slot>4||!Number.isInteger(f.algorithm)||f.algorithm<0||f.algorithm>60||f.parameters.length>64||f.parameters.some(p=>!Number.isFinite(p.value)||(p.type==='f'&&(p.value<0||p.value>1))||(p.type==='i'&&(!Number.isInteger(p.value)||p.value<0||p.value>127))))throw Error('FX invalide');
+    if(this.mode==='simulation'){this.fxValues.set(f.slot,structuredClone(f));await this.writeParameter(`/fx/${f.slot}/type`,f.algorithm);return;}
+    if(!this.writes||!this.isLive())throw Error('Écritures désactivées ou XR18 déconnectée');
+    const generation=this.generation,operation=this.operationEpoch;
+    await this.writeParameter(`/fx/${f.slot}/type`,f.algorithm);
+    if(f.parameters.length){
+      if(operation!==this.operationEpoch)throw Error('FX interrompu');
+      this.send(`/fx/${f.slot}/par`,f.parameters.map(p=>p.type==='f'?oscFloat(p.value):p.value));
+      const observed=await this.readFx(f.slot);
+      if(generation!==this.generation||observed.parameters.length<f.parameters.length||f.parameters.some((p,i)=>p.type!==observed.parameters[i]!.type||Math.abs(p.value-observed.parameters[i]!.value)>.003))throw Error('FX potentiellement partiel : lecture différente');
+    }
+    this.fxValues.set(f.slot,structuredClone(f));
+  }
+  /** Keep the same instance so scenes, API and subscriptions follow the new transport. */
+  async reconnect(opts: {mode: Mode; host: string; port: number; enableWrites: boolean}) {
+    this.close();
+    this.currentMode=opts.mode;this.host=opts.host;this.port=opts.port;
+    this.writes=opts.mode==='real'&&opts.enableWrites;
+    this.lastReplyAt=null;this.meters=null;this.advanced.clear();this.parameterValues.clear();this.fxValues.clear();
+    for(let i=1;i<=16;i++)this.channels.set(i,{channel:i,fader:.5,on:true,updatedAt:null});
+    this.main={channel:0,fader:.5,on:true,updatedAt:null};
+    this.connected=opts.mode==='simulation';
+    this.emit('reset');this.emit('connection');
+    try { await this.start(); } catch(e) { this.close();this.emit('connection');throw e; }
+  }
+  close() {
+    this.generation++;this.emit("transport-closed");
+    if(this.timer)clearInterval(this.timer);this.timer=undefined;
+    const socket=this.socket;this.socket=undefined;
+    if(socket){socket.removeAllListeners('message');try{socket.close();}catch{}}
+    this.connected=false;
+  }
 }
+
 

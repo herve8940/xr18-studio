@@ -10,3 +10,15 @@ test('manual change invalidates preview without altering console',async()=>{cons
 test('ReaCue requires arm, deduplicates event and manual override disarms',async()=>{const {xr,library,show}=setup();try{xr.setFader(1,.2);const saved=library.save('scene','Song',show.capture());library.save('cue','Refrain',{songId:'song',section:'refrain',targetId:saved.id});const event={eventId:'event-1',songId:'song',section:'refrain'};await assert.rejects(show.event(event),/désarmé/);show.arm(true);xr.setFader(1,.5);await show.event(event);assert.equal(xr.listChannels()[0]!.fader,.2);xr.setFader(1,.6);assert.equal((await show.event(event) as {duplicate:boolean}).duplicate,true);assert.equal(xr.listChannels()[0]!.fader,.6);show.manualOverride();await assert.rejects(show.event({...event,eventId:'event-2'}),/désarmé/);}finally{library.close();}});
 test('invalid imported scenes and FX are rejected before changing anything',()=>{const {library,show}=setup();try{const s=show.capture();s.channels[15]!.fader=NaN;assert.throws(()=>show.validateScene(s));assert.throws(()=>validateFx({slot:5,algorithm:0,parameters:[]}));assert.throws(()=>validateFx({slot:1,algorithm:0,parameters:[{type:'f',value:1.1}]}));}finally{library.close();}});
 test('FX simulation recalls typed values, hardware is opt-in',async()=>{const {library,show}=setup();try{const saved=library.save('fx','Plate',{slot:1,algorithm:0,parameters:[{type:'f',value:.3}]});const p=show.preview(saved.id);await show.apply(saved.id,p.token,true);assert.equal(show.capture().fx[0]!.parameters[0]!.value,.3);}finally{library.close();}});
+
+test('manual override interrupts complete ReaCue recall and failed events are never replayed',async()=>{
+ const {xr,library,show}=setup();try{
+  xr.setFader(1,.2);const scene=await show.console.capture();
+  for(const a of Object.keys(scene.values))if(a.endsWith('/phantom'))delete scene.values[a];
+  const saved=library.save('scene','ReaCue complete',scene);library.save('cue','Chorus',{songId:'song',section:'chorus',targetId:saved.id});
+  xr.setFader(1,.6);show.arm(true);const event={eventId:'unique-1',songId:'song',section:'chorus'};
+  const recall=show.event(event);setTimeout(()=>show.manualOverride(),30);await assert.rejects(recall,/interrompu/);assert.equal(xr.listChannels()[0]?.fader,.6);
+  show.arm(true);assert.equal((await show.event(event) as {duplicate?:boolean}).duplicate,true);assert.equal(xr.listChannels()[0]?.fader,.6);
+ }finally{xr.close();library.close();}
+});
+

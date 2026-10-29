@@ -1,6 +1,6 @@
 /** Minimal OSC encoder/decoder for XR18 scalar messages. Not a full OSC implementation. */
 export type OscArg = number | string | Buffer;
-export interface OscMessage { address: string; args: OscArg[] }
+export interface OscMessage { address: string; args: OscArg[]; tags?:string }
 /** Explicit OSC float32, including whole-number values 0 and 1. */
 export interface OscFloat { oscType: "f"; value: number }
 export type OutgoingOscArg = OscArg | OscFloat;
@@ -43,7 +43,7 @@ export function decodeOsc(b: Buffer): OscMessage {
       args.push(tag === "i" ? b.readInt32BE(pos) : b.readFloatBE(pos)); pos += 4;
     } else throw new Error("Unsupported OSC tag: " + tag);
   }
-  return { address, args };
+  const message:OscMessage={address,args};Object.defineProperty(message,"tags",{value:tags.slice(1),enumerable:false});return message;
 }
 
 /** X-Air meter blob: LE uint32 count, then signed LE int16 levels at 1/256 dBFS. */
@@ -53,4 +53,5 @@ export function decodeXAirMeterBlob(blob:Buffer, expectedCount:number):number[]{
   if(count!==expectedCount||blob.length!==4+count*2)throw Error("Unexpected X-Air meter blob layout");
   return Array.from({length:count},(_,i)=>Math.max(-128,Math.min(0,blob.readInt16LE(4+i*2)/256)));
 }
+
 

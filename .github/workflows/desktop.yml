@@ -16,8 +16,10 @@ jobs:
         include:
           - os: windows-latest
             name: windows
+          - os: macos-15-intel
+            name: macos-intel
           - os: macos-latest
-            name: macos
+            name: macos-apple-silicon
           - os: ubuntu-latest
             name: linux
     runs-on: ${{ matrix.os }}
@@ -29,9 +31,9 @@ jobs:
         with:
           node-version: '22'
       - name: Install backend and desktop dependencies
-        run: npm install
+        run: npm ci
       - name: Install frontend dependencies
-        run: npm --prefix web install
+        run: npm --prefix web ci
       - name: Backend tests
         run: npm test
       - name: Build and package desktop app
@@ -58,4 +60,5 @@ jobs:
             release/*.AppImage
             release/*.deb
           if-no-files-found: error
+
 
