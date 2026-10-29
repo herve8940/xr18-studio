@@ -35,7 +35,7 @@ export function ConnectionPanel({status}:{status:Status}){
    void run(async()=>{await request('/api/connection',{mode:'real',host:status.host,port:status.port,enableWrites});setMessage(enableWrites?'Contrôle activé.':'Lecture seule activée.');});
   }}>{status.writesEnabled?'Désactiver le contrôle':'Activer le contrôle'}</button>}
   <MixerSyncPanel status={status}/>
-  <details><summary>Connexion manuelle si la recherche est bloquée</summary><form onSubmit={e=>{e.preventDefault();void run(()=>connect({host,port:10024,name:'XR18',model:'XR18'}));}}><fieldset disabled={working}><label>Adresse IP<input required placeholder="192.168.1.100" value={host} onChange={e=>setHost(e.target.value)}/></label><button>Se connecter</button></fieldset></form></details>
+  <details><summary>Connexion manuelle si la recherche est bloquée</summary><form onSubmit={e=>{e.preventDefault();void run(()=>connect({host,port:10024,name:'XR18',model:'XR18'}));}}><fieldset disabled={working}><label>Adresse IP<input required placeholder="192.168.1.1 (point d’accès XR18)" value={host} onChange={e=>setHost(e.target.value)}/></label><button>Se connecter</button></fieldset></form></details>
   <p><a href="/api/diagnostics/log" download="xr18-studio-diagnostic.log">Télécharger le journal de diagnostic</a></p>
   <p>Après un essai de connexion, télécharge ce fichier pour le joindre au support. Il contient les adresses IP locales et les réponses d’identité de la console, sans clé API ni mot de passe.</p>
   <p>La connexion ne modifie aucun réglage audio. Le mode et l’adresse sont conservés au prochain démarrage.</p></>:<p>La connexion à la console est gérée par l’administrateur.</p>}

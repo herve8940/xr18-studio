@@ -5,6 +5,7 @@ import {createHash,randomUUID} from 'node:crypto';
 import type {XR18,ChannelState} from './xr18.js';
 import {ProcessingStore,validateProcessing,type ProcessingState} from './processing.js';
 import {LibraryStore} from './library-store.js';
+import {PARAMETERS,readbackTolerance} from "./parameters.js";
 export type Fx={slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]};
 export function validateFx(input:unknown):Fx{
  const f=input as Fx;if(!f||!Number.isInteger(f.slot)||f.slot<1||f.slot>4||!Number.isInteger(f.algorithm)||f.algorithm<0||f.algorithm>60||!Array.isArray(f.parameters)||f.parameters.length>64||f.parameters.some(p=>!p||!['i','f'].includes(p.type)||!Number.isFinite(p.value)||(p.type==='f'&&(p.value<0||p.value>1))||(p.type==='i'&&(!Number.isInteger(p.value)||p.value<0||p.value>127))))throw Error('Preset FX invalide : slot 1..4, algorithme entier et paramètres OSC typés requis');return structuredClone(f);
@@ -32,7 +33,7 @@ export class ShowControl {
     await this.xr.applyNative(plan.commands);
     const readback:string[]=[];for(const node of plan.nodes)readback.push(await this.xr.node(node));
     const observed=new Map(compileNativeScene(readback.join('\n')).commands.map(c=>[c.address,c]));
-    const differences=plan.commands.filter(c=>{const o=observed.get(c.address);return !o||o.type!==c.type||(typeof c.value==='number'&&typeof o.value==='number'?Math.abs(c.value-o.value)>(c.type==='f'?.003:0):o.value!==c.value);});
+    const differences=plan.commands.filter(c=>{const o=observed.get(c.address);return !o||o.type!==c.type||(typeof c.value==='number'&&typeof o.value==='number'?Math.abs(c.value-o.value)>(c.type==='f'?(PARAMETERS[c.address]?readbackTolerance(c.address):.003):0):o.value!==c.value);});
     return {ok:differences.length===0,backupId:backup.id,readbackCompared:true,verifiedOnHardware:false,differences};
    }catch(error){throw Error(`Rappel matériel potentiellement partiel ; sauvegarde ${backup.id} : ${(error as Error).message}`);}
   }

@@ -7,7 +7,7 @@ export class ConsoleControl {
  private previews=new Map<string,{values:Record<string,Value>;before:Record<string,Value>;identity:string;expires:number}>();
  constructor(private xr:XR18,private library:LibraryStore){}
  identity(){const s=this.xr.status();return JSON.stringify([s.mode,s.host,s.port,s.writesEnabled]);}
- catalog(prefix:string){return Object.values(PARAMETERS).filter(p=>p.address.startsWith(prefix)).map(p=>({...p,...(this.xr.parameterState()[p.address]?{state:{...this.xr.parameterState()[p.address]!,display:fromWire(p.address,this.xr.parameterState()[p.address]!.value)}}:{})}));}
+ catalog(prefix:string){const state=this.xr.parameterState();return Object.values(PARAMETERS).filter(p=>p.address.startsWith(prefix)).map(p=>({...p,...(state[p.address]?{state:{...state[p.address]!,display:fromWire(p.address,state[p.address]!.value)}}:{})}));}
  validateScene(input:unknown):CompleteScene {
   const s=input as CompleteScene;
   if(!s||s.version!==2||s.scope!=='console'||!s.values||typeof s.values!=='object'||Array.isArray(s.values)||!Object.keys(s.values).length||!Array.isArray(s.fx)||s.fx.length!==4||s.fx.some((f,i)=>f.slot!==i+1))throw Error('Scène complète invalide');

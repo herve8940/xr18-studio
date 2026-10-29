@@ -11,6 +11,29 @@ for(const [node,fields] of Object.entries(SCENE_SCHEMA))for(const f of fields){
 }
 // Physical XR18 has 16 mic preamps plus stereo aux; larger headamp entries are not exposed.
 for(const a of Object.keys(PARAMETERS))if(/^\/headamp\/(1[7-9]|2\d)\//.test(a))delete PARAMETERS[a];
+/**
+ * The XR18 quantizes every float to a fixed number of steps (as X-AIR Edit does):
+ * faders 1024, send levels 161, pan 101, EQ frequency 201, HPF 101, Q 72, times 101…
+ * A write is accepted when the readback lands within ~half a step of the request.
+ */
+const LIN_STEP:Record<string,number>={gain:.5,rtntrim:.25,g:.25,thr:.5,range:1,attack:1,knee:1,mgain:.5,weight:.5,sourcetrim:.5,dimatt:1};
+export function wireSteps(address:string):number|undefined{
+ const p=PARAMETERS[address];if(!p||p.type!=='f')return undefined;
+ const leaf=address.split('/').at(-1)!;
+ if(p.kind==='LevelC')return leaf==='fader'?1024:161;
+ if(p.kind==='PanC')return 101;
+ if(p.kind==='EqQC')return 72;
+ if(p.kind==='PercentC')return 21;
+ if(p.kind==='LogFreqC')return leaf==='hpf'?101:201;
+ if(p.kind==='LogTimeC')return 101;
+ if(address.includes('/geq/'))return 61;
+ const step=LIN_STEP[leaf];
+ return step&&p.max!==undefined&&p.min!==undefined?Math.round((p.max-p.min)/step)+1:undefined;
+}
+export function readbackTolerance(address:string):number{
+ const steps=wireSteps(address);
+ return steps?Math.max(.003,.6/(steps-1)):.011;
+}
 export function descriptor(address:string){const p=PARAMETERS[address];if(!p)throw Error('Paramètre XR18 non autorisé : '+address);return p;}
 export function validateWire(address:string,value:unknown):Value {
  const p=descriptor(address);

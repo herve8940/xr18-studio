@@ -16,11 +16,16 @@ export function broadcastTargets(interfaces=interfacesSafe()) {
  }
  return [...targets];
 }
+/**
+ * Same 18-channel OSC map as X-AIR Edit: XR18, X18 (rack) and MR18, original and V2 hardware
+ * (X-AIR Edit 1.8.1 lists X18V2, XR18V2, MR18V2). XR12/XR16 have a different channel count.
+ */
+export function isXR18Family(model:string){return /^(XR|X|MR)18(V2)?$/.test(model.trim().toUpperCase());}
 export function parseIdentity(data:Buffer,host:string,port:number):DiscoveredXR18|null {
  try{
   const msg=decodeOsc(data);
   if(msg.address!=='/info'&&msg.address!=='/xinfo')return null;
-  if(msg.args.length<3||typeof msg.args[1]!=='string'||typeof msg.args[2]!=='string'||!['XR18','XR18V2'].includes(msg.args[2].trim().toUpperCase()))return null;
+  if(msg.args.length<3||typeof msg.args[1]!=='string'||typeof msg.args[2]!=='string'||!isXR18Family(msg.args[2]))return null;
   return {host,port,name:msg.args[1].trim()||'XR18',model:'XR18'};
  }catch{return null;}
 }

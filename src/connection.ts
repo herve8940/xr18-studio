@@ -9,7 +9,7 @@ export function connectionConfig(value:unknown):ConnectionConfig {
  if(!value||typeof value!=='object')throw Error('Configuration de connexion invalide');
  const d=value as Record<string,unknown>;
  if(d.mode!=='real'&&d.mode!=='simulation')throw Error('Mode invalide');
- const host=d.host??'192.168.1.100',port=d.port??10024;
+ const host=d.host??'192.168.1.1',port=d.port??10024;
  if(typeof host!=='string'||!isIPv4(host)||host==='0.0.0.0'||Number(host.split('.')[0])>=224)throw Error('Adresse IPv4 invalide');
  if(typeof port!=='number'||!Number.isInteger(port)||port<1||port>65535)throw Error('Port invalide');
  if(d.enableWrites!==undefined&&typeof d.enableWrites!=='boolean')throw Error('Option de contrôle invalide');

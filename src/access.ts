@@ -57,6 +57,12 @@ export function permitted(user:User,method:string,path:string){
  const send=/^\/api\/monitor\/([1-6])\/channels\/(\d+)$/.exec(path);
  return user.role==='musician'&&method==='POST'&&!!send&&user.buses.includes(Number(send[1]));
 }
+/** Direct control from the graphical mixer: admins everything allowed live, musicians only their own monitor sends. */
+export function liveControlPermitted(user:User,address:string){
+ if(user.role==='admin')return true;
+ const send=/^\/(?:ch\/(?:0[1-9]|1[0-6])|rtn\/(?:[1-4]|aux))\/mix\/0([1-6])\/level$/.exec(address);
+ return user.role==='musician'&&!!send&&user.buses.includes(Number(send[1]));
+}
 export function sameOrigin(req:IncomingMessage){
  const host=req.headers.host??'';
  const allowed=new Set(['localhost','127.0.0.1',...(process.env.XR18_ALLOWED_HOSTS??'').split(',').filter(Boolean)]);

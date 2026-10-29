@@ -69,3 +69,6 @@ test('physical XR18V2 firmware 1.23 identity captures are accepted',()=>{
  for(const packet of [info,xinfo])assert.deepEqual(parseIdentity(packet,'192.168.50.10',10024),{host:'192.168.50.10',port:10024,name:'XR18-AA-BB-CC',model:'XR18'});
  for(const model of ['XR16V2','XR18V3','XR18V2-other'])assert.equal(parseIdentity(encodeOsc('/info',['V','Other',model,'1']),'127.0.0.1',10024),null);
 });
+test('X18 and MR18 share the XR18 OSC map, as in X-AIR Edit 1.8.1',()=>{
+ for(const model of ['X18','X18V2','MR18','MR18V2','xr18'])assert.equal(parseIdentity(encodeOsc('/info',['V0.04','Rack',model,'1.23']),'10.0.0.2',10024)?.model,'XR18');
+});

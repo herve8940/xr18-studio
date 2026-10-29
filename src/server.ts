@@ -15,7 +15,7 @@ import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
-import { Access, permitted, sameOrigin } from "./access.js";
+import { Access, permitted, sameOrigin, liveControlPermitted } from "./access.js";
 import { LibraryStore } from "./library-store.js";
 import { ShowControl } from "./show-control.js";
 import { StudioApi, body } from "./studio-api.js";
@@ -26,7 +26,7 @@ const diagnostics=new DiagnosticLog(join(dirname(dbPath),'logs','xr18-studio.log
 setDiagnosticLogger(diagnostics);
 diagnostic('startup',{version:process.env.XR18_APP_VERSION??'source',platform:process.platform,arch:process.arch,node:process.version});
 const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
-const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.100',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
+const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.1',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
 const xr18 = new XR18(config);
 const connection=new ConnectionManager(xr18,configPath,config);
 let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
@@ -281,7 +281,24 @@ const handler: http.RequestListener = async (req, res) => {
 const server=tls?https.createServer(tls,handler):http.createServer(handler);
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient:({req},done)=>done(sameOrigin(req)&&!!access.user(req),401) });
 const wsRequests=new WeakMap<WebSocket,http.IncomingMessage>();
-wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState(),parameters:xr18.parameterState() }));});
+// Live control channel for the graphical mixer (fader drags, knobs, mute, solo), like X-AIR Edit.
+function handleLive(ws:WebSocket,req:http.IncomingMessage,raw:Buffer){
+  let message:{type?:unknown;address?:unknown;value?:unknown};
+  try{if(raw.length>2048)throw Error();message=JSON.parse(raw.toString('utf8'));}catch{return;}
+  const reply=(data:unknown)=>{if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data));};
+  const user=access.user(req);if(!user){ws.terminate();return;}
+  if(message.type==='sync'){void xr18.syncLiveView().catch(e=>reply({type:'live-error',error:(e as Error).message}));return;}
+  if(message.type!=='set'||typeof message.address!=='string')return;
+  const address=message.address,value=message.value;
+  try{
+    if(!liveControlPermitted(user,address))throw Error('Droits insuffisants pour '+address);
+    if(studioApi.busy)throw Error('Une opération est déjà en cours');
+    if(typeof value!=='number'&&typeof value!=='string')throw Error('Valeur invalide');
+    show.manualOverride();
+    xr18.liveSet(address,value);
+  }catch(e){reply({type:'live-error',address,error:(e as Error).message});}
+}
+wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.on('message',raw=>handleLive(ws,req,raw as Buffer));ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState(),parameters:xr18.parameterState() }));});
 xr18.on('reset',()=>{const message=JSON.stringify({type:'snapshot',channels:xr18.listChannels(),status:xr18.status(),main:xr18.mainState(),meters:xr18.meterState(),parameters:xr18.parameterState()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on('parameter',state=>{const message=JSON.stringify({type:'parameter',state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
