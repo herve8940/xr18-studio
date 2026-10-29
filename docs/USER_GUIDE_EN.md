@@ -1,4 +1,4 @@
-# XR18 Studio 1.0 — User guide
+# XR18 Studio 1.3 — User guide
 
 [Français](USER_GUIDE_FR.md) · [Downloads](https://github.com/herve8940/xr18-studio-/releases/latest) · [Home](../README.md)
 
@@ -8,9 +8,9 @@ The desktop package includes the backend and interface. No Node.js, terminal or 
 
 | Computer | Download | Installation |
 |---|---|---|
-| Windows x64 | `XR18-Studio-Windows-1.0.0.exe` | Double-click. Installs for your user account and creates shortcuts. |
-| Intel Mac | `XR18-Studio-macOS-1.0.0-x64.dmg` | Open, then drag XR18 Studio into Applications. |
-| Apple Silicon Mac | `XR18-Studio-macOS-1.0.0-arm64.dmg` | Open, then drag XR18 Studio into Applications. |
+| Windows x64 | `XR18-Studio-Windows-1.3.0.exe` | Double-click. Installs for your user account and creates shortcuts. |
+| Intel Mac | `XR18-Studio-macOS-1.3.0-x64.dmg` | Open, then drag XR18 Studio into Applications. |
+| Apple Silicon Mac | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Open, then drag XR18 Studio into Applications. |
 | Ubuntu/Debian x64 | `.deb` package | Open in your distribution’s software installer. |
 | Other Linux x64 | `.AppImage` file | Allow execution in file properties, then open it. |
 
@@ -22,9 +22,9 @@ Targets are recent Windows x64, Intel/Apple Silicon macOS and Linux x64 systems.
 
 The first launch opens **Mon ingé son** (My sound engineer) in simulation mode. Explore without changing the XR18. Simulated fader positions are not audio measurements. Channel names in the screenshot are examples.
 
-![Console: 16 inputs and Main L/R](images/console.png)
+![Graphical console: 16 inputs, returns and Main LR](images/console.png)
 
-Each strip represents an input; Main L/R is the main output. The fader adjusts mix level and M mutes the channel. Tabs provide controls, EQ, dynamics, sends, effects, routing and DCA. Use detailed parameters and change previews as the reference; the small illustrative EQ curve in the Mixage page is not a console measurement.
+Each strip is an input; the right-hand strip is the selected output (Main LR by default). Faders are scaled in dB like the console; M mutes, S solos and LR assigns to the main mix. Tabs provide detailed controls, EQ, dynamics, sends, effects, routing and DCA. See [Graphical console (1.3)](#graphical-console-13).
 
 ## 2. Connect your XR18
 
@@ -33,7 +33,7 @@ Each strip represents an input; Main L/R is the main output. The fader adjusts m
 3. One console connects read-only; if several appear, select the intended console.
 4. Check channel names and connection status. Select **Activer le contrôle** (Enable control) and confirm when ready to operate the mixer.
 
-No restart or technical configuration file is required. Connection settings are remembered. If discovery fails, check the firewall and shared network; guest networks and VLANs may block discovery. Manual IP entry is available as a fallback. [Technical details](CONNEXION_XR18.md).
+No restart or technical configuration file is required. Connection settings are remembered. If discovery fails, check the firewall and shared network; guest networks and VLANs may block discovery. Manual IP entry is available as a fallback: 192.168.1.1 when the computer is joined to the XR18’s own Wi-Fi. X18 and MR18 are recognised too. [Technical details](CONNEXION_XR18.md).
 
 ## 3. Prepare your band
 
@@ -90,3 +90,57 @@ Simulation preparations are saved before connection. PC snapshots stay separate 
 In Console > Mixage, select **Entrée / Gain**, then **Lire l’entrée**. Studio identifies the mapped analog input or offers USB trim for a USB return. Input gain adapts the received signal; the fader sets its level in the mix. Analog gain also affects other channels using the same physical input, monitors and processing.
 
 Enter gain in dB, preview and confirm. The panel also exposes high-pass filtering and polarity inversion. Phantom power requires an additional confirmation; check connected equipment first. Shortcuts open EQ, dynamics and sends. Values reflect the last explicit read; refresh after changes in another application. Source routing is re-read before applying to detect changed assignments.
+
+## Graphical console (1.3)
+
+Open **Console › Mixage**. The layout follows X-AIR Edit and updates live from the console. Names, colours and settings are read back automatically when connecting.
+
+![Graphical console](images/console.png)
+
+**Each strip**, top to bottom:
+
+- The console name and colour. Click it to select the strip.
+- **Gain**: the preamp actually mapped to the channel, or **USB trim** for a USB return. Gain belongs to the physical input, so it also affects other channels using it.
+- **Pan**.
+- **M** (mute), **S** (solo), **LR** (main assignment).
+- **Fader** in dB: 0 dB sits at three quarters of the travel.
+- **Meter** with peak hold: red at the top means clipping.
+
+Mouse and keyboard controls:
+
+- **Drag** a fader or knob to adjust it. Hold **Shift** for fine control.
+- The **mouse wheel** adjusts in small steps.
+- **Double-click** restores the default (0 dB for a fader, centre for pan).
+- Arrow keys work when the control has focus.
+
+Each move is sent to the XR18 immediately, then the value the console actually stored is read back. The status at the top right shows **Contrôle direct** (direct control), **Lecture seule** (read-only) or **Hors ligne** (offline). In read-only mode, enable control in Configuration.
+
+### Sends on fader
+
+![Faders showing sends to a monitor bus](images/mixer-sends-on-fader.png)
+
+The **Main LR / Bus 1-6 / FX 1-4** selector puts the sends to that mix on the faders, like “Sends on fader” in X-AIR Edit. The right-hand strip becomes that bus master. This is the quickest way to build a musician’s monitor mix: pick their bus, then bring up what they want to hear. Go back to **Main LR** for the front-of-house mix.
+
+### Buses, FX sends and DCAs
+
+![Bus · FX · DCA view](images/mixer-outputs.png)
+
+The **Bus · FX · DCA** button shows the masters of the 6 buses, 4 FX sends and 4 DCAs, next to Main LR.
+
+### EQ, dynamics and sends of the selected strip
+
+![Interactive EQ](images/mixer-eq.png)
+
+- **Égaliseur** (EQ): the curve is calculated from the console settings. **Drag a point** to change frequency and gain; use the **wheel** on a point to change the width (Q). The band type is chosen below the graph. **EQ** and **Coupe-bas** (low cut) switch the equaliser and the filter on or off.
+- **Dynamique** (dynamics): gate (mode, threshold, range, attack, hold, release) and compressor (ratio, threshold, knee, gain, attack, release, mix), with the transfer curve.
+- **Envois** (sends): the strip’s 10 sends with their tap point (IN, PRE EQ, POST EQ, PRE, POST).
+
+![Gate and compressor](images/mixer-dynamics.png)
+
+![Strip sends](images/mixer-sends-list.png)
+
+### Still protected
+
+**Phantom power**, **routing** and **FX algorithm changes** cannot be changed with a single move. They go through **Entrée / Gain**, **Contrôles** or **Effets**, with preview and confirmation. A **musician** account can only adjust the sends of its own buses.
+
+The solo button uses X-AIR Edit’s commands but has not yet been verified on a physical XR18. Listen to monitors carefully after an update.

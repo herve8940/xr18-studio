@@ -22,7 +22,7 @@ curl -X POST http://127.0.0.1:3000/api/channels/1/fader -H 'Content-Type: applic
 
 ## Lecture seule sur XR18 réelle
 ```sh
-XR18_MODE=real XR18_HOST=192.168.1.100 npm run dev
+XR18_MODE=real XR18_HOST=192.168.1.1 npm run dev
 ```
 Remplacer l'IP par celle de la console. Les écritures sont désactivées par défaut. Les valeurs initiales ne sont pas fiables tant qu'aucune réponse n'a été reçue : vérifier `updatedAt` sur chaque canal.
 

@@ -1,10 +1,12 @@
-# XR18 Studio 1.0.0 — état du développement
+# XR18 Studio 1.3.0 — état du développement
 
 Cette version expose les 2 636 paramètres du catalogue XR18 connu. Les essais sur émulateur ne constituent pas une qualification matérielle ni une validation pour le concert.
 
 ## Implémenté
 
-- Détection et connexion sans redémarrage, mode lecture/contrôle, configuration persistante.
+- Détection et connexion sans redémarrage (XR18, X18, MR18 et V2), mode lecture/contrôle, configuration persistante.
+- Console graphique (1.3) façon X-AIR Edit : tranches, faders en dB, 40 vumètres, mix sur les faders, EQ interactif, gate/compresseur, envois. Contrôle direct par WebSocket avec relecture ; 48 V, routage et algorithme FX exclus. Voir `XAIR_EDIT_PARITY.md`.
+- Relecture des écritures tolérante à la quantification de chaque paramètre (pas de la console).
 - Entrées : nom/couleur réels, gain, 48 V avec confirmation distincte, inversion, coupe-bas, EQ, gate, compresseur, fader, mute, pan et sources.
 - Aux stéréo, six bus, master, quatre envois et retours FX, quatre DCA, affectations, liens, groupes de mute, source d’écoute/solo, routages analogiques/USB/P16.
 - Paramètres typés avec unités physiques, prévisualisation, sauvegarde et comparaison OSC après écriture. Les ratios de compression utilisent des indices entiers.
@@ -19,6 +21,7 @@ Cette version expose les 2 636 paramètres du catalogue XR18 connu. Les essais s
 
 ## Limites connues
 
+- Solo `/-stat/solosw/01-16` et cadence des vumètres de la console graphique à confirmer sur le matériel.
 - Aucun essai sur la XR18 physique ou l’installation REAPER de l’utilisateur pendant ce développement. Adresses, plages et réponses de groupe à confirmer sur son firmware.
 - Les `.scn` natifs sont conservés/exportables. Le rappel des fichiers contenant des paramètres FX textuels opaques reste refusé avant toute écriture : les scènes JSON version 2 évitent cette conversion incertaine en utilisant les vecteurs OSC capturés.
 - Une opération interrompue peut laisser un état partiel ; la sauvegarde est conservée et aucun retour automatique silencieux n’est envoyé.

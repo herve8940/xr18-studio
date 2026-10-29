@@ -1,36 +1,32 @@
 # XR18 Studio — interface web
 
-Interface de mixage React/TypeScript + Tailwind CSS, destinée au prototype OSC.
+Interface React/TypeScript (Vite + Tailwind CSS) servie par le backend XR18 Studio.
 
-## Démarrage (deux terminaux)
+## Démarrage
 
 À la racine du dépôt :
+
 ```sh
-npm install
-npm run dev
+npm run setup
+npm run studio
 ```
 
-Dans un autre terminal :
-```sh
-cd web
-npm install
-npm run dev
-```
+Ouvrir **http://127.0.0.1:5173**. Le proxy Vite pointe sur le backend local (port 3000).
 
-Ouvrir **http://127.0.0.1:5173**.
+## Communication avec le backend
 
-La page lit `/api/status` et `/api/channels` et reçoit les changements sur `/ws`. Le proxy Vite pointe sur le backend local port 3000.
+- `GET /api/status`, `/api/channels`, `/api/meters`, `/api/console/parameters?prefix=…` : lecture.
+- WebSocket `/ws` : instantané initial (`snapshot`), puis `parameter`, `channel`, `main`, `meters` (40 valeurs dans `state.all`) et `status`.
+- Contrôle direct (console graphique) : le client envoie sur `/ws` `{"type":"set","address":"/ch/01/mix/fader","value":0.75}` (valeur OSC 0..1 ou entier) ou `{"type":"sync"}`. En cas de refus, le serveur répond `{"type":"live-error"}`. Le 48 V, le routage et le type d’effet ne sont pas acceptés par ce canal.
 
-### Limites de sécurité
+## Fichiers principaux
 
-- Mode simulation par défaut. Les faders ne pilotent la console réelle que si le backend est explicitement configuré pour les écritures ; **ne pas activer sur le matériel pour le moment**.
-- Les mutes sont affichés en lecture seule. Les vumètres sont volontairement désactivés : aucune donnée audio réelle n'est encore disponible.
-- Le libellé des canaux est un exemple d'interface, pas la configuration lue de la XR18.
-- Les écrans retours in-ear, répétitions et configuration sont des espaces réservés, non fonctionnels.
-- Pas encore de login, permissions ni interface d'administration. Ne pas exposer les serveurs à Internet.
-- Les valeurs des faders sont OSC normalisées ; l'indication dB est seulement indicative.
-- Aucun test réel de console n'a été effectué.
+- `XAirMixer.tsx` : console graphique (tranches, faders, vumètres, EQ, dynamique, envois).
+- `xairMath.ts` : lois de conversion X-Air (fader en dB, fréquences log, Q, couleurs, réponse EQ).
+- `ConsolePanel.tsx`, `InputGainPanel.tsx`, `FxConsole.tsx` : réglages avec aperçu et confirmation.
 
-### Étape suivante
+## Sécurité
 
-Valider les échanges OSC en lecture seule sur la XR18, puis intégrer les noms de canaux réels, la détection de connexion et les vumètres.
+- Mode simulation par défaut. Le contrôle réel exige l’activation explicite des écritures dans Configuration.
+- Les droits sont vérifiés côté serveur, y compris sur le WebSocket : un musicien ne règle que les envois de ses bus.
+- Ne pas exposer le serveur à Internet. L’accès réseau exige HTTPS et des comptes (voir `docs/FONCTIONS_0_2.md`).

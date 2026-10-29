@@ -1,4 +1,4 @@
-# XR18 Studio 1.0 — Guide utilisateur
+# XR18 Studio 1.3 — Guide utilisateur
 
 [English](USER_GUIDE_EN.md) · [Téléchargements](https://github.com/herve8940/xr18-studio-/releases/latest) · [Accueil](../README.md)
 
@@ -8,9 +8,9 @@ Aucun Node.js, terminal ou serveur à installer : le moteur et l’interface son
 
 | Ordinateur | Fichier à télécharger | Installation |
 |---|---|---|
-| Windows x64 | `XR18-Studio-Windows-1.0.0.exe` | Double-cliquer ; installation pour ton compte et raccourci automatique. |
-| Mac Intel | `XR18-Studio-macOS-1.0.0-x64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
-| Mac Apple Silicon | `XR18-Studio-macOS-1.0.0-arm64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
+| Windows x64 | `XR18-Studio-Windows-1.3.0.exe` | Double-cliquer ; installation pour ton compte et raccourci automatique. |
+| Mac Intel | `XR18-Studio-macOS-1.3.0-x64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
+| Mac Apple Silicon | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
 | Ubuntu/Debian x64 | fichier `.deb` | Ouvrir avec l’installateur de logiciels de ta distribution. |
 | Autres Linux x64 | fichier `.AppImage` | Autoriser son exécution dans les propriétés du fichier, puis l’ouvrir. |
 
@@ -22,9 +22,9 @@ Les compilations ciblent Windows x64, Mac Intel et Apple Silicon, Linux x64 réc
 
 Au premier démarrage, l’application s’ouvre en simulation sur **Mon ingé son**. Tu peux découvrir le parcours sans modifier ta XR18. Les curseurs simulés ne constituent pas des mesures audio. Les noms de la capture sont des exemples.
 
-![Console : 16 entrées et Main L/R](images/console.png)
+![Console graphique : 16 entrées, retours et Main LR](images/console.png)
 
-Chaque colonne représente une entrée ; Main L/R représente la sortie principale. Le curseur règle le volume du mix, le bouton M coupe le canal. Les onglets donnent accès aux contrôles, à l’EQ, aux traitements dynamiques, aux envois, aux effets, au routage et aux DCA. Les paramètres détaillés et l’aperçu des changements font foi ; la petite courbe d’EQ illustrative de la vue Mixage n’est pas une mesure de la console.
+Chaque tranche représente une entrée ; la tranche de droite est la sortie affichée (Main LR par défaut). Le fader est gradué en dB comme sur la console, le bouton M coupe le canal, S l’écoute en solo et LR l’affecte au Main. Les onglets donnent accès aux contrôles détaillés, à l’EQ, aux traitements dynamiques, aux envois, aux effets, au routage et aux DCA. Voir [Console graphique (1.3)](#console-graphique-13).
 
 ## 2. Connecter la XR18
 
@@ -33,7 +33,7 @@ Chaque colonne représente une entrée ; Main L/R représente la sortie principa
 3. Une console : connexion en lecture seule. Plusieurs : choisir la bonne console.
 4. Vérifier les noms des canaux et l’état de connexion. Pour agir sur la console, choisir **Activer le contrôle** et confirmer.
 
-Pas de redémarrage ni de fichier technique à modifier. La connexion est mémorisée. Si la détection échoue, vérifier le pare-feu et le réseau commun ; les réseaux invités/VLAN peuvent bloquer la découverte. Une adresse IP peut être saisie en secours. [Détails](CONNEXION_XR18.md).
+Pas de redémarrage ni de fichier technique à modifier. La connexion est mémorisée. Si la détection échoue, vérifier le pare-feu et le réseau commun ; les réseaux invités/VLAN peuvent bloquer la découverte. Une adresse IP peut être saisie en secours : 192.168.1.1 quand l’ordinateur est connecté au Wi-Fi propre de la XR18. Les X18 et MR18 sont aussi reconnues. [Détails](CONNEXION_XR18.md).
 
 ## 3. Préparer le groupe avec « Mon ingé son »
 
@@ -90,3 +90,57 @@ La préparation en simulation est conservée avant la connexion. Les copies PC r
 Dans Console > Mixage, cliquer sur **Entrée / Gain** du canal puis **Lire l’entrée**. Le logiciel identifie la prise analogique utilisée ; s’il s’agit d’un retour USB, il propose le trim USB. Ne pas confondre gain d’entrée (adaptation du signal reçu) et fader (niveau dans le mix). Un gain analogique agit aussi sur les autres canaux affectés à la même prise, les retours et les traitements.
 
 Saisir le gain en dB, prévisualiser, puis confirmer. Le panneau permet aussi de régler le coupe-bas et la polarité Ø. Le 48 V exige un accord supplémentaire ; vérifier le matériel branché avant de l’activer. Les raccourcis ouvrent l’EQ, les traitements et les envois. Les valeurs sont celles de la dernière lecture, à actualiser après changement dans une autre application. Le routage est relu avant application pour détecter un changement de source.
+
+## Console graphique (1.3)
+
+Ouvrir **Console › Mixage**. L’affichage reprend l’organisation de X-AIR Edit et se met à jour en direct depuis la console. Les noms, couleurs et réglages sont relus automatiquement à la connexion.
+
+![Console graphique](images/console.png)
+
+**Sur chaque tranche**, de haut en bas :
+
+- Le nom et la couleur de la console. Cliquer dessus sélectionne la tranche.
+- **Gain** : le préampli réellement affecté au canal, ou **Trim USB** pour un retour USB. Le gain agit sur la prise physique, donc aussi sur les autres canaux qui l’utilisent.
+- **Pan**.
+- **M** (mute), **S** (solo), **LR** (affectation au Main).
+- **Fader** en dB : 0 dB est aux trois quarts de la course.
+- **Vumètre** avec maintien de crête : le rouge en haut signale une saturation.
+
+Commandes de la souris et du clavier :
+
+- **Glisser** un fader ou un bouton rotatif pour le régler. **Maj** permet un réglage fin.
+- La **molette** ajuste par petits pas.
+- Un **double-clic** remet la valeur par défaut (0 dB pour un fader, centre pour le pan).
+- Les flèches du clavier fonctionnent quand le contrôle a le focus.
+
+Chaque geste est envoyé immédiatement à la XR18, puis la valeur réellement retenue est relue. Le statut en haut à droite indique **Contrôle direct**, **Lecture seule** ou **Hors ligne**. En lecture seule, activer le contrôle dans Configuration.
+
+### Envois sur les faders
+
+![Faders en mode envoi vers un retour](images/mixer-sends-on-fader.png)
+
+Le sélecteur **Main LR / Bus 1-6 / FX 1-4** affiche sur les faders les envois vers le mix choisi, comme « Sends on fader » dans X-AIR Edit. La tranche de droite devient le master de ce bus. C’est le moyen le plus rapide de régler le retour d’un musicien : choisir son bus, puis monter les instruments qu’il veut entendre. Revenir sur **Main LR** pour retrouver le mix de façade.
+
+### Bus, envois FX et DCA
+
+![Vue Bus · FX · DCA](images/mixer-outputs.png)
+
+Le bouton **Bus · FX · DCA** affiche les masters des 6 bus, des 4 envois FX et des 4 DCA, à côté du Main LR.
+
+### Égaliseur, dynamique et envois de la tranche sélectionnée
+
+![Égaliseur interactif](images/mixer-eq.png)
+
+- **Égaliseur** : la courbe est calculée à partir des réglages de la console. **Glisser un point** change la fréquence et le gain, la **molette** sur un point change la largeur (Q). Le type de bande se choisit sous le graphique. **EQ** et **Coupe-bas** activent ou coupent l’égaliseur et le filtre.
+- **Dynamique** : gate (mode, seuil, plage, attaque, maintien, relâchement) et compresseur (ratio, seuil, knee, gain, attaque, relâchement, mix), avec la courbe de transfert.
+- **Envois** : les 10 envois de la tranche avec leur point de prélèvement (IN, PRE EQ, POST EQ, PRE, POST).
+
+![Gate et compresseur](images/mixer-dynamics.png)
+
+![Envois de la tranche](images/mixer-sends-list.png)
+
+### Ce qui reste protégé
+
+Le **48 V**, le **routage** et le **changement d’algorithme FX** ne se règlent pas d’un simple geste. Ils passent par **Entrée / Gain**, **Contrôles** ou **Effets**, avec aperçu et confirmation. Un compte **musicien** ne peut régler que les envois de ses propres bus.
+
+Le bouton solo utilise les commandes de X-AIR Edit, mais il n’a pas encore été vérifié sur une XR18 physique. Écouter ses retours avec précaution après une mise à jour.
