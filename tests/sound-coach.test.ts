@@ -46,8 +46,9 @@ test('level observation collects fresh distinct events, cleans listeners and rej
  const stream=Object.assign(new EventEmitter(),{mode:'real',status:()=>({connected:true})});let identity='console-A';
  const control={identity:()=>identity} as ConsoleControl;const library=new LibraryStore(':memory:');
  const coach=new SoundCoach(stream as unknown as XR18,control,library);
- let n=0;const timer=setInterval(()=>{n++;stream.emit('meters',{available:true,updatedAt:new Date(Date.now()-n).toISOString(),channels:[-20]});},15);
- try{const report=await coach.measure(1,250);assert.equal(report.available,true);assert.equal(report.state,'present');assert.equal(stream.listenerCount('meters'),0);
-  const pending=coach.measure(1,250);setTimeout(()=>{identity='console-B';},10);await assert.rejects(pending,/Connexion modifiée/);assert.equal(stream.listenerCount('meters'),0);
- }finally{clearInterval(timer);library.close();}
+ const measurement=coach.measure(1,250);const now=Date.now();
+ for(let n=0;n<3;n++)stream.emit('meters',{available:true,updatedAt:new Date(now-n).toISOString(),channels:[-20]});
+ try{const report=await measurement;assert.equal(report.available,true);assert.equal(report.state,'present');assert.equal(stream.listenerCount('meters'),0);
+  const pending=coach.measure(1,250);identity='console-B';await assert.rejects(pending,/Connexion modifiée/);assert.equal(stream.listenerCount('meters'),0);
+ }finally{library.close();}
 });
