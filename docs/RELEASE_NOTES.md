@@ -1,3 +1,9 @@
+# XR18 Studio 2.0.0-beta.5 — Réglages graphiques
+
+Vue graphique par défaut des paramètres : curseurs en unités physiques, sélecteurs, boutons d’activation et valeurs précises. Égaliseur avec points fréquence/gain déplaçables sur un axe logarithmique et largeur Q réglable. Les points ne représentent pas la réponse cumulée des filtres ; aucun signal RTA n’est inventé. Les changements préparent un brouillon et conservent la comparaison/confirmation avant écriture. La vue technique OSC reste accessible.
+
+L’archive Mac X AIR Edit 1.8.1 fournie contient un exécutable Mach-O, une icône et un fichier NIB de menu, sans ressources graphiques de panneaux séparées. Aucun code ou asset Behringer n’est copié ; l’exécutable Mac n’a pas été exécuté dans cet environnement Linux. Vérification visuelle requise sur le poste utilisateur.
+
 # XR18 Studio 2.0.0-beta.4 — Sources USB et analogiques
 
 Corrige le catalogue des retours Aux : rtnsrc accepte les indices 0 à 8 pour U0102 à U1718, comme les autres retours stéréo. U1718 est décodé en 8, et non en 0. Corrige également l’ordre des sources analogiques : In01..In16, L, R, OFF (0..18). Ces corrections sont fondées sur le document de paramètres X AIR et des tables de protocole, en complément de l’export.
