@@ -21,6 +21,12 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   assert.equal((await call('/api/connection',{mode:'real',host:'999.1.2.3'})).status,400);
   assert.equal((await call('/api/connection',{mode:'simulation'},'POST')).status,200);
   const forbiddenOrigin=await fetch(base+'/api/connection',{method:'POST',headers:{Cookie:cookie,Origin:'https://evil.example','Content-Type':'application/json'},body:JSON.stringify({mode:'simulation'})});assert.equal(forbiddenOrigin.status,403);
+  const coachCatalog=await (await call('/api/coach')).json() as {profile:unknown;aiConfigured:boolean};assert.ok(coachCatalog.profile);
+  await call('/api/reacue/arm',{armed:true,confirm:true});await call('/api/coach/profile',{profile:coachCatalog.profile});await call('/api/coach/ask',{channel:1,message:'ça siffle',external:false});assert.equal((await (await call('/api/reacue')).json() as {armed:boolean}).armed,true);
+  const preparation=await (await call('/api/coach/prepare',{channel:1})).json() as {token:string};assert.ok(preparation.token);assert.equal((await call('/api/coach/apply',{token:preparation.token,confirm:false})).status,400);assert.equal((await call('/api/coach/apply',{token:preparation.token,confirm:true})).status,200);
+  const report=await (await call('/api/coach/measure',{channel:1})).json() as {available:boolean};assert.equal(report.available,false);
+  const advice=await (await call('/api/coach/ask',{channel:1,message:'ça siffle',external:false})).json() as {source:string;measuredAudio:boolean};assert.equal(advice.source,'local');assert.equal(advice.measuredAudio,false);
+  assert.equal((await call('/api/coach/ask',{channel:1,message:'conseil',external:true,consent:false})).status,400);
   let cp=await (await call('/api/console/preview',{values:{'/ch/01/config/name':'Chant','/routing/usb/01/src':2}})).json() as {token:string};assert.ok(cp.token);
   assert.equal((await call('/api/console/apply',{token:cp.token,confirm:true})).status,200);
   const params=await (await call('/api/console/parameters?prefix=/ch/01/config/')).json() as {parameters:{address:string;state?:{value:unknown}}[]};assert.equal(params.parameters.find(p=>p.address.endsWith('/name'))?.state?.value,'Chant');
@@ -32,6 +38,7 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   const channels=await (await call('/api/channels')).json() as {fader:number}[];assert.equal(channels[0]!.fader,.5);
   await call('/api/users',{name:'Guest',password:'guest-long-password',role:'guest',buses:[]});await call('/api/auth/logout',{});assert.equal((await call('/api/channels')).status,401);
   login=await call('/api/auth/login',{name:'Guest',password:'guest-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
+  assert.equal((await call('/api/coach/prepare',{})).status,403);assert.equal((await call('/api/coach/ask',{channel:1,message:'test'})).status,403);
   assert.equal((await call('/api/console/preview',{values:{'/ch/01/mix/fader':0}})).status,403);
   assert.equal((await call('/api/discovery')).status,403);assert.equal((await call('/api/connection',{mode:'simulation'})).status,403);
   assert.equal((await call('/api/channels/1/fader',{value:.9})).status,403);assert.equal((await call('/api/users')).status,403);assert.equal((await call('/api/channels')).status,200);

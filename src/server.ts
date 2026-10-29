@@ -1,3 +1,5 @@
+import {SoundCoach,identifySymptom} from "./sound-coach.js";
+import {askConnectedCoach} from "./coach-ai.js";
 import {PARAMETERS,fromWire,type Value} from "./parameters.js";
 import {processingCommands} from "./processing-osc.js";
 import http from "node:http";
@@ -25,6 +27,8 @@ const connection=new ConnectionManager(xr18,configPath,config);
 let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
 const access=new Access(dbPath), library=new LibraryStore(dbPath);
 const show=new ShowControl(xr18,processing,library);
+const coach=new SoundCoach(xr18,show.console,library);
+let aiRequestAt=0;
 const studioApi=new StudioApi(xr18,access,library,show);
 const listenHost=process.env.XR18_HTTP_HOST??'127.0.0.1';
 const tls=process.env.XR18_TLS_CERT&&process.env.XR18_TLS_KEY?{cert:await readFile(process.env.XR18_TLS_CERT),key:await readFile(process.env.XR18_TLS_KEY)}:undefined;
@@ -47,12 +51,14 @@ const handler: http.RequestListener = async (req, res) => {
   const user=access.user(req);
   if(path.startsWith('/api/')&&(!user||!permitted(user,req.method??'GET',path))){res.writeHead(user?403:401);res.end(JSON.stringify({error:user?'Droits insuffisants':'Connexion requise'}));return;}
   if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
-  if(path.startsWith('/api/')&&req.method!=='GET'){
-    if(studioApi.busy&&!path.startsWith('/api/reacue')){show.manualOverride();}
+  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/undo'].includes(path);
+  if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
+    const coachMetadata=path.startsWith('/api/coach/')&&path!=='/api/coach/apply';
+    if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
     if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
-    if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library'))show.manualOverride();
+    if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
   }
   if(path==='/api/discovery'&&req.method==='GET'){
     try{discoveryPending??=discoverXR18().finally(()=>{discoveryPending=undefined;});res.end(JSON.stringify({devices:await discoveryPending}));}
@@ -61,6 +67,28 @@ const handler: http.RequestListener = async (req, res) => {
   if(path==='/api/connection'&&req.method==='POST'){
     try{const data=await body(req);const status=await connection.change(data);res.end(JSON.stringify({status}));}
     catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/coach'&&req.method==='GET'){res.end(JSON.stringify({...coach.catalog(),role:user!.role}));return;}
+  if(path==='/api/coach/advice'&&req.method==='GET'){
+    try{const q=new URL(req.url!,'http://localhost').searchParams;res.end(JSON.stringify(coach.advice(Number(q.get('channel')),String(q.get('symptom')))));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path.startsWith('/api/coach/')&&req.method==='POST'){
+    try{const d=await body(req);let result:unknown;
+      if(path==='/api/coach/profile')result=coach.saveProfile(d.profile);
+      else if(path==='/api/coach/prepare')result=await coach.prepare(d.channel===undefined?undefined:Number(d.channel));
+      else if(path==='/api/coach/suggest')result=await coach.suggest(Number(d.channel),String(d.symptom));
+      else if(path==='/api/coach/apply'){if(d.confirm!==true)throw Error('Confirmation requise');result=await coach.apply(d.token,d.confirm);}
+      else if(path==='/api/coach/undo')result=await coach.undo();
+      else if(path==='/api/coach/measure')result=await coach.measure(Number(d.channel));
+      else if(path==='/api/coach/ask'){
+        if(typeof d.message!=='string'||!d.message.trim()||d.message.length>2000)throw Error('Question de 1 à 2 000 caractères requise');
+        const channel=Number(d.channel),input=coach.profile().inputs.find(i=>i.channel===channel);
+        if(!input)throw Error('Choisir un instrument de la préparation');
+        if(d.external===true){if(d.consent!==true)throw Error('Accord explicite requis avant envoi à OpenAI');if(Date.now()-aiRequestAt<5000)throw Error('Attendre quelques secondes entre deux demandes IA');aiRequestAt=Date.now();result={source:'openai',...await askConnectedCoach(d.message,{source:input.source,mode:xr18.mode,connected:xr18.status().connected},d.consent)};}
+        else{const symptom=identifySymptom(d.message);result=symptom?{source:'local',symptom,...coach.advice(channel,symptom)}:{source:'local',answer:'Je peux t’aider à préparer le groupe, vérifier les niveaux et tester une correction à la fois. Décris ce qui te gêne : son brouillon, agressif, notes coupées, saturation, bruit ou voix difficile à distinguer.',check:'Choisis d’abord le canal et l’instrument, puis explique ce que tu entends. Je ne reçois aucun audio par OSC.',measuredAudio:false};}
+      }else throw Error('Action du conseiller inconnue');
+      res.end(JSON.stringify(result));
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/console/fx'&&req.method==='GET'){try{res.end(JSON.stringify(await xr18.readFx(Number(new URL(req.url!,'http://localhost').searchParams.get('slot')))));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;}
   if(path==='/api/console/parameters'&&req.method==='GET'){

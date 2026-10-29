@@ -1,3 +1,4 @@
+import {SoundCoach} from "./SoundCoach";
 import {MonitorPanel} from "./MonitorPanel";
 import {ConsolePanel} from "./ConsolePanel";
 import {FxConsole} from "./FxConsole";
@@ -17,7 +18,7 @@ type Status = { mode: "simulation" | "real"; connected: boolean; writesEnabled: 
 type Scene = { id: string; name: string; created: string; faders: number[] };
 type Song = { id: string; title: string; artist: string; bpm: number };
 type Tab = "mixer" | "eq" | "dynamics" | "sends" | "fx" | "routing" | "dca" | "controls";
-type Page = "console" | "ears" | "rehearsals" | "setlists" | "scenes" | "settings";
+type Page = "coach" | "console" | "ears" | "rehearsals" | "setlists" | "scenes" | "settings";
 type Stored = { scenes: Scene[]; songs: Song[]; setlist: string[]; notes: string };
 const KEY = "xr18-studio-local-v1";
 const NAMES = ["Chant","Guitare 1","Guitare 2","Basse","Kick","Caisse","Tom 1","Tom 2","OH gauche","OH droite","Clavier L","Clavier R","Playback L","Playback R","Ambiance","Réserve"];
@@ -29,6 +30,7 @@ function id() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Mat
 function labelFor(n: number) { return NAMES[n - 1] ?? `Canal ${n}`; }
 function normalized(v: number) { return Math.round(v * 100); }
 const MENU: { page: Page; name: string; icon: typeof AudioLines }[] = [
+  { page:"coach", name:"Mon ingé son", icon:Headphones },
   { page:"console", name:"Console", icon:SlidersHorizontal }, { page:"ears", name:"Retours in-ear", icon:Headphones },
   { page:"rehearsals", name:"Répétitions", icon:Music2 }, { page:"setlists", name:"Setlists", icon:ListMusic },
   { page:"scenes", name:"Snapshots", icon:Disc3 }, { page:"settings", name:"Configuration", icon:Settings2 },
@@ -38,7 +40,7 @@ const TABS: { id: Tab; name: string }[] = [
   {id:"sends",name:"Envois"},{id:"fx",name:"Effets"},{id:"routing",name:"Routage"},{id:"dca",name:"DCA"},
 ];
 export default function App() {
-  const [page, setPage] = useState<Page>("console");
+  const [page, setPage] = useState<Page>("coach");
   useEffect(()=>{const open=()=>setPage('settings');window.addEventListener('xr18-open-connection',open);return()=>window.removeEventListener('xr18-open-connection',open);},[]);
   const [tab, setTab] = useState<Tab>("mixer");
   const [fxFamily, setFxFamily] = useState<FxFamily | "Tous">("Tous");
@@ -273,9 +275,9 @@ export default function App() {
       <div className="side-info"><div><span>Mode</span><b>{isSim?"Simulation":"Matériel"}</b></div><div><span>WebSocket</span><b>{socketOk?"Actif":"Hors ligne"}</b></div><div><span>Écriture</span><b>{canWrite?"Autorisée":"Bloquée"}</b></div></div>
     </aside>
     <main className="studio-main">
-      <header className="studio-top"><div className="top-brand"><span className={socketOk?"led":"led offline"}/><b>{socketOk?"Backend connecté":"Backend hors ligne"}</b><small>{onlineSince && socketOk?`Depuis ${onlineSince}`:"Mode local"}</small></div><div className="top-right"><span className="safety-pill"><ShieldCheck size={14}/>{isSim?"SIMULATION":"XR18 RÉELLE"}</span><button className="top-button" onClick={()=>setPage("scenes")}><Save size={16}/> Sauvegarder</button><button className="top-button" onClick={()=>setPage("scenes")}><FolderOpen size={16}/> Charger</button><button className="icon-top" title="Configuration" onClick={()=>setPage("settings")}><Settings2 size={19}/></button></div></header>
+      <header className="studio-top"><div className="top-brand"><span className={socketOk?"led":"led offline"}/><b>{socketOk?"Application connectée":"Application hors ligne"}</b><small>{onlineSince && socketOk?`Depuis ${onlineSince}`:"Mode local"}</small></div><div className="top-right"><span className="safety-pill"><ShieldCheck size={14}/>{isSim?"SIMULATION":"XR18 RÉELLE"}</span><button className="top-button" onClick={()=>setPage("scenes")}><Save size={16}/> Sauvegarder</button><button className="top-button" onClick={()=>setPage("scenes")}><FolderOpen size={16}/> Charger</button><button className="icon-top" title="Configuration" onClick={()=>setPage("settings")}><Settings2 size={19}/></button></div></header>
       {notice && <div className="studio-alert" role="alert"><CircleAlert size={16}/><span>{notice}</span><button onClick={()=>setNotice("")}>Fermer</button></div>}
-      {page==="console" ? <>
+      {page==="coach" ? <SoundCoach status={status} online={socketOk} onConnect={()=>setPage("settings")} onMonitors={()=>setPage("ears")} onExpert={()=>{setPage("console");setTab("mixer");}}/> : page==="console" ? <>
         <div className="studio-tabs">{TABS.map(t=><button key={t.id} className={tab===t.id?"active":""} onClick={()=>setTab(t.id)}>{t.name}</button>)}</div>
         <div className="studio-work">
           {tab==="mixer" ? <>
@@ -309,7 +311,7 @@ export default function App() {
         {page==="settings" && <ConnectionPanel status={status}/>}
         {page==="settings" && <section className="studio-panel pad"><div className="panel-title"><div><b>État du système</b><small>Paramètres de sécurité</small></div><Cable size={18}/></div><div className="settings-rows"><div><span>Mode d'exécution</span><b>{isSim?"Simulation":"Console réelle"}</b></div><div><span>WebSocket</span><b>{socketOk?"Connecté":"Déconnecté"}</b></div><div><span>Réponse OSC</span><b>{status.connected?"Reçue / simulation":"Non confirmée"}</b></div><div><span>Écritures matérielles</span><b>{!isSim&&status.writesEnabled?"Activées sur backend":"Désactivées"}</b></div><div><span>Accès multiappareils</span><b>HTTPS configurable</b></div></div><p className="disclaimer">Utilise le panneau de connexion pour détecter la XR18, activer le contrôle ou revenir en simulation.</p></section>}
       </div>}
-      <div className="studio-control"><button disabled={!canWrite} onClick={()=>{if(confirm('Couper les 16 entrées de la console ?'))void api('/api/console/mute-all','POST',{confirm:true}).then(()=>setNotice('Les 16 entrées sont coupées.')).catch(e=>setNotice(e.message));}}>Couper toutes les entrées</button></div>
+      {page!=="coach"&&<div className="studio-control"><button disabled={!canWrite} onClick={()=>{if(confirm('Couper les 16 entrées de la console ?'))void api('/api/console/mute-all','POST',{confirm:true}).then(()=>setNotice('Les 16 entrées sont coupées.')).catch(e=>setNotice(e.message));}}>Couper toutes les entrées</button></div>}
       <footer className="studio-footer"><span>XR18 STUDIO · Prototype de développement</span><span>{isSim?"Simulation sans matériel":"Console réelle — expérimental"} · {meterState.available?"Vumètres OSC actifs":"Aucune mesure OSC reçue"}</span></footer>
     </main>
   </div>;
