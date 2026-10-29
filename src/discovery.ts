@@ -15,11 +15,10 @@ export async function discoverXR18(timeoutMs = 2500): Promise<DiscoveredXR18[]> 
   const targets = new Set<string>();
   for (const addresses of Object.values(interfaces)) for (const addr of addresses ?? []) {
     if (addr.family !== "IPv4" || addr.internal || !IPV4.test(addr.address)) continue;
-    if (addr.broadcast && IPV4.test(addr.broadcast)) targets.add(addr.broadcast);
-    else if (addr.netmask && IPV4.test(addr.netmask)) {
+    if (addr.netmask && IPV4.test(addr.netmask)) {
       const ip = addr.address.split(".").map(Number);
       const mask = addr.netmask.split(".").map(Number);
-      targets.add(ip.map((part, i) => ((part & mask[i]!) | (~mask[i]! & 255)) & 255).join("."));
+      targets.add(ip.map((part, i) => ((part & mask[i]!) | (~(mask[i] ?? 0) & 255)) & 255).join("."));
     }
   }
   if (!targets.size) return [];
