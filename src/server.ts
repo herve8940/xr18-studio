@@ -1,3 +1,4 @@
+import {DiagnosticLog,setDiagnosticLogger,diagnostic} from './diagnostics.js';
 import {SoundCoach,identifySymptom} from "./sound-coach.js";
 import {askConnectedCoach} from "./coach-ai.js";
 import {PARAMETERS,fromWire,type Value} from "./parameters.js";
@@ -20,6 +21,9 @@ import { StudioApi, body } from "./studio-api.js";
 const database = new StudioDatabase();
 const processing = new ProcessingStore();
 const dbPath=process.env.XR18_DB_PATH??"data/xr18-studio.db";
+const diagnostics=new DiagnosticLog(join(dirname(dbPath),'logs','xr18-studio.log'));
+setDiagnosticLogger(diagnostics);
+diagnostic('startup',{version:process.env.XR18_APP_VERSION??'source',platform:process.platform,arch:process.arch,node:process.version});
 const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
 const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.100',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
 const xr18 = new XR18(config);
@@ -59,6 +63,10 @@ const handler: http.RequestListener = async (req, res) => {
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
     if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
+  }
+  if(path==='/api/diagnostics/log'&&req.method==='GET'){
+    try{res.setHeader('Content-Type','text/plain; charset=utf-8');res.setHeader('Content-Disposition','attachment; filename="xr18-studio-diagnostic.log"');res.end(diagnostics.read());}
+    catch{res.writeHead(503);res.end('Journal indisponible : vérifier les droits du dossier de données.');}return;
   }
   if(path==='/api/discovery'&&req.method==='GET'){
     try{discoveryPending??=discoverXR18().finally(()=>{discoveryPending=undefined;});res.end(JSON.stringify({devices:await discoveryPending}));}
@@ -268,7 +276,7 @@ xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(
 xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("advanced", state => {const message=JSON.stringify({type:"advanced",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("connection", () => {const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
-xr18.on("warning", warning => console.warn("[OSC]", warning));
+xr18.on("warning", warning => {console.warn("[OSC]", warning);diagnostic("osc.warning",{message:String(warning).slice(0,500)}); });
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
 server.listen(port, listenHost, () => console.log(`XR18 Studio API on ${tls?"https":"http"}://${listenHost}:${port} (${xr18.mode})`));

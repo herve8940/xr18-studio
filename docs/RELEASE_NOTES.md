@@ -1,21 +1,19 @@
-# XR18 Studio 1.0.1
+# XR18 Studio 1.0.2
 
 ## Français
 
-Connexion : plusieurs sondes /info et /xinfo sont envoyées pendant 2,5 secondes au lieu d’une seule sonde /info sur 900 ms. Les deux formats d’adresse de réponse sont reconnus. Un échec manuel distingue désormais une réponse d’identité non reconnue, une absence de réponse et une erreur d’envoi réseau. Aucune écriture de mixage n’est envoyée pendant ces sondes.
+- Correction confirmée du refus d’identité : la XR18 firmware 1.23 de l’utilisateur annonce **XR18V2**. Les identifiants exacts XR18 et XR18V2 sont désormais reconnus ; les autres modèles restent refusés. Test de régression basé sur les deux paquets /info et /xinfo réellement reçus.
+- Journal automatique `logs/xr18-studio.log` dans le dossier de données de l’application. Dates, version, étapes de connexion, erreurs, réponse d’identité décodée et paquet hexadécimal (taille limitée). Rotation à 1 Mio avec un fichier précédent conservé.
+- Bouton **Télécharger le journal de diagnostic** dans Configuration > Connexion à ma XR18, réservé à l’administrateur. Après un essai, joindre le fichier au support. Les IP et noms de console figurent dans le journal ; aucune clé API, mot de passe, cookie, scène ou donnée audio n’est enregistrée.
+- Le message « Connexion… » disparaît après un échec.
 
-Ce correctif fait suite à une connexion refusée sur Mac alors que X Air Edit fonctionne et que l’autorisation Réseau local est active. Il améliore la compatibilité et le diagnostic ; la cause sur ce Mac n’est pas encore confirmée et son efficacité sur la console concernée reste à vérifier. Réessayer avec l’adresse utilisée dans X Air Edit et transmettre le nouveau message si nécessaire.
-
-Validation logicielle : 51 tests locaux réussis et compilation backend/frontend. Test UDP supplémentaire : premier paquet perdu, réponse /xinfo, autres modèles refusés et aucune écriture. Les installateurs sont publiés seulement après les tests et le démarrage empaqueté sur les quatre plateformes.
-
-Paquets non signés/notariés. Validation XR18 physique/REAPER toujours nécessaire. Guides : docs/USER_GUIDE_FR.md et docs/USER_GUIDE_EN.md.
+Validation : 53 tests locaux réussis, compilation backend/frontend ; tests de rotation, droits du fichier, export administrateur et refus invité. La réponse d’identité réelle est confirmée ; la connexion et le pilotage complets restent à réessayer sur la console physique. Installateurs publiés après les tests de démarrage empaquetés des quatre plateformes. Paquets non signés/notariés.
 
 ## English
 
-Connection: retry /info and /xinfo probes for 2.5 seconds rather than a single /info probe over 900 ms. Both reply addresses are accepted. Manual connection errors now distinguish unrecognized identity replies, no response and network send errors. Probes do not write mixer parameters.
+- Fix confirmed identity rejection: the user’s firmware 1.23 console identifies itself as **XR18V2**. Exact XR18 and XR18V2 identifiers are accepted; other models remain rejected. Regression tests reproduce the actual /info and /xinfo packets.
+- Automatic `logs/xr18-studio.log` in the application data directory: timestamps, version, connection stages/errors and bounded decoded/hex identity replies. Rotates at 1 MiB with one previous file retained.
+- Administrator-only **Télécharger le journal de diagnostic** link in Configuration > Connexion à ma XR18 exports both log generations. Reproduce the connection attempt, then attach this file to support. Logs include local IP addresses and console names, but no API keys, passwords, cookies, scenes or audio.
+- Clears the pending connection message after failure.
 
-This follows a Mac connection failure while X Air Edit works and Local Network permission is enabled. It improves compatibility and diagnostics; the root cause on that Mac and effectiveness against the affected physical console remain unconfirmed. Retry with the IP used by X Air Edit and report the new error if needed.
-
-Software validation: 51 local tests passed and backend/frontend builds succeeded. Added UDP test covers a dropped initial packet, /xinfo replies, rejecting other models and read-only probes. Installer publication requires passing tests and packaged startup checks on all four platforms.
-
-Unsigned/non-notarized packages. Physical XR18/REAPER validation remains necessary. Illustrated French/English guides are in docs/USER_GUIDE_FR.md and docs/USER_GUIDE_EN.md.
+Validation: 53 local tests passed and backend/frontend builds succeeded; rotation, file permissions and admin-only export tested. Actual console identity is confirmed, but full connection/control must still be retried on the physical console. Publication requires packaged startup checks across four platforms. Packages remain unsigned/non-notarized.

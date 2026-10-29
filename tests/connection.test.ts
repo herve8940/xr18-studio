@@ -13,7 +13,7 @@ import {permitted,type User} from '../src/access.js';
 test('identity uses console name, rejects other models and malformed replies',()=>{
  assert.equal(parseIdentity(encodeOsc('/info',['V0.50','Mon groupe','XR18','1.22']),'127.0.0.1',10024)?.name,'Mon groupe');
  for(const data of [Buffer.from('bad'),encodeOsc('/info',['XR18','wrong','XR16']),encodeOsc('/info',['XR18','XR18']),encodeOsc('/other',['V','name','XR18'])])assert.equal(parseIdentity(data,'127.0.0.1',10024),null);
- assert.equal(parseIdentity(encodeOsc('/xinfo',['192.168.68.94','Console','XR18','1.17']),'192.168.68.94',10024)?.name,'Console');
+ assert.equal(parseIdentity(encodeOsc('/xinfo',['192.168.50.10','Console','XR18','1.17']),'192.168.50.10',10024)?.name,'Console');
  assert.deepEqual(broadcastTargets({eth0:[{family:'IPv4',address:'10.1.2.42',netmask:'255.255.254.0',internal:false,cidr:'10.1.2.42/23',mac:'00:00:00:00:00:00'}]}),['10.1.3.255']);
  for(const host of ['999.1.2.3','0.0.0.0','224.0.0.1','host.local'])assert.throws(()=>connectionConfig({mode:'real',host}));
  for(const role of ['guest','musician'] as const){const u:User={id:'u',name:'u',role,buses:[1]};assert.equal(permitted(u,'POST','/api/connection'),false);assert.equal(permitted(u,'GET','/api/discovery'),false);}
@@ -61,4 +61,11 @@ test('discovery retries dropped packets, accepts xinfo and records rejected iden
  });
  const diagnostics={received:0,unrecognized:0,sendErrors:[] as string[]};
  try{const found=await discoverXR18(800,['127.0.0.1'],port,diagnostics);assert.equal(found[0]?.name,'Retry console');assert.ok(probes>=2);assert.ok(diagnostics.unrecognized>0);assert.deepEqual(diagnostics.sendErrors,[]);}finally{socket.close();}
+});
+
+test('physical XR18V2 firmware 1.23 identity captures are accepted',()=>{
+ const info=Buffer.from('/info\0\0\0,ssss\0\0\0V0.04\0\0\0XR18-AA-BB-CC\0\0\0XR18V2\0\0'+'1.23\0\0\0\0','binary');
+ const xinfo=Buffer.from('/xinfo\0\0,ssss\0\0\0'+'192.168.50.10\0\0\0XR18-AA-BB-CC\0\0\0XR18V2\0\0'+'1.23\0\0\0\0','binary');
+ for(const packet of [info,xinfo])assert.deepEqual(parseIdentity(packet,'192.168.50.10',10024),{host:'192.168.50.10',port:10024,name:'XR18-AA-BB-CC',model:'XR18'});
+ for(const model of ['XR16V2','XR18V3','XR18V2-other'])assert.equal(parseIdentity(encodeOsc('/info',['V','Other',model,'1']),'127.0.0.1',10024),null);
 });

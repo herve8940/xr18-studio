@@ -31,6 +31,7 @@ app.whenReady().then(async () => {
       probe.once("error",reject);
       probe.listen(0,"127.0.0.1",()=>{const address=probe.address();const freePort=typeof address==="object"?address.port:0;probe.close(()=>resolve(freePort));});
     });
+    process.env.XR18_APP_VERSION=app.getVersion();
     process.env.HTTP_PORT=String(port);
     process.env.XR18_DB_PATH=path.join(dataPath,"xr18-studio.db");
     process.env.XR18_WEB_DIST=app.isPackaged

@@ -1,3 +1,4 @@
+import {diagnostic} from './diagnostics.js';
 import {readFile,mkdir,writeFile,rename} from 'node:fs/promises';
 import {dirname} from 'node:path';
 import {isIPv4} from 'node:net';
@@ -28,6 +29,7 @@ export class ConnectionManager {
   if(this.busy)throw Error('Connexion déjà en cours');
   const next=connectionConfig(input);this.busy=true;
   const previous=this.config;let switched=false;
+  diagnostic('connection.start',{mode:next.mode,host:next.host,port:next.port,enableWrites:next.enableWrites});
   try{
    // Verify identity before touching the running transport. No mixer writes.
    if(next.mode==='real'){
@@ -42,8 +44,10 @@ export class ConnectionManager {
     if(!this.xr.status().connected)throw Error('Console détectée, mais aucune réponse de mixage reçue.');
    }
    await saveConnection(this.path,next);this.config=next;
+   diagnostic('connection.success',{mode:next.mode,host:next.host,port:next.port});
    return this.xr.status();
   }catch(e){
+   diagnostic('connection.failed',{message:e instanceof Error?e.message:String(e),transportChanged:switched});
    // Failed identity probes leave the existing session untouched.
    if(switched){await this.xr.reconnect(previous);}
    throw e;

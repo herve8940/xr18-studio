@@ -17,6 +17,7 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   assert.equal((await call('/api/channels')).status,401);
   await new Promise<void>((resolve,reject)=>{const ws=new WebSocket(base.replace('http','ws')+'/ws');ws.once('unexpected-response',(_req,res)=>{assert.equal(res.statusCode,401);res.resume();resolve();});ws.once('open',()=>{ws.close();reject(Error('Anonymous WS allowed'));});ws.once('error',()=>{});});
   let login=await call('/api/auth/login',{name:'Admin',password:'very-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;assert.equal((await call('/api/channels')).status,200);
+  const diagnosticLog=await call('/api/diagnostics/log');assert.equal(diagnosticLog.status,200);assert.match(diagnosticLog.headers.get('content-disposition')??'',/attachment/);const diagnosticText=await diagnosticLog.text();assert.match(diagnosticText,/startup/);assert.ok(!diagnosticText.includes('very-long-password'));
   assert.equal((await call('/api/connection',{mode:'simulation'})).status,200);
   assert.equal((await call('/api/connection',{mode:'real',host:'999.1.2.3'})).status,400);
   assert.equal((await call('/api/connection',{mode:'simulation'},'POST')).status,200);
@@ -40,6 +41,7 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   login=await call('/api/auth/login',{name:'Guest',password:'guest-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
   assert.equal((await call('/api/coach/prepare',{})).status,403);assert.equal((await call('/api/coach/ask',{channel:1,message:'test'})).status,403);
   assert.equal((await call('/api/console/preview',{values:{'/ch/01/mix/fader':0}})).status,403);
+  assert.equal((await call('/api/diagnostics/log')).status,403);
   assert.equal((await call('/api/discovery')).status,403);assert.equal((await call('/api/connection',{mode:'simulation'})).status,403);
   assert.equal((await call('/api/channels/1/fader',{value:.9})).status,403);assert.equal((await call('/api/users')).status,403);assert.equal((await call('/api/channels')).status,200);
   await call('/api/auth/logout',{});login=await call('/api/auth/login',{name:'Musician',password:'musician-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
