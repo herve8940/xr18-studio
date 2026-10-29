@@ -1,0 +1,118 @@
+name: Release desktop installers
+on:
+  push:
+    branches: [main]
+    paths: ['package.json', '.github/workflows/release.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  package:
+    if: github.ref == 'refs/heads/main'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            name: windows
+          - os: macos-15-intel
+            name: macos-intel
+          - os: macos-latest
+            name: macos-apple-silicon
+          - os: ubuntu-latest
+            name: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm --prefix web ci
+      - run: npm test
+      - run: npm run desktop:package
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Test Windows installation and launch
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem release/XR18-Studio-Windows-*.exe | Select-Object -First 1
+          $installDir = Join-Path $env:RUNNER_TEMP 'XR18SmokeInstall'
+          $result = Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$installDir" -Wait -PassThru
+          if ($result.ExitCode -ne 0) { throw "Installation failed: $($result.ExitCode)" }
+          node desktop/smoke.cjs (Join-Path $installDir 'XR18 Studio.exe')
+          if ($LASTEXITCODE -ne 0) { throw 'Installed application failed to start' }
+      - name: Test macOS disk image and launch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=$(find release -maxdepth 1 -name '*.dmg' -print -quit)
+          mount="$RUNNER_TEMP/xr18-dmg"
+          mkdir -p "$mount"
+          hdiutil attach "$image" -mountpoint "$mount" -nobrowse
+          trap 'hdiutil detach "$mount"' EXIT
+          node desktop/smoke.cjs "$mount/XR18 Studio.app/Contents/MacOS/XR18 Studio"
+      - name: Test extracted Linux AppImage launch
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          image=$(find release -maxdepth 1 -name '*.AppImage' -print -quit)
+          chmod +x "$image"
+          "$image" --appimage-extract > /dev/null
+          xvfb-run -a node desktop/smoke.cjs "$PWD/squashfs-root/AppRun"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ matrix.name }}
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.deb
+          if-no-files-found: error
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installers-*
+          path: installers
+          merge-multiple: true
+      - name: Check packages and generate checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          root=pathlib.Path('installers')
+          version=json.loads(pathlib.Path('package.json').read_text())['version']
+          expected=[f'XR18-Studio-Windows-{version}.exe',f'XR18-Studio-macOS-{version}-x64.dmg',f'XR18-Studio-macOS-{version}-arm64.dmg',f'XR18-Studio-Linux-{version}-x64.AppImage',f'XR18-Studio-Linux-{version}-x64.deb']
+          for name in expected:
+              assert (root/name).is_file(), f'Missing package: {name}'
+          files=sorted(p for p in root.iterdir() if p.is_file())
+          (root/'SHA256SUMS.txt').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n' for p in files))
+          PY
+      - name: Publish version after every platform passed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(node -p "require('./package.json').version")
+          tag="v$version"
+          if gh release view "$tag" > /dev/null 2>&1; then
+            echo "Release already exists. Refusing to overwrite published installers."
+            exit 1
+          fi
+          gh release create "$tag" installers/* --target "$GITHUB_SHA" --title "XR18 Studio $version" --notes-file docs/RELEASE_1_0.md --draft
+          gh release edit "$tag" --draft=false --latest

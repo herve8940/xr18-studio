@@ -1,7 +1,7 @@
 {
   "name": "xr18-studio",
   "private": true,
-  "version": "0.3.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -73,14 +73,18 @@
     },
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "category": "AudioVideo",
-      "artifactName": "XR18-Studio-Linux-${version}-${arch}.${ext}"
+      "artifactName": "XR18-Studio-Linux-${version}-${arch}.${ext}",
+      "maintainer": "Hervé Naessens"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }

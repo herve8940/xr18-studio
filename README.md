@@ -1,3 +1,15 @@
+# XR18 Studio 1.0
+
+[🇫🇷 Guide utilisateur illustré](docs/USER_GUIDE_FR.md) · [🇬🇧 Illustrated user guide](docs/USER_GUIDE_EN.md) · [Télécharger / Download](https://github.com/herve8940/xr18-studio-/releases/latest)
+
+**FR** — Assistant de mixage pour Behringer XR18 : parcours guidé, console, retours, effets et scènes. Installateurs autonomes Windows, Mac Intel / Apple Silicon et Linux. Interface en français ; guides bilingues. Voir les [notes et limites de la 1.0](docs/RELEASE_1_0.md), notamment la validation matérielle encore nécessaire.
+
+**EN** — Behringer XR18 mixing assistant with a guided workflow, console, monitors, effects and scenes. Self-contained Windows, Intel / Apple Silicon Mac and Linux installers. French interface; bilingual guides. Read the [1.0 release notes and limitations](docs/RELEASE_1_0.md), including pending physical hardware validation.
+
+![16 entrées / 16 inputs](docs/images/console.png)
+
+---
+
 # XR18 Studio
 
 Application de mixage XR18 pour Windows, macOS et Linux : simulation, connexion OSC, contrôles de console, scènes, effets, retours personnels, répétitions, ReaCue et MCP.

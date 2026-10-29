@@ -1,4 +1,4 @@
-# XR18 Studio 0.3.0 — état du développement
+# XR18 Studio 1.0.0 — état du développement
 
 Cette version expose les 2 636 paramètres du catalogue XR18 connu. Les essais sur émulateur ne constituent pas une qualification matérielle ni une validation pour le concert.
 
@@ -31,3 +31,7 @@ Voir `FONCTIONS_0_2.md` pour l’utilisation et la validation.
 ## Mode guidé 0.3
 
 Accueil Mon ingé son, préparation de groupe persistante, parcours de balance en six étapes, test des niveaux OSC récents, conseils locaux selon symptômes, petites corrections prévisualisées, sauvegarde et annulation. Dialogue OpenAI facultatif, sans exécution de ses réponses ; configuration de bureau avec clé chiffrée via Electron safeStorage (refus du backend basic_text), ou variables serveur. Le conseiller ne reçoit pas d’audio. Guide : `INGE_SON.md`.
+
+## Distribution 1.0
+
+Guides illustrés français et anglais, installateur Windows par utilisateur en un clic, DMG Intel/Apple Silicon, AppImage et Debian. Le workflow release ne publie qu’après réussite des quatre plateformes et de leurs tests de démarrage. Les résultats réels sont visibles dans GitHub Actions ; une définition de workflow ne prouve pas sa réussite. Les paquets ne sont pas signés/notariés.

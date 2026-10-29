@@ -1,33 +1,28 @@
-# XR18 Studio — application de bureau multiplateforme (prototype)
+# Desktop packaging / Distribution de bureau
 
-## Plateformes cibles
-- **Windows** : installateur NSIS (.exe).
-- **macOS** : image disque (.dmg), Intel et Apple Silicon selon le runner.
-- **Linux** : AppImage et paquet Debian (.deb).
+Guides utilisateurs : [Français](USER_GUIDE_FR.md) · [English](USER_GUIDE_EN.md).
 
-Les packages sont construits par GitHub Actions `.github/workflows/desktop.yml`. Dans la PR, consulter **Actions → Desktop packages → Artifacts** une fois les jobs terminés. Un artefact n'est pas une version publiée ou signée.
+## Architecture
 
-## Installation depuis les sources
-Prérequis : Node.js 22, npm et les outils de compilation natifs pour better-sqlite3.
+Electron starts the backend in its main process and serves the compiled Vite interface on an available loopback port. SQLite and connection settings use the OS user-data directory. First launch defaults to simulation. Discovery, read-only connection and explicit control activation are available without restarting. The renderer is sandboxed and isolated; Node integration is disabled.
+
+## Reproducible local build
+
+Use Node.js 22 and native compilation prerequisites for better-sqlite3:
 
 ```sh
-npm install
-npm --prefix web install
-npm run desktop:dev
-```
-
-Pour produire un installateur local :
-```sh
+npm ci
+npm --prefix web ci
+npm test
 npm run desktop:package
 ```
 
-## Architecture
-Electron charge la version Vite compilée via un serveur HTTP local (127.0.0.1:3000). Le backend est démarré dans le processus principal Electron. La base SQLite est placée dans le répertoire de données utilisateur du système d'exploitation. Le mode matériel est **forcé en simulation** pour éviter toute commande OSC non validée.
+Build on each target OS. Native dependencies must match Electron and the target CPU. Output is in `release/`. Windows NSIS installs per-user with shortcuts; macOS uses DMG; Linux uses AppImage and Debian packages. OS prompts and AppImage executable permissions may require extra steps. Packages are not signed/notarized.
 
-## Limitations de sécurité et distribution
-- Les packages ne sont pas encore signés/notarisés. Windows SmartScreen et macOS Gatekeeper peuvent afficher des avertissements.
-- Les ports locaux sont fixes (3000) ; un autre service peut empêcher le démarrage. La gestion robuste de ports reste à réaliser.
-- Aucun contrôle XR18 réel complet ; effets, traitements, bus et vumètres ne sont pas encore connectés à une console physique.
-- L'API locale n'a pas d'authentification. Ne pas publier de port vers Internet, ne pas faire de reverse proxy.
-- Ne pas utiliser cette version pour le mixage d'un concert ou le contrôle des retours in-ear réels.
-- Tests de compilation, packaging et installation sur les trois OS à confirmer par CI.
+## GitHub release pipeline
+
+`.github/workflows/desktop.yml` builds PR candidates and uploads temporary Actions artifacts. `.github/workflows/release.yml` runs when `package.json` or the release workflow changes on main, or by manual dispatch on main. Four runners cover Windows x64, Mac Intel, Mac Apple Silicon and Linux x64. Each executes tests and builds; startup checks cover installed Windows, mounted macOS DMG and extracted Linux AppImage. Linux CI alone disables Chromium sandbox for its startup check; normal app startup keeps sandbox settings.
+
+Only after every matrix job passes, a separate job downloads all packages, checks required filenames, generates SHA-256 checksums, creates the tag at the tested commit and uploads assets to a draft release. It publishes the release after upload succeeds. Existing releases are never overwritten. A failed run leaves no public partial release; if asset upload fails, a draft may need inspection before retrying. Increase the package versions for a subsequent release.
+
+Physical-console validation remains separate from packaging and software checks; see [release limitations](RELEASE_1_0.md). No automatic updater or commercial signing credentials are configured.
