@@ -1,3 +1,11 @@
+# XR18 Studio 2.0.0-beta.2 — Correctif de synchronisation
+
+Corrige l’adresse DIM-PFL du catalogue : `/config/solo/dimpfl` remplace la faute `/config/solo/dimplf`, qui provoquait « Pas de réponse XR18 » pendant Table → PC. Les anciens fichiers de scènes JSON version 2 contenant la faute sont normalisés lors de leur validation ; aucune lecture manquante n’est ignorée.
+
+Après installation, relancer Table → PC. La validation du reste du catalogue sur la console physique reste nécessaire : ce correctif ne prouve pas qu’aucune autre adresse ne pose problème.
+
+## Previous beta
+
 # XR18 Studio 2.0.0-beta.1 — Console organisée
 
 Préversion de la nouvelle génération de XR18 Studio. La couverture complète de toutes les fonctions XR18 n’est pas encore atteinte.

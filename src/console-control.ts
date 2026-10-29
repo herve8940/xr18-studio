@@ -9,8 +9,14 @@ export class ConsoleControl {
  identity(){const s=this.xr.status();return JSON.stringify([s.mode,s.host,s.port,s.writesEnabled]);}
  catalog(prefix:string){return Object.values(PARAMETERS).filter(p=>p.address.startsWith(prefix)).map(p=>({...p,...(this.xr.parameterState()[p.address]?{state:{...this.xr.parameterState()[p.address]!,display:fromWire(p.address,this.xr.parameterState()[p.address]!.value)}}:{})}));}
  validateScene(input:unknown):CompleteScene {
-  const s=input as CompleteScene;
+  let s=input as CompleteScene;
   if(!s||s.version!==2||s.scope!=='console'||!s.values||typeof s.values!=='object'||Array.isArray(s.values)||!Object.keys(s.values).length||!Array.isArray(s.fx)||s.fx.length!==4||s.fx.some((f,i)=>f.slot!==i+1))throw Error('Scène complète invalide');
+  // Accept PC scenes made by older builds with the misspelled DIM-PFL key.
+  s=structuredClone(s);
+  if(Object.hasOwn(s.values,'/config/solo/dimplf')){
+   if(Object.hasOwn(s.values,'/config/solo/dimpfl')&&s.values['/config/solo/dimpfl']!==s.values['/config/solo/dimplf'])throw Error('Valeurs DIM-PFL contradictoires');
+   s.values['/config/solo/dimpfl']=s.values['/config/solo/dimplf']!;delete s.values['/config/solo/dimplf'];
+  }
   for(const [a,v] of Object.entries(s.values))validateWire(a,v);
   for(const f of s.fx)if(!Number.isInteger(f.algorithm)||f.algorithm<0||f.algorithm>60||!Array.isArray(f.parameters)||f.parameters.length>64||f.parameters.some(p=>!['i','f'].includes(p.type)||!Number.isFinite(p.value)||(p.type==='f'&&(p.value<0||p.value>1))||(p.type==='i'&&(!Number.isInteger(p.value)||p.value<0||p.value>127))))throw Error('Vecteur FX invalide');
   return structuredClone(s);

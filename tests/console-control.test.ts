@@ -8,6 +8,20 @@ import {LibraryStore} from '../src/library-store.js';
 import {encodeOsc,decodeOsc,oscFloat,type OutgoingOscArg} from '../src/osc.js';
 import {processingCommands} from '../src/processing-osc.js';
 
+test('DIM-PFL uses the hardware address and migrates older PC scenes without mutating the import',async()=>{
+ assert.ok(PARAMETERS['/config/solo/dimpfl']);
+ assert.equal(PARAMETERS['/config/solo/dimplf'],undefined);
+ const xr=new XR18({mode:'simulation',host:'127.0.0.1',port:10024,enableWrites:false}),library=new LibraryStore(':memory:'),control=new ConsoleControl(xr,library);
+ try{
+  const scene=await control.capture();assert.ok(Object.hasOwn(scene.values,'/config/solo/dimpfl'));
+  scene.values['/config/solo/dimplf']=1;delete scene.values['/config/solo/dimpfl'];
+  const migrated=control.validateScene(scene);
+  assert.equal(migrated.values['/config/solo/dimpfl'],1);assert.equal(migrated.values['/config/solo/dimplf'],undefined);
+  assert.equal(scene.values['/config/solo/dimplf'],1);
+  scene.values['/config/solo/dimpfl']=0;assert.throws(()=>control.validateScene(scene),/contradictoires/);
+ }finally{xr.close();library.close();}
+});
+
 test('physical units and integer enums match documented wire formats',()=>{
  assert.equal(toWire('/ch/01/dyn/ratio','4.0'),6);
  assert.equal(toWire('/ch/01/eq/1/g',3),.6);
@@ -38,6 +52,7 @@ test('real OSC emulator verifies floats including 0/1, int ratios, names, routin
  peer.on('message',(data,remote)=>{const m=decodeOsc(data);const reply=(a:string,args:OutgoingOscArg[])=>peer.send(encodeOsc(a,args),remote.port,remote.address);
   if(m.address==='/lr/mix/fader'){reply(m.address,[oscFloat(.5)]);return;}
   if(m.address==='/fx/1/par'){if(m.args.length){writes.push({address:m.address,tags:m.tags});reply(m.address,m.args.map((v,i)=>m.tags?.[i]==='f'?oscFloat(v as number):v));}else reply(m.address,[oscFloat(1),1]);return;}
+  if(m.address==='/config/solo/dimplf')return;
   const p=PARAMETERS[m.address];if(!p)return;
   if(m.args.length){writes.push({address:m.address,tags:m.tags});wire.set(m.address,m.args[0] as number|string);}
   const v=mismatch ? .123 :wire.get(m.address)??defaultWire(p);reply(m.address,[p.type==='f'?oscFloat(v as number):v]);
@@ -48,6 +63,7 @@ test('real OSC emulator verifies floats including 0/1, int ratios, names, routin
   const p=await control.preview({'/ch/01/config/name':'Basse','/ch/01/dyn/ratio':'4.0','/ch/01/eq/1/g':15,'/routing/usb/01/src':4});await control.apply(p.token);
   assert.deepEqual(writes.map(w=>w.tags),['s','i','f','i']);assert.equal(wire.get('/ch/01/dyn/ratio'),6);assert.equal(wire.get('/ch/01/eq/1/g'),1);
   const fx=await xr.readFx(1);assert.deepEqual(fx.parameters,[{type:'f',value:1},{type:'i',value:1}]);await xr.applyFx(fx);assert.equal(writes.at(-1)?.tags,'fi');
+  assert.equal(await xr.readParameter('/config/solo/dimpfl'),0);
   mismatch=true;await assert.rejects(xr.writeParameter('/ch/01/eq/1/g',.8),/Lecture différente/);
   const before=writes.length;await assert.rejects(xr.writeParameter('/headamp/01/phantom',1),/48 V/);assert.equal(writes.length,before);
   xr.close();await assert.rejects(xr.writeParameter('/dca/1/fader',.5),/déconnectée/);
