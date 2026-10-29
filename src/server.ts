@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import { XR18 } from "./xr18.js";
+import { discoverXR18 } from "./discovery.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
 const database = new StudioDatabase();
@@ -14,6 +15,14 @@ const server = http.createServer(async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("Cache-Control", "no-store");
   // Bound to loopback by default; no authentication yet. Do not expose this API.
+  if (req.method === "GET" && path === "/api/discovery") {
+    try {
+      if (req.headers.origin && !["http://127.0.0.1","http://localhost"].some(base => req.headers.origin!.startsWith(base + ":"))) throw Error("Remote origin denied");
+      const devices = await discoverXR18();
+      res.end(JSON.stringify({ devices, current: xr18.status().host ?? null, note: "Detection only; connection mode changes require backend restart." }));
+    } catch (err) { res.writeHead(500); res.end(JSON.stringify({error:(err as Error).message})); }
+    return;
+  }
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
