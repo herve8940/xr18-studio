@@ -1,22 +1,19 @@
 # XR18 Studio
 
-Application locale de gestion de la console Behringer X Air XR18, des retours in-ear, des répétitions et des setlists, avec serveur MCP et intégration ReaCue prévue.
+Application de mixage XR18 pour Windows, macOS et Linux : simulation, connexion OSC, contrôles de console, scènes, effets, retours personnels, répétitions, ReaCue et MCP.
 
-## Objectifs
+Version 0.2.0 candidate : compilation et tests automatisés ; validation sur la console physique requise avant utilisation en concert.
 
-- Rendre le pilotage de la XR18 simple et sécurisé, sans retirer ses fonctions avancées.
-- Proposer une interface web responsive adaptée aux musiciens.
-- Centraliser les commandes OSC/UDP dans un moteur partagé par le backend, l'interface et le MCP.
-- Fonctionner en local sans dépendance obligatoire à l'IA.
+```sh
+npm run setup
+npm run studio
+```
 
-## Architecture cible
+Backend et interface compilés : `npm run build:all`. Application de bureau : `npm run desktop:package`. Les installateurs sont produits par GitHub Actions.
 
-React + TypeScript + Tailwind CSS / Node.js + TypeScript / WebSocket / OSC UDP / MCP / SQLite.
+- [État vérifié et limites](docs/ETAT_DU_PROJET.md)
+- [Guide des fonctions, HTTPS, ReaCue et MCP](docs/FONCTIONS_0_2.md)
+- [Connexion en un clic](docs/CONNEXION_XR18.md)
+- [Installation de bureau](docs/INSTALLATION_CLE_EN_MAIN.md)
 
-## État
-
-Initialisation du dépôt. Aucune fonctionnalité XR18 n'est encore validée sur la console réelle.
-
-## Sécurité
-
-Ne jamais exposer directement la console à Internet. Toute commande sensible doit être protégée, confirmée et journalisée.
+Le moteur OSC est unique ; l’interface, les clients musiciens et MCP passent par son API et ses droits. Une connexion ou une lecture ne change pas le mixage. Les scènes natives `.scn` avec FX textuels opaques restent archivables, mais leur rappel est refusé ; les scènes complètes JSON version 2 conservent directement les vecteurs OSC typés.

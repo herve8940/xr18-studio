@@ -1,3 +1,4 @@
+import {networkInterfaces} from 'node:os';
 import Database from 'better-sqlite3';
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual, createHash } from 'node:crypto';
 import type { IncomingMessage } from 'node:http';
@@ -27,6 +28,22 @@ export class Access {
  logout(req:IncomingMessage){const token=this.token(req);if(token)this.db.prepare('DELETE FROM sessions WHERE token=?').run(this.digest(token));}
  log(user:User,action:string){this.db.prepare('INSERT INTO audit(at,user_id,action) VALUES(?,?,?)').run(new Date().toISOString(),user.id,action);}
  audit(){return this.db.prepare('SELECT * FROM audit ORDER BY id DESC LIMIT 200').all();}
+ update(id:string,role:unknown,buses:unknown,password?:unknown){
+  const old=this.list().find(u=>u.id===id);if(!old)throw Error('Compte absent');
+  if(!['admin','musician','guest'].includes(String(role))||!Array.isArray(buses)||buses.some(b=>!Number.isInteger(b)||b<1||b>6))throw Error('Rôle ou bus invalides');
+  if(old.role==='admin'&&role!=='admin'&&this.list().filter(u=>u.role==='admin').length===1)throw Error('Conserver au moins un administrateur');
+  if(password!==undefined&&(typeof password!=='string'||password.length<12||password.length>200))throw Error('Mot de passe de 12 à 200 caractères requis');
+  this.db.transaction(()=>{
+   this.db.prepare('UPDATE users SET role=?,buses=? WHERE id=?').run(role,JSON.stringify([...new Set(buses)]),id);
+   if(typeof password==='string'){const salt=randomBytes(16).toString('hex');this.db.prepare('UPDATE users SET salt=?,hash=? WHERE id=?').run(salt,scryptSync(password,salt,64).toString('hex'),id);}
+   this.db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);
+  })();return this.list().find(u=>u.id===id)!;
+ }
+ remove(id:string){
+  const old=this.list().find(u=>u.id===id);if(!old)throw Error('Compte absent');
+  if(old.role==='admin'&&this.list().filter(u=>u.role==='admin').length===1)throw Error('Conserver au moins un administrateur');
+  this.db.transaction(()=>{this.db.prepare('DELETE FROM sessions WHERE user_id=?').run(id);this.db.prepare('DELETE FROM users WHERE id=?').run(id);})();return {ok:true};
+ }
  close(){this.db.close();}
 }
 export function permitted(user:User,method:string,path:string){
@@ -35,12 +52,17 @@ export function permitted(user:User,method:string,path:string){
  if(path.startsWith('/api/users')||path==='/api/audit'||path.startsWith('/api/reacue'))return false;
  if(method==='GET')return true;
  // A musician can change only assigned monitor sends, never FOH or another bus.
+ const profile=/^\/api\/monitor\/([1-6])\/profiles(?:\/[a-f0-9-]+\/apply)?$/.exec(path);
+ if(profile)return user.role==='musician'&&method==='POST'&&user.buses.includes(Number(profile[1]));
  const send=/^\/api\/monitor\/([1-6])\/channels\/(\d+)$/.exec(path);
  return user.role==='musician'&&method==='POST'&&!!send&&user.buses.includes(Number(send[1]));
 }
 export function sameOrigin(req:IncomingMessage){
- const host=req.headers.host??'';if(!/^(localhost|127\.0\.0\.1):\d+$/.test(host))return false;
+ const host=req.headers.host??'';
+ const allowed=new Set(['localhost','127.0.0.1',...(process.env.XR18_ALLOWED_HOSTS??'').split(',').filter(Boolean)]);
+ try{for(const entries of Object.values(networkInterfaces()))for(const a of entries??[])if(a.family==='IPv4')allowed.add(a.address);}catch{/* Explicitly allowed hosts remain available on restricted systems. */}
+ let target:URL;try{target=new URL('http://'+host);}catch{return false;}
+ if(!allowed.has(target.hostname)||!target.port||target.username||target.password||target.pathname!=='/')return false;
  if(!req.headers.origin)return true;
- try{const origin=new URL(req.headers.origin);return origin.protocol==='http:'&&(['localhost','127.0.0.1'].includes(origin.hostname))&&(origin.host===host||(['5173','5174'].includes(origin.port)));}catch{return false;}
+ try{const origin=new URL(req.headers.origin),secure=Boolean((req.socket as {encrypted?:boolean}|undefined)?.encrypted);return origin.protocol===(secure?'https:':'http:')&&(origin.host===host||(!secure&&['localhost','127.0.0.1'].includes(target.hostname)&&['localhost','127.0.0.1'].includes(origin.hostname)&&['5173','5174'].includes(origin.port)));}catch{return false;}
 }
-

@@ -21,13 +21,23 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   assert.equal((await call('/api/connection',{mode:'real',host:'999.1.2.3'})).status,400);
   assert.equal((await call('/api/connection',{mode:'simulation'},'POST')).status,200);
   const forbiddenOrigin=await fetch(base+'/api/connection',{method:'POST',headers:{Cookie:cookie,Origin:'https://evil.example','Content-Type':'application/json'},body:JSON.stringify({mode:'simulation'})});assert.equal(forbiddenOrigin.status,403);
+  let cp=await (await call('/api/console/preview',{values:{'/ch/01/config/name':'Chant','/routing/usb/01/src':2}})).json() as {token:string};assert.ok(cp.token);
+  assert.equal((await call('/api/console/apply',{token:cp.token,confirm:true})).status,200);
+  const params=await (await call('/api/console/parameters?prefix=/ch/01/config/')).json() as {parameters:{address:string;state?:{value:unknown}}[]};assert.equal(params.parameters.find(p=>p.address.endsWith('/name'))?.state?.value,'Chant');
+  cp=await (await call('/api/console/preview',{values:{'/headamp/01/phantom':1}})).json() as {token:string};assert.equal((await call('/api/console/apply',{token:cp.token,confirm:true})).status,400);
+  assert.equal((await call('/api/reacue/stop',{})).status,200);
+  await call('/api/users',{name:'Musician',password:'musician-long-password',role:'musician',buses:[2]});
   const created=await (await call('/api/library',{kind:'scene',name:'First'})).json() as {id:string};assert.ok(created.id);
   await call('/api/channels/1/fader',{value:.2});const preview=await (await call('/api/library/'+created.id+'/preview',{})).json() as {token:string};assert.equal((await call('/api/library/'+created.id+'/apply',{token:preview.token,confirm:true})).status,200);
   const channels=await (await call('/api/channels')).json() as {fader:number}[];assert.equal(channels[0]!.fader,.5);
   await call('/api/users',{name:'Guest',password:'guest-long-password',role:'guest',buses:[]});await call('/api/auth/logout',{});assert.equal((await call('/api/channels')).status,401);
   login=await call('/api/auth/login',{name:'Guest',password:'guest-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
+  assert.equal((await call('/api/console/preview',{values:{'/ch/01/mix/fader':0}})).status,403);
   assert.equal((await call('/api/discovery')).status,403);assert.equal((await call('/api/connection',{mode:'simulation'})).status,403);
   assert.equal((await call('/api/channels/1/fader',{value:.9})).status,403);assert.equal((await call('/api/users')).status,403);assert.equal((await call('/api/channels')).status,200);
+  await call('/api/auth/logout',{});login=await call('/api/auth/login',{name:'Musician',password:'musician-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
+  assert.equal((await call('/api/monitor/3/channels/1',{value:.05})).status,403);assert.equal((await call('/api/monitor/2/channels/1',{value:.5})).status,400);assert.equal((await call('/api/monitor/2/channels/1',{value:.05})).status,200);
+  const profile=await (await call('/api/monitor/2/profiles',{name:'Mon retour'})).json() as {id:string};assert.ok(profile.id);assert.equal((await call('/api/monitor/3/profiles/'+profile.id+'/apply',{confirm:true})).status,403);assert.equal((await call('/api/monitor/2/profiles/'+profile.id+'/apply',{confirm:true})).status,200);
  }finally{child.kill('SIGTERM');await new Promise(r=>child.once('exit',r));await rm(directory,{recursive:true,force:true});}
 });
 

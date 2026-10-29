@@ -4,7 +4,8 @@ import {isIPv4} from 'node:net';
 import {decodeOsc,encodeOsc} from './osc.js';
 
 export interface DiscoveredXR18 {host:string;port:number;name:string;model:'XR18'}
-export function broadcastTargets(interfaces=networkInterfaces()) {
+function interfacesSafe(){try{return networkInterfaces();}catch{return {};}}
+export function broadcastTargets(interfaces=interfacesSafe()) {
  const targets=new Set<string>();
  for(const addresses of Object.values(interfaces))for(const a of addresses??[]){
   if(a.family!=='IPv4'||a.internal||!isIPv4(a.address)||!isIPv4(a.netmask))continue;

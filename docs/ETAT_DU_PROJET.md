@@ -1,20 +1,29 @@
-# Version de bureau — état vérifié
+# XR18 Studio 0.2.0 — état du développement
 
-La branche release/desktop-finalization rassemble les développements jusqu’à la PR 20.
+Cette version expose les 2 636 paramètres du catalogue XR18 connu. Les essais sur émulateur ne constituent pas une qualification matérielle ni une validation pour le concert.
 
-Vérifié : compilation TypeScript backend et frontend ; 20 tests automatisés réussis ; CI GitHub réussie. Application Windows assemblée avec module SQLite Windows. L’installation et l’exécution sur un PC Windows restent à vérifier.
+## Implémenté
 
-Connexion : menu Connexion, puis Simulation, XR18 lecture seule ou XR18 contrôle. Pour une connexion réelle, choisir un fichier .txt contenant uniquement l’adresse IPv4 de la console (exemple 192.168.1.100). L’application redémarre après le choix et conserve ce réglage. Le contrôle demande une confirmation.
+- Détection et connexion sans redémarrage, mode lecture/contrôle, configuration persistante.
+- Entrées : nom/couleur réels, gain, 48 V avec confirmation distincte, inversion, coupe-bas, EQ, gate, compresseur, fader, mute, pan et sources.
+- Aux stéréo, six bus, master, quatre envois et retours FX, quatre DCA, affectations, liens, groupes de mute, source d’écoute/solo, routages analogiques/USB/P16.
+- Paramètres typés avec unités physiques, prévisualisation, sauvegarde et comparaison OSC après écriture. Les ratios de compression utilisent des indices entiers.
+- Application matérielle des presets EQ/gate/compresseur ; seuils absents conservés, ratio matériel présenté, valeurs hors plage refusées.
+- FX : choix des 61 algorithmes, capture/édition de vecteurs OSC typés, presets persistants, sauvegarde du slot précédent et comparaison après application. Les unités de l’éditeur FX sont les unités OSC ; les cartes musicales restent consultatives.
+- Scènes JSON version 2 : capture exhaustive du catalogue connu et des quatre vecteurs FX, sauvegarde avant rappel, confirmation 48 V, rappel simulation ou transport réel avec lectures comparées. Une lecture absente fait échouer la capture.
+- Retours personnels : droits par bus, plafond et pas de variation, profils SQLite et rappel progressif.
+- ReaCue : associations morceau/section, armer/arrêter, déduplication, interruption avant la prochaine écriture, scènes version 2 sans 48 V, action REAPER et client Python de surveillance.
+- Comptes, droits HTTP/WebSocket et accès multiappareils configurable sous HTTPS. Local par défaut.
+- MCP de lecture et écriture confirmée via la même API authentifiée, sans deuxième moteur OSC.
+- Morceaux, setlists, répétitions, notes et bibliothèques SQLite existants conservés.
 
-Disponible : faders et mutes de 16 entrées et master, lecture des niveaux OSC, lecture/écriture directe de paramètres avancés autorisés, bibliothèque de presets de préparation, morceaux, répétitions, setlists et profils in-ear SQLite, MCP en lecture seule.
+## Limites connues
 
-Limites : presets de traitement, snapshots et mixes personnels ne constituent pas des scènes matérielles complètes. Application automatique des presets FX, routage, DCA, authentification multiutilisateur, ReaCue et validation physique XR18 non terminés. Les noms des tranches sont des exemples. Le backend reste limité à l’ordinateur local.
+- Aucun essai sur la XR18 physique ou l’installation REAPER de l’utilisateur pendant ce développement. Adresses, plages et réponses de groupe à confirmer sur son firmware.
+- Les `.scn` natifs sont conservés/exportables. Le rappel des fichiers contenant des paramètres FX textuels opaques reste refusé avant toute écriture : les scènes JSON version 2 évitent cette conversion incertaine en utilisant les vecteurs OSC capturés.
+- Une opération interrompue peut laisser un état partiel ; la sauvegarde est conservée et aucun retour automatique silencieux n’est envoyé.
+- Les anciennes scènes version 1 restent rappelables en simulation. Capturer une version 2 pour le matériel.
+- Le catalogue n’inclut pas tous les paramètres de tous les firmwares, les autres modèles X AIR, les réglages réseau ou les mises à jour firmware.
+- Pas d’analyse acoustique audio ni de correction automatique par IA : OSC transporte paramètres et niveaux, pas les signaux audio.
 
-Téléchargements des installeurs : ouvrir la page Actions du dépôt, exécution Desktop packages, puis Artifacts (connexion GitHub nécessaire). Les builds Windows, macOS et Linux sont indépendants.
-
-
-## Incrément scènes / FX / comptes / ReaCue
-
-Voir `docs/SHOW_CONTROL.md` : comptes locaux avec contrôle HTTP et WebSocket, rôles par bus, bibliothèque SQLite, scènes applicatives avec sauvegarde préalable et prévisualisation, archives natives .scn, presets FX OSC typés, point d'entrée et client Python ReaCue. Rappel de scènes applicatives et ReaCue testés en simulation. FX matériel expérimental désactivé par défaut.
-
-Toujours à valider ou terminer : essais physiques XR18, correspondances musicales des paramètres FX, rappel matériel complet des .scn, déclencheur dans ReaCue existant, accès simultané depuis plusieurs appareils et essai sur le PC Windows utilisateur. Un test de lancement du paquet installé est ajouté au workflow Windows ; attendre son résultat avant d'en annoncer la réussite.
+Voir `FONCTIONS_0_2.md` pour l’utilisation et la validation.
