@@ -59,3 +59,7 @@ Tests automatisés : unités et formats OSC, noms, ratio entier, routages, DCA, 
 Sur matériel : vérifier chaque famille de contrôles sur le firmware de la XR18, les FX et leur lecture vectorielle, capturer/rappeler une scène de test, connecter les clients HTTPS, essayer le déclencheur REAPER et contrôler les niveaux avant utilisation en concert.
 
 Références : [Music Tribe, protocole X AIR](https://cdn.mediavalet.com/aunsw/musictribe/hmivS7F05kKSJlWDYPGLpA/agTKkSIWS0y1bJl97YZEjg/Original/X%20AIR%20Remote%20Control%20Protocol.pdf), [xair-scene-manager](https://github.com/stblassitude/xair-scene-manager), [transport xair-api-go](https://github.com/stblassitude/xair-api-go/blob/main/WIRE_PROTOCOL.md). Attribution MIT des schémas dans `THIRD_PARTY_NOTICES.txt`.
+
+## Installateurs
+
+Les Actions GitHub produisent Windows, Linux et deux paquets macOS distincts : Intel (x64, pour le MacBook Intel) et Apple Silicon (arm64). Choisir le paquet correspondant au processeur. Les applications ne sont pas signées/notariées ; installation et test sur le poste cible restent nécessaires.

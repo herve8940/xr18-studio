@@ -16,8 +16,10 @@ jobs:
         include:
           - os: windows-latest
             name: windows
+          - os: macos-15-intel
+            name: macos-intel
           - os: macos-latest
-            name: macos
+            name: macos-apple-silicon
           - os: ubuntu-latest
             name: linux
     runs-on: ${{ matrix.os }}
@@ -58,4 +60,5 @@ jobs:
             release/*.AppImage
             release/*.deb
           if-no-files-found: error
+
 
