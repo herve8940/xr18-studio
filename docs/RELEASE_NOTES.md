@@ -1,29 +1,21 @@
-# XR18 Studio 1.1.0 — Synchronisation / Synchronization
+# XR18 Studio 1.2.0 — Entrées / Input controls
 
 ## Français
 
-Après connexion, Configuration s’ouvre avec un choix du sens et un bouton Synchroniser, inspirés du panneau de connexion X Air Edit :
+Vue mixeur : bouton **Entrée / Gain** sur chaque tranche et panneau réel remplaçant l’ancienne courbe EQ illustrative. Cliquer sur **Lire l’entrée** pour relire la source analogique/USB et les paramètres. Affichage et édition du gain du préampli physique réellement affecté au canal ; trim à la place du gain si retour USB. Valeurs en dB et plages fournies par le catalogue serveur, sans conversion inventée côté interface.
 
-- **Table → PC** (choix par défaut) : relire le catalogue des paramètres connus et les quatre vecteurs FX ; conserver une copie PC indépendante dans SQLite. Lecture seule, aucun envoi de réglage. Les copies précédentes sont conservées.
-- **PC → Table** : choisir une copie PC ou une scène complète JSON v2. Activer le contrôle, préparer un aperçu des différences, puis confirmer l’envoi. Les changements de 48 V sont exclus par défaut et nécessitent deux accords distincts pour être inclus et appliqués. Sauvegarde complète avant écriture ; vérification des réponses après chaque écriture.
-- Préparation en simulation conservée automatiquement avant une connexion réelle ; bouton manuel disponible. Les valeurs par défaut non préparées font aussi partie de cette copie : vérifier les différences avant envoi.
-- La copie PC ne se laisse pas écraser par les notifications temps réel. La vue de mixage en ligne continue de refléter la table ; ce n’est pas un éditeur hors ligne détaché en mode connecté.
-- Comparaison avec une nouvelle lecture avant application : si la table a changé depuis l’aperçu, recommencer. Reconnexion : aperçu invalidé. Droits réservés aux administrateurs. Opérations consignées dans le journal.
+Le panneau expose également alimentation 48 V (entrée analogique), inversion de polarité Ø, activation et fréquence du coupe-bas, et raccourcis Égaliseur, Gate/Compresseur, Envois/Retours. Les valeurs absentes restent non lues. Les réglages affichés sont ceux de la dernière lecture ; relire pour les actualiser après utilisation d’une autre application.
 
-Ne pas manipuler une autre application pendant une synchronisation. OSC ne propose pas de transaction atomique ou de verrouillage des autres clients : un changement concurrent pendant l’envoi ne peut pas être exclu. Une erreur peut laisser un état partiel ; la sauvegarde reste dans les scènes. Une capture incomplète échoue plutôt que d’inventer des paramètres. Seul le catalogue connu est couvert ; compatibilité de chaque paramètre sur le firmware utilisateur encore à vérifier.
+Toute écriture passe par l’aperçu existant, une sauvegarde et la comparaison des réponses. Le routage est relu avant application ; si la source a changé, recommencer. Le 48 V exige une confirmation supplémentaire. Le gain et le 48 V appartiennent à la prise physique : d’autres canaux utilisant cette prise sont affectés aussi. Le gain peut changer le niveau du mix et des retours ainsi que la réaction des traitements ; travailler progressivement, sorties à faible niveau.
 
-Validation : 55 tests locaux réussis, vérifications HTTP supplémentaires, compilation backend/frontend. Tests des copies distinctes, lecture sans écriture, différences, sauvegarde, état concurrent, 48 V, reconnexion et droits. Les installateurs sont publiés après les tests empaquetés sur les quatre plateformes. Essai des deux sens sur XR18 physique encore nécessaire. Paquets non signés/notariés.
+Validation : compilation backend/frontend, 55 tests existants et vérifications des paquets en CI. Navigateur en simulation : source identifiée, aperçu du gain sans écriture, application avec sauvegarde, deux confirmations pour le 48 V, aucune erreur JavaScript. Essai matériel des nouvelles commandes encore nécessaire. Ce changement n’ajoute pas un Solo/PFL sur les tranches. Paquets non signés/notariés.
 
 ## English
 
-After connection, Configuration opens with a direction selector and Synchronize button inspired by X Air Edit:
+Mixer strips now include **Entrée / Gain** and a real input control panel replaces the previous illustrative EQ chart. **Lire l’entrée** reads analog/USB source selection and parameters. It shows the actual mapped analog preamp gain or USB return trim, using dB values and ranges from the server catalog.
 
-- **Mixer → PC** (default): read the known parameter catalog and four FX vectors, then retain an independent PC snapshot in SQLite. No mixer settings are written. Previous snapshots remain available.
-- **PC → Mixer**: choose a saved PC snapshot or complete JSON v2 scene. Enable control, review differences and explicitly confirm. Phantom-power changes are excluded by default and require separate inclusion and application confirmations. A complete backup precedes writes; write replies are compared.
-- Simulation preparations are saved automatically before connecting to hardware, with a manual save button too. Unconfigured defaults are included; inspect differences before sending.
-- PC snapshots stay distinct from live mixer notifications. The online mixer view still follows hardware; it is not a detached offline editor while connected.
-- Re-read before applying; changes since preview cause rejection. Reconnecting invalidates previews. Administrator-only routes; operations logged.
+Also available: analog phantom power, polarity inversion, high-pass enable/frequency, and shortcuts to EQ, Gate/Compressor and Sends/Monitors. Missing values remain unread. Displayed values reflect the last explicit read; refresh after editing in another app.
 
-Do not operate another application during synchronization. OSC has no atomic transaction or cross-client lock: concurrent changes during writes cannot be excluded. Failure may leave a partial state; the backup remains in scenes. Missing parameters fail capture instead of inventing values. Only the known catalog is covered; firmware coverage still needs physical verification.
+Writes use existing preview, backup and readback checks. Source routing is read again before applying; a changed source requires restarting. Phantom power requires an additional confirmation. Gain and phantom affect the physical input, including other channels mapped to it. Gain can alter main/monitor levels and processing response; adjust gradually with low output levels.
 
-Validation: 55 local tests passed, additional HTTP checks and backend/frontend builds. Tests cover separate snapshots, read-only pull, deltas, backups, changed state, phantom confirmation, reconnects and permissions. Installer publication requires packaged tests on all four platforms. Physical two-way synchronization still requires testing. Packages are unsigned/non-notarized.
+Validation: backend/frontend builds, 55 existing tests and CI package checks. Browser simulation covers source identification, preview without writes, gain application with backup, separate phantom confirmation and no JavaScript errors. Physical testing of these new controls remains required. This change does not add strip Solo/PFL. Packages remain unsigned/non-notarized.

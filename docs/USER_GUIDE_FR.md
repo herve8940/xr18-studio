@@ -84,3 +84,9 @@ Après connexion, Configuration affiche **Sens de synchronisation**, avec **Tabl
 - **PC → Table** : activer le contrôle, sélectionner une copie PC ou une scène complète, puis cliquer sur Synchroniser pour afficher les différences. Confirmer l’envoi après vérification. Le 48 V est exclu par défaut ; son inclusion et son application demandent des accords distincts.
 
 La préparation en simulation est conservée avant la connexion. Les copies PC restent distinctes des valeurs reçues en direct. Une préparation non réglée contient des valeurs par défaut : ne pas l’envoyer sans vérifier. La table est sauvegardée avant envoi ; un changement depuis l’aperçu fait refuser l’application. Ne pas manipuler les autres applications pendant l’opération : il n’existe pas de verrouillage OSC entre clients. En cas d’échec, l’état peut être partiel et la sauvegarde reste dans les scènes. Une capture échoue si un paramètre du catalogue est indisponible.
+
+## Gains et réglages d’entrée (1.2)
+
+Dans Console > Mixage, cliquer sur **Entrée / Gain** du canal puis **Lire l’entrée**. Le logiciel identifie la prise analogique utilisée ; s’il s’agit d’un retour USB, il propose le trim USB. Ne pas confondre gain d’entrée (adaptation du signal reçu) et fader (niveau dans le mix). Un gain analogique agit aussi sur les autres canaux affectés à la même prise, les retours et les traitements.
+
+Saisir le gain en dB, prévisualiser, puis confirmer. Le panneau permet aussi de régler le coupe-bas et la polarité Ø. Le 48 V exige un accord supplémentaire ; vérifier le matériel branché avant de l’activer. Les raccourcis ouvrent l’EQ, les traitements et les envois. Les valeurs sont celles de la dernière lecture, à actualiser après changement dans une autre application. Le routage est relu avant application pour détecter un changement de source.

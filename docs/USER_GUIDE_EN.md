@@ -84,3 +84,9 @@ After connecting, Configuration displays **Sens de synchronisation** with **Tabl
 - **PC → Table**: enable control, choose a PC snapshot or complete scene, then select Synchronize to review differences. Explicitly confirm to send. Phantom power is excluded by default and requires separate inclusion and application confirmations.
 
 Simulation preparations are saved before connection. PC snapshots stay separate from live values. Unconfigured simulation values are defaults; review before sending. The mixer is backed up before writes, and changes since preview cause rejection. Do not operate other applications during synchronization: OSC cannot lock other clients. Failures can leave partial changes; backups remain in scenes. Capture fails when a required catalog parameter is unavailable.
+
+## Input gain controls (1.2)
+
+In Console > Mixage, select **Entrée / Gain**, then **Lire l’entrée**. Studio identifies the mapped analog input or offers USB trim for a USB return. Input gain adapts the received signal; the fader sets its level in the mix. Analog gain also affects other channels using the same physical input, monitors and processing.
+
+Enter gain in dB, preview and confirm. The panel also exposes high-pass filtering and polarity inversion. Phantom power requires an additional confirmation; check connected equipment first. Shortcuts open EQ, dynamics and sends. Values reflect the last explicit read; refresh after changes in another application. Source routing is re-read before applying to detect changed assignments.
