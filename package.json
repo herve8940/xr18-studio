@@ -86,5 +86,10 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
+  },
+  "homepage": "https://github.com/herve8940/xr18-studio-",
+  "description": "Guided mixing assistant and desktop controller for Behringer XR18",
+  "author": {
+    "name": "Hervé Naessens"
   }
 }
