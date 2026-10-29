@@ -75,3 +75,12 @@ Download the next installer from GitHub Releases and close Studio before install
 ## Version 1.0 validation
 
 Automatic publication requires tests, builds, all four platform packages and packaged application startup checks. Software tests and the OSC emulator do not replace testing with a physical XR18, real monitors and REAPER. Concert qualification and universal old-device compatibility are not claimed. Release notes state the available validation results.
+
+## Two-way synchronization (1.1)
+
+After connecting, Configuration displays **Sens de synchronisation** with **Table → PC** selected and a **Synchroniser** button. Return here whenever needed.
+
+- **Table → PC**: re-read the console’s known catalog and retain a new independent PC snapshot. Use after editing in X Air. No settings are sent.
+- **PC → Table**: enable control, choose a PC snapshot or complete scene, then select Synchronize to review differences. Explicitly confirm to send. Phantom power is excluded by default and requires separate inclusion and application confirmations.
+
+Simulation preparations are saved before connection. PC snapshots stay separate from live values. Unconfigured simulation values are defaults; review before sending. The mixer is backed up before writes, and changes since preview cause rejection. Do not operate other applications during synchronization: OSC cannot lock other clients. Failures can leave partial changes; backups remain in scenes. Capture fails when a required catalog parameter is unavailable.

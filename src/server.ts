@@ -1,3 +1,4 @@
+import {MixerSync} from './mixer-sync.js';
 import {DiagnosticLog,setDiagnosticLogger,diagnostic} from './diagnostics.js';
 import {SoundCoach,identifySymptom} from "./sound-coach.js";
 import {askConnectedCoach} from "./coach-ai.js";
@@ -31,6 +32,7 @@ const connection=new ConnectionManager(xr18,configPath,config);
 let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
 const access=new Access(dbPath), library=new LibraryStore(dbPath);
 const show=new ShowControl(xr18,processing,library);
+const mixerSync=new MixerSync(xr18,show.console,library);
 const coach=new SoundCoach(xr18,show.console,library);
 let aiRequestAt=0;
 const studioApi=new StudioApi(xr18,access,library,show);
@@ -57,12 +59,23 @@ const handler: http.RequestListener = async (req, res) => {
   if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
   const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/undo'].includes(path);
   if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
-    const coachMetadata=path.startsWith('/api/coach/')&&path!=='/api/coach/apply';
+    const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply');
     if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
     if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
     if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
+  }
+  if(path==='/api/mixer-sync'&&req.method==='GET'){res.end(JSON.stringify(mixerSync.status()));return;}
+  if(path.startsWith('/api/mixer-sync/')&&req.method==='POST'){
+   try{const d=await body(req);let result:unknown;
+    if(path==='/api/mixer-sync/save-pc')result=await mixerSync.savePc();
+    else if(path==='/api/mixer-sync/pull')result=await mixerSync.pull();
+    else if(path==='/api/mixer-sync/preview')result=await mixerSync.preview(d.sourceId,d.includePhantom===true);
+    else if(path==='/api/mixer-sync/apply')result=await mixerSync.apply(d.token,d.confirm,d.allowPhantom);
+    else{res.writeHead(404);res.end(JSON.stringify({error:'Action inconnue'}));return;}
+    res.end(JSON.stringify(result));
+   }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/diagnostics/log'&&req.method==='GET'){
     try{res.setHeader('Content-Type','text/plain; charset=utf-8');res.setHeader('Content-Disposition','attachment; filename="xr18-studio-diagnostic.log"');res.end(diagnostics.read());}
@@ -73,7 +86,7 @@ const handler: http.RequestListener = async (req, res) => {
     catch(e){res.writeHead(503);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/connection'&&req.method==='POST'){
-    try{const data=await body(req);const status=await connection.change(data);res.end(JSON.stringify({status}));}
+    try{const data=await body(req);if(data.mode==='real'&&xr18.mode==='simulation')await mixerSync.savePc();const status=await connection.change(data);res.end(JSON.stringify({status}));}
     catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/coach'&&req.method==='GET'){res.end(JSON.stringify({...coach.catalog(),role:user!.role}));return;}

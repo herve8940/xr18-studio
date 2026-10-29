@@ -75,3 +75,12 @@ Télécharger le nouvel installateur depuis les versions GitHub et fermer Studio
 ## Validation de la 1.0
 
 La publication automatique exige tests, compilation et fabrication des quatre paquets, ainsi qu’un démarrage des applications empaquetées. Les contrôles logiciels et l’émulateur OSC ne remplacent pas un essai avec une XR18 physique, les retours réels et REAPER. Aucune qualification concert ni compatibilité universelle avec les anciens appareils n’est revendiquée. Les notes de version indiquent les résultats disponibles.
+
+## Synchronisation dans les deux sens (1.1)
+
+Après connexion, Configuration affiche **Sens de synchronisation**, avec **Table → PC** sélectionné et le bouton **Synchroniser**. Ce panneau reste disponible à tout moment.
+
+- **Table → PC** : relire le catalogue connu de la console et conserver une nouvelle copie PC. À utiliser après des réglages dans X Air. Aucun réglage n’est envoyé.
+- **PC → Table** : activer le contrôle, sélectionner une copie PC ou une scène complète, puis cliquer sur Synchroniser pour afficher les différences. Confirmer l’envoi après vérification. Le 48 V est exclu par défaut ; son inclusion et son application demandent des accords distincts.
+
+La préparation en simulation est conservée avant la connexion. Les copies PC restent distinctes des valeurs reçues en direct. Une préparation non réglée contient des valeurs par défaut : ne pas l’envoyer sans vérifier. La table est sauvegardée avant envoi ; un changement depuis l’aperçu fait refuser l’application. Ne pas manipuler les autres applications pendant l’opération : il n’existe pas de verrouillage OSC entre clients. En cas d’échec, l’état peut être partiel et la sauvegarde reste dans les scènes. Une capture échoue si un paramètre du catalogue est indisponible.

@@ -57,6 +57,7 @@ export default function App() {
   const [channels, setChannels] = useState<Channel[]>(INITIAL);
   const [mainState,setMainState]=useState<Channel>({channel:0,fader:.5,on:true,updatedAt:null});
   const [status, setStatus] = useState<Status>({ mode:"simulation", connected:false, writesEnabled:false });
+  useEffect(()=>{if(status.mode==='real'&&status.connected)setPage('settings');},[status.mode,status.connected]);
   const [socketOk, setSocketOk] = useState(false);
   const [lastOscUpdate,setLastOscUpdate]=useState<string|null>(null);
   const [meterState,setMeterState]=useState<{channels:number[];updatedAt:string|null;available:boolean}>({channels:[],updatedAt:null,available:false});
