@@ -1,3 +1,9 @@
+# XR18 Studio 2.0.0-beta.4 — Sources USB et analogiques
+
+Corrige le catalogue des retours Aux : rtnsrc accepte les indices 0 à 8 pour U0102 à U1718, comme les autres retours stéréo. U1718 est décodé en 8, et non en 0. Corrige également l’ordre des sources analogiques : In01..In16, L, R, OFF (0..18). Ces corrections sont fondées sur le document de paramètres X AIR et des tables de protocole, en complément de l’export.
+
+Référence : https://www.scribd.com/document/819735371/Parameters (document de paramètres du constructeur hébergé sur un tiers), sections config/insrc et config/rtnsrc. Une vérification physique reste requise. Refaire Table → PC ; vérifier les sources avant de rappeler une ancienne préparation PC créée avec une bêta précédente.
+
 # XR18 Studio 2.0.0-beta.3 — Capture par blocs XR18
 
 - Table → PC et la lecture des groupes utilisent les blocs natifs `/node` lorsque la console les fournit, avec vérification de chaque bloc et de la complétude du catalogue. Une lecture manquante ne devient jamais une valeur par défaut.

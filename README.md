@@ -2,7 +2,7 @@
 
 [🇫🇷 Guide utilisateur illustré](docs/USER_GUIDE_FR.md) · [🇬🇧 Illustrated user guide](docs/USER_GUIDE_EN.md) · [Télécharger / Download](https://github.com/herve8940/xr18-studio-/releases/latest)
 
-**Version en préparation : 2.0.0-beta.3.** [Périmètre et limites de la version 2](docs/RELEASE_2_0.md). La couverture complète des fonctions XR18 n’est pas encore atteinte.
+**Version en préparation : 2.0.0-beta.4.** [Périmètre et limites de la version 2](docs/RELEASE_2_0.md). La couverture complète des fonctions XR18 n’est pas encore atteinte.
 
 **FR** — Assistant de mixage pour Behringer XR18 : parcours guidé, console, retours, effets et scènes. Installateurs autonomes Windows, Mac Intel / Apple Silicon et Linux. Interface en français ; guides bilingues. Voir les [notes et limites de la 1.0](docs/RELEASE_1_0.md), notamment la validation matérielle encore nécessaire.
 
@@ -16,7 +16,7 @@
 
 Application de mixage XR18 pour Windows, macOS et Linux : simulation, connexion OSC, contrôles de console, scènes, effets, retours personnels, répétitions, ReaCue et MCP.
 
-Version 2.0.0-beta.3 : commandes organisées par traitement, copie sélective entre canaux et inventaire des fonctions. Validation sur la console physique requise avant utilisation en concert.
+Version 2.0.0-beta.4 : commandes organisées par traitement, copie sélective entre canaux et inventaire des fonctions. Validation sur la console physique requise avant utilisation en concert.
 
 ```sh
 npm run setup

@@ -1,4 +1,4 @@
-# XR18 Studio 2.0.0-beta.3
+# XR18 Studio 2.0.0-beta.4
 
 Cette première bêta prépare la nouvelle version majeure. Elle améliore l’accès aux commandes existantes ; elle ne prétend pas encore remplacer toutes les fonctions de X AIR Edit. Elle ne modifie pas le format des scènes JSON version 2 ni les bases de données existantes.
 

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import dgram from 'node:dgram';
 import {XR18} from '../src/xr18.js';
 import {SCENE_SCHEMA} from '../src/scene-schema.js';
-import {PARAMETERS,toWire} from '../src/parameters.js';
+import {PARAMETERS,toWire,validateWire,fromWire} from '../src/parameters.js';
 import {ConsoleControl} from '../src/console-control.js';
 import {LibraryStore} from '../src/library-store.js';
 import {decodeOsc,encodeOsc,oscFloat,type OutgoingOscArg} from '../src/osc.js';
@@ -21,6 +21,15 @@ function syntheticNode(node:string){
   return '0';
  }).join(' ');
 }
+test('Aux USB stereo source uses all nine wire indices and native U1718 maps to eight',()=>{
+ const address='/rtn/aux/config/rtnsrc';
+ for(let i=0;i<9;i++)assert.equal(validateWire(address,i),i);
+ assert.throws(()=>validateWire(address,9));assert.throws(()=>validateWire(address,-1));
+ assert.equal(toWire(address,'U0102'),0);assert.equal(toWire(address,'U1718'),8);
+ const scene=compileNativeScene('/rtn/aux/config "Aux" 0 U1718');
+ assert.equal(scene.commands.find(c=>c.address===address)?.value,8);
+ assert.equal(fromWire(address,8),8);
+});
 test('node capture reads the entire catalogue without unsupported scalar queries, retries loss and never writes',async()=>{
  const peer=dgram.createSocket('udp4');await new Promise<void>(r=>peer.bind(0,'127.0.0.1',r));
  const requests:string[]=[],mutations:string[]=[];let drop=true,broken=false;
@@ -40,7 +49,7 @@ test('node capture reads the entire catalogue without unsupported scalar queries
  try{
   await xr.start();for(let i=0;i<100&&!xr.status().connected;i++)await new Promise(r=>setTimeout(r,5));
   const saved=await control.capture();assert.equal(Object.keys(saved.values).length,Object.keys(PARAMETERS).length);
-  assert.equal(saved.values['/ch/16/config/insrc'],18);assert.equal(saved.values['/ch/01/insert/fxslot'],0);
+  assert.equal(saved.values['/ch/16/config/insrc'],17);assert.equal(saved.values['/ch/01/insert/fxslot'],0);
   assert.ok(!requests.includes('/ch/01/insert/fxslot'));assert.equal(saved.fx.length,4);assert.equal(mutations.length,0);
   broken=true;await assert.rejects(control.capture(),/Bloc XR18 incompatible \/ch\/01\/eq\/1/);
  }finally{xr.close();library.close();peer.close();}
@@ -48,8 +57,8 @@ test('node capture reads the entire catalogue without unsupported scalar queries
 
 test('input source R and native block formats are accepted without altering opaque FX tokens',()=>{
  const p=compileNativeScene('/ch/16/config "Canal" 0 R U02\n/ch/01/insert OFF OFF\n/fx/1/par 26 145 ST 1 7k9');
- assert.equal(p.commands.find(c=>c.address==='/ch/16/config/insrc')?.value,18);
- assert.equal(toWire('/ch/16/config/insrc','R'),18);assert.equal(toWire('/ch/16/config/insrc','L'),17);assert.equal(toWire('/ch/16/config/insrc','OFF'),16);
+ assert.equal(p.commands.find(c=>c.address==='/ch/16/config/insrc')?.value,17);
+ assert.equal(toWire('/ch/16/config/insrc','R'),17);assert.equal(toWire('/ch/16/config/insrc','L'),16);assert.equal(toWire('/ch/16/config/insrc','OFF'),18);
  assert.deepEqual(p.opaqueFx[0]!.tokens,['26','145','ST','1','7k9']);
 });
 
