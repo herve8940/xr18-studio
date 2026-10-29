@@ -8,7 +8,7 @@ permissions:
   contents: read
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   package:
     if: github.ref == 'refs/heads/main'
@@ -20,7 +20,7 @@ jobs:
             name: windows
           - os: macos-15-intel
             name: macos-intel
-          - os: macos-latest
+          - os: macos-15
             name: macos-apple-silicon
           - os: ubuntu-latest
             name: linux
@@ -66,7 +66,7 @@ jobs:
           image=$(find release -maxdepth 1 -name '*.AppImage' -print -quit)
           chmod +x "$image"
           "$image" --appimage-extract > /dev/null
-          xvfb-run -a node desktop/smoke.cjs "$PWD/squashfs-root/AppRun"
+          APPDIR="$PWD/squashfs-root" xvfb-run -a node desktop/smoke.cjs "$PWD/squashfs-root/AppRun"
       - uses: actions/upload-artifact@v4
         with:
           name: installers-${{ matrix.name }}
@@ -96,7 +96,7 @@ jobs:
           import hashlib,json,pathlib
           root=pathlib.Path('installers')
           version=json.loads(pathlib.Path('package.json').read_text())['version']
-          expected=[f'XR18-Studio-Windows-{version}.exe',f'XR18-Studio-macOS-{version}-x64.dmg',f'XR18-Studio-macOS-{version}-arm64.dmg',f'XR18-Studio-Linux-{version}-x64.AppImage',f'XR18-Studio-Linux-{version}-x64.deb']
+          expected=[f'XR18-Studio-Windows-{version}.exe',f'XR18-Studio-macOS-{version}-x64.dmg',f'XR18-Studio-macOS-{version}-arm64.dmg',f'XR18-Studio-Linux-{version}-x86_64.AppImage',f'XR18-Studio-Linux-{version}-amd64.deb']
           for name in expected:
               assert (root/name).is_file(), f'Missing package: {name}'
           files=sorted(p for p in root.iterdir() if p.is_file())

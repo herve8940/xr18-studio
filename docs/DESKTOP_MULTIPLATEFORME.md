@@ -21,7 +21,7 @@ Build on each target OS. Native dependencies must match Electron and the target 
 
 ## GitHub release pipeline
 
-`.github/workflows/desktop.yml` builds PR candidates and uploads temporary Actions artifacts. `.github/workflows/release.yml` runs when `package.json` or the release workflow changes on main, or by manual dispatch on main. Four runners cover Windows x64, Mac Intel, Mac Apple Silicon and Linux x64. Each executes tests and builds; startup checks cover installed Windows, mounted macOS DMG and extracted Linux AppImage. Linux CI alone disables Chromium sandbox for its startup check; normal app startup keeps sandbox settings.
+`.github/workflows/desktop.yml` builds PR candidates and uploads temporary Actions artifacts. `.github/workflows/release.yml` runs when `package.json` or the release workflow changes on main, or by manual dispatch on main. A newer release run cancels an obsolete in-flight run for the same branch. Four runners cover Windows x64, Mac Intel, Mac Apple Silicon and Linux x64. Each executes tests and builds; startup checks cover installed Windows, mounted macOS DMG and extracted Linux AppImage. Linux CI alone disables Chromium sandbox for its startup check; normal app startup keeps sandbox settings.
 
 Only after every matrix job passes, a separate job downloads all packages, checks required filenames, generates SHA-256 checksums, creates the tag at the tested commit and uploads assets to a draft release. It publishes the release after upload succeeds. Existing releases are never overwritten. A failed run leaves no public partial release; if asset upload fails, a draft may need inspection before retrying. Increase the package versions for a subsequent release.
 
