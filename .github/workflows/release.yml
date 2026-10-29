@@ -115,5 +115,10 @@ jobs:
             echo "Release already exists. Refusing to overwrite published installers."
             exit 1
           fi
-          gh release create "$tag" installers/* --target "$GITHUB_SHA" --title "XR18 Studio $version" --notes-file docs/RELEASE_NOTES.md --draft
-          gh release edit "$tag" --draft=false --latest
+          if [[ "$version" == *-* ]]; then
+            gh release create "$tag" installers/* --target "$GITHUB_SHA" --title "XR18 Studio $version" --notes-file docs/RELEASE_NOTES.md --draft --prerelease
+            gh release edit "$tag" --draft=false --prerelease --latest=false
+          else
+            gh release create "$tag" installers/* --target "$GITHUB_SHA" --title "XR18 Studio $version" --notes-file docs/RELEASE_NOTES.md --draft
+            gh release edit "$tag" --draft=false --latest
+          fi

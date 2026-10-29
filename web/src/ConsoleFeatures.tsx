@@ -1,0 +1,7 @@
+import {useEffect,useState} from 'react';
+type Report={hardwareValidated:boolean;parameterCount:number;features:{id:string;name:string;status:'controls'|'external'|'pending';detail:string;parameterCount:number}[]};
+export function ConsoleFeatures(){
+ const [report,setReport]=useState<Report|null>(null),[error,setError]=useState('');
+ useEffect(()=>{let active=true;void fetch('/api/console/features').then(async r=>{const d=await r.json();if(!r.ok)throw Error(d.error??'Catalogue indisponible');if(active)setReport(d);}).catch(e=>{if(active)setError(e.message);});return()=>{active=false;};},[]);
+ return <section className="studio-panel pad studio-control"><h2>XR18 Studio 2.0 bêta 4 · Fonctions de la console</h2><p>Ce tableau décrit la couverture logicielle. Les commandes disponibles doivent encore être validées sur une console physique avant utilisation en concert.</p><p role="status">{error||(!report?'Chargement du catalogue…':`${report.parameterCount} paramètres dans le catalogue de commande.`)}</p>{report&&<div className="console-feature-list">{report.features.map(f=><article key={f.id} className="parameter-card"><span className={'feature-state '+f.status}>{f.status==='controls'?'Commandes disponibles':f.status==='external'?'Logiciel externe requis':'À intégrer'}</span><h3>{f.name}</h3><p>{f.detail}</p></article>)}</div>}<p>Pour régler la console : Console → Contrôles. Pour le gain : Console → Mixage → Entrée / Gain. Pour relire le mix après une autre application : Configuration → Synchronisation.</p></section>;
+}

@@ -1,4 +1,7 @@
 import {MixerSync} from './mixer-sync.js';
+import {readChannelCopy} from './channel-copy.js';
+import {consoleFeatures} from './console-features.js';
+import {HardwareSnapshots} from './hardware-snapshots.js';
 import {DiagnosticLog,setDiagnosticLogger,diagnostic} from './diagnostics.js';
 import {SoundCoach,identifySymptom} from "./sound-coach.js";
 import {askConnectedCoach} from "./coach-ai.js";
@@ -32,6 +35,7 @@ const connection=new ConnectionManager(xr18,configPath,config);
 let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
 const access=new Access(dbPath), library=new LibraryStore(dbPath);
 const show=new ShowControl(xr18,processing,library);
+const hardwareSnapshots=new HardwareSnapshots(xr18,show.console,library);
 const mixerSync=new MixerSync(xr18,show.console,library);
 const coach=new SoundCoach(xr18,show.console,library);
 let aiRequestAt=0;
@@ -116,11 +120,21 @@ const handler: http.RequestListener = async (req, res) => {
     const prefix=new URL(req.url!,'http://localhost').searchParams.get('prefix')??'/ch/01/';
     res.end(JSON.stringify({parameters:show.console.catalog(prefix),status:xr18.status()}));return;
   }
+  if(path==='/api/console/features'&&req.method==='GET'){res.end(JSON.stringify(consoleFeatures()));return;}
+  if(path==='/api/console/snapshots/read'&&req.method==='POST'){
+    try{const d=await body(req);res.end(JSON.stringify(await hardwareSnapshots.read(d.index)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/snapshots/execute'&&req.method==='POST'){
+    try{res.end(JSON.stringify(await hardwareSnapshots.execute(await body(req))));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
   if(path==='/api/console/refresh'&&req.method==='POST'){
     const d=await body(req);try{await xr18.refreshParameters(String(d.prefix));res.end(JSON.stringify({ok:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/console/preview'&&req.method==='POST'){
     try{const d=await body(req);res.end(JSON.stringify(await show.console.preview(d.values)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/copy-channel'&&req.method==='POST'){
+    try{const d=await body(req);const values=await readChannelCopy(xr18,d.source,d.target,d.sections);res.end(JSON.stringify(await show.console.preview(values,true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/console/apply'&&req.method==='POST'){
     try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
@@ -147,6 +161,7 @@ const handler: http.RequestListener = async (req, res) => {
     if(user&&await studioApi.handle(req,res,path,user))return;
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
+  if (req.method === "GET" && path === "/api/analysis") {res.end(JSON.stringify({banks:xr18.analysisState(),simulation:xr18.mode==='simulation'}));return;}
   if (req.method === "GET" && path === "/api/channels") { res.end(JSON.stringify(xr18.listChannels())); return; }
   if(req.method==="GET"&&path==="/api/main"){res.end(JSON.stringify(xr18.mainState()));return;}
   const mixerWrite=/^\/api\/(?:channels\/(\d+)\/(on)|main\/(fader|on))$/.exec(path);

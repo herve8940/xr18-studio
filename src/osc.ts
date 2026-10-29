@@ -47,11 +47,11 @@ export function decodeOsc(b: Buffer): OscMessage {
 }
 
 /** X-Air meter blob: LE uint32 count, then signed LE int16 levels at 1/256 dBFS. */
-export function decodeXAirMeterBlob(blob:Buffer, expectedCount:number):number[]{
+export function decodeXAirMeterBlob(blob:Buffer, expectedCount:number, clampLevels=true):number[]{
   if(blob.length<4)throw Error("Meter blob too short");
   const count=blob.readUInt32LE(0);
   if(count!==expectedCount||blob.length!==4+count*2)throw Error("Unexpected X-Air meter blob layout");
-  return Array.from({length:count},(_,i)=>Math.max(-128,Math.min(0,blob.readInt16LE(4+i*2)/256)));
+  return Array.from({length:count},(_,i)=>{const value=blob.readInt16LE(4+i*2)/256;return clampLevels?Math.max(-128,Math.min(0,value)):value;});
 }
 
 

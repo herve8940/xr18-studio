@@ -17,6 +17,10 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   assert.equal((await call('/api/channels')).status,401);
   await new Promise<void>((resolve,reject)=>{const ws=new WebSocket(base.replace('http','ws')+'/ws');ws.once('unexpected-response',(_req,res)=>{assert.equal(res.statusCode,401);res.resume();resolve();});ws.once('open',()=>{ws.close();reject(Error('Anonymous WS allowed'));});ws.once('error',()=>{});});
   let login=await call('/api/auth/login',{name:'Admin',password:'very-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;assert.equal((await call('/api/channels')).status,200);
+  const featureResponse=await call('/api/console/features');assert.equal(featureResponse.status,200);assert.equal((await featureResponse.json() as {hardwareValidated:boolean}).hardwareValidated,false);
+  const analysisResponse=await call('/api/analysis');assert.equal(analysisResponse.status,200);const analysis=await analysisResponse.json() as {banks:{available:boolean;values:number[]}[]};assert.equal(analysis.banks.length,7);assert.ok(analysis.banks.every(b=>!b.available&&!b.values.length));
+  assert.equal((await call('/api/console/snapshots/read',{index:1})).status,400);
+  assert.equal((await call('/api/console/copy-channel',{source:1,target:2,sections:['eq']})).status,200);
   assert.equal((await call('/api/mixer-sync')).status,200);
   assert.equal((await call('/api/mixer-sync/save-pc',{})).status,200);
   assert.equal((await call('/api/mixer-sync/pull',{})).status,400);
@@ -42,6 +46,9 @@ test('HTTP and websocket auth, guest denial and complete simulation recall',asyn
   const channels=await (await call('/api/channels')).json() as {fader:number}[];assert.equal(channels[0]!.fader,.5);
   await call('/api/users',{name:'Guest',password:'guest-long-password',role:'guest',buses:[]});await call('/api/auth/logout',{});assert.equal((await call('/api/channels')).status,401);
   login=await call('/api/auth/login',{name:'Guest',password:'guest-long-password'});cookie=login.headers.get('set-cookie')!.split(';')[0]!;
+  assert.equal((await call('/api/analysis')).status,200);
+  assert.equal((await call('/api/console/copy-channel',{source:1,target:2,sections:['eq']})).status,403);
+  assert.equal((await call('/api/console/snapshots/execute',{action:'delete',index:1,confirm:true})).status,403);
   assert.equal((await call('/api/coach/prepare',{})).status,403);assert.equal((await call('/api/coach/ask',{channel:1,message:'test'})).status,403);
   assert.equal((await call('/api/console/preview',{values:{'/ch/01/mix/fader':0}})).status,403);
   assert.equal((await call('/api/mixer-sync')).status,403);assert.equal((await call('/api/mixer-sync/save-pc',{})).status,403);
