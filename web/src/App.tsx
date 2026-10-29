@@ -1,3 +1,4 @@
+import {ConnectionPanel} from "./ConnectionPanel";
 import {StudioControl} from "./StudioControl";
 import { PROCESSING_PRESETS, PROCESSING_SOURCES, type ProcessingPreset } from "./processingPresets";
 import { FX_PRESETS, type FxFamily } from "./fxPresets";
@@ -8,7 +9,7 @@ import "./fx-library.css";
 import "./processing.css";
 
 type Channel = { channel: number; fader: number; on: boolean; updatedAt: string | null };
-type Status = { mode: "simulation" | "real"; connected: boolean; writesEnabled: boolean };
+type Status = { mode: "simulation" | "real"; connected: boolean; writesEnabled: boolean; host?:string };
 type Scene = { id: string; name: string; created: string; faders: number[] };
 type Song = { id: string; title: string; artist: string; bpm: number };
 type Tab = "mixer" | "eq" | "dynamics" | "sends" | "fx" | "routing" | "dca";
@@ -34,6 +35,7 @@ const TABS: { id: Tab; name: string }[] = [
 ];
 export default function App() {
   const [page, setPage] = useState<Page>("console");
+  useEffect(()=>{const open=()=>setPage('settings');window.addEventListener('xr18-open-connection',open);return()=>window.removeEventListener('xr18-open-connection',open);},[]);
   const [tab, setTab] = useState<Tab>("mixer");
   const [fxFamily, setFxFamily] = useState<FxFamily | "Tous">("Tous");
   const [fxSearch, setFxSearch] = useState("");
@@ -96,7 +98,7 @@ export default function App() {
       socket.onmessage = e => { try {
         const msg = JSON.parse(e.data) as {type:string;channels?:Channel[];status?:Status;state?:Channel;main?:Channel;meters?:{channels:number[];updatedAt:string|null;available:boolean}};
         if (!active) return;
-        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setStatus(msg.status); if(msg.main)setMainState(msg.main);if(msg.meters)setMeterState(msg.meters); }
+        if (msg.type === "snapshot" && msg.channels && msg.status) { setChannels(msg.channels); setAdvancedReadback({});setLastOscUpdate(null);setStatus(msg.status); if(msg.main)setMainState(msg.main);if(msg.meters)setMeterState(msg.meters); }
         if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="status"&&msg.status)setStatus(msg.status);
@@ -297,11 +299,13 @@ export default function App() {
         {page==="scenes" && <StudioControl section="scene"/>}
         {page==="scenes" && <section className="studio-panel pad"><div className="panel-title"><div><b>Snapshots locaux</b><small>Faders simulés uniquement — aucun rappel matériel</small></div><Disc3 size={18}/></div><div className="scene-form"><input placeholder="Nom de la scène (ex. Répétition)" value={sceneName} onChange={e=>setSceneName(e.target.value)}/><button disabled={!isSim} onClick={saveScene}><Save size={16}/> Enregistrer</button></div><div className="song-list">{store.scenes.map(scene=><div key={scene.id}><div><b>{scene.name}</b><small>{new Date(scene.created).toLocaleString("fr-BE")} · 16 faders</small></div><button disabled={!isSim||!canWrite} onClick={()=>void recallScene(scene)}>Rappeler</button><button title="Supprimer" onClick={()=>setStore(s=>({...s,scenes:s.scenes.filter(x=>x.id!==scene.id)}))}><Trash2 size={15}/></button></div>)}</div><p className="disclaimer">Ce sont des snapshots applicatifs stockés dans ce navigateur, pas des scènes internes XR18. Les mutes, bus, effets et traitements ne sont pas sauvegardés.</p></section>}
         {page==="settings" && <StudioControl section="settings"/>}
-        {page==="settings" && <section className="studio-panel pad"><div className="panel-title"><div><b>État du système</b><small>Paramètres de sécurité</small></div><Cable size={18}/></div><div className="settings-rows"><div><span>Mode d'exécution</span><b>{isSim?"Simulation":"Console réelle"}</b></div><div><span>WebSocket</span><b>{socketOk?"Connecté":"Déconnecté"}</b></div><div><span>Réponse OSC</span><b>{status.connected?"Reçue / simulation":"Non confirmée"}</b></div><div><span>Écritures matérielles</span><b>{!isSim&&status.writesEnabled?"Activées sur backend":"Désactivées"}</b></div><div><span>Accès distant</span><b>Non configuré</b></div></div><p className="disclaimer">Pour changer le mode de connexion, configurez les variables d'environnement du backend. N'activez pas les écritures réelles avant validation du protocole et des protections auditives.</p></section>}
+        {page==="settings" && <ConnectionPanel status={status}/>}
+        {page==="settings" && <section className="studio-panel pad"><div className="panel-title"><div><b>État du système</b><small>Paramètres de sécurité</small></div><Cable size={18}/></div><div className="settings-rows"><div><span>Mode d'exécution</span><b>{isSim?"Simulation":"Console réelle"}</b></div><div><span>WebSocket</span><b>{socketOk?"Connecté":"Déconnecté"}</b></div><div><span>Réponse OSC</span><b>{status.connected?"Reçue / simulation":"Non confirmée"}</b></div><div><span>Écritures matérielles</span><b>{!isSim&&status.writesEnabled?"Activées sur backend":"Désactivées"}</b></div><div><span>Accès distant</span><b>Non configuré</b></div></div><p className="disclaimer">Utilise le panneau de connexion pour détecter la XR18, activer le contrôle ou revenir en simulation.</p></section>}
       </div>}
       <footer className="studio-footer"><span>XR18 STUDIO · Prototype de développement</span><span>{isSim?"Simulation sans matériel":"Console réelle — expérimental"} · Vumètres indisponibles</span></footer>
     </main>
   </div>;
 }
+
 
 

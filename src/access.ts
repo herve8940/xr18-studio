@@ -31,6 +31,7 @@ export class Access {
 }
 export function permitted(user:User,method:string,path:string){
  if(user.role==='admin')return true;
+ if(path==='/api/discovery'||path==='/api/connection')return false;
  if(path.startsWith('/api/users')||path==='/api/audit'||path.startsWith('/api/reacue'))return false;
  if(method==='GET')return true;
  // A musician can change only assigned monitor sends, never FOH or another bus.
@@ -42,3 +43,4 @@ export function sameOrigin(req:IncomingMessage){
  if(!req.headers.origin)return true;
  try{const origin=new URL(req.headers.origin);return origin.protocol==='http:'&&(['localhost','127.0.0.1'].includes(origin.hostname))&&(origin.host===host||(['5173','5174'].includes(origin.port)));}catch{return false;}
 }
+

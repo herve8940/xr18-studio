@@ -2,6 +2,9 @@ import http from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
+import {discoverXR18} from "./discovery.js";
+import {ConnectionManager,loadConnection} from "./connection.js";
+import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
@@ -11,9 +14,12 @@ import { ShowControl } from "./show-control.js";
 import { StudioApi, body } from "./studio-api.js";
 const database = new StudioDatabase();
 const processing = new ProcessingStore();
-const mode = process.env.XR18_MODE === "real" ? "real" : "simulation";
-const xr18 = new XR18({ mode, host: process.env.XR18_HOST ?? "192.168.1.100", port: Number(process.env.XR18_PORT ?? 10024), enableWrites: process.env.XR18_ENABLE_WRITES === "true" });
 const dbPath=process.env.XR18_DB_PATH??"data/xr18-studio.db";
+const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
+const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.100',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
+const xr18 = new XR18(config);
+const connection=new ConnectionManager(xr18,configPath,config);
+let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
 const access=new Access(dbPath), library=new LibraryStore(dbPath);
 const show=new ShowControl(xr18,processing,library);
 const studioApi=new StudioApi(xr18,access,library,show);
@@ -40,6 +46,14 @@ const server = http.createServer(async (req, res) => {
     access.log(user!,`${req.method} ${path}`);
     if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library'))show.manualOverride();
   }
+  if(path==='/api/discovery'&&req.method==='GET'){
+    try{discoveryPending??=discoverXR18().finally(()=>{discoveryPending=undefined;});res.end(JSON.stringify({devices:await discoveryPending}));}
+    catch(e){res.writeHead(503);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/connection'&&req.method==='POST'){
+    try{const data=await body(req);const status=await connection.change(data);res.end(JSON.stringify({status}));}
+    catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
   if(user&&await studioApi.handle(req,res,path,user))return;
   if (req.method === "GET" && path === "/api/status") { res.end(JSON.stringify(xr18.status())); return; }
   if (req.method === "GET" && path === "/api/meters") {res.end(JSON.stringify(xr18.meterState()));return;}
@@ -58,7 +72,7 @@ const server = http.createServer(async (req, res) => {
         if(typeof value!=="number")throw Error("Numeric value required");
         xr18.setMainFader(value);
       }
-      res.end(JSON.stringify({ok:true,acknowledged:mode==="simulation"}));return;
+      res.end(JSON.stringify({ok:true,acknowledged:xr18.mode==="simulation"}));return;
     }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
   }
   if(req.method==="POST"&&path==="/api/osc/advanced/write"){
@@ -127,7 +141,7 @@ const server = http.createServer(async (req, res) => {
       if (!body || typeof body !== "object") throw Error("Invalid JSON");
       const data = body as Record<string,unknown>;
       if (processingMatch[2] === "preview") { res.end(JSON.stringify(processing.preview(channel,data.processing))); return; }
-      if (mode !== "simulation") { res.writeHead(403); res.end(JSON.stringify({ error: "Processing hardware writes are not implemented or validated; simulation only" })); return; }
+      if (xr18.mode !== "simulation") { res.writeHead(403); res.end(JSON.stringify({ error: "Processing hardware writes are not implemented or validated; simulation only" })); return; }
       if (processingMatch[2] === "undo") {
         if (!Number.isInteger(data.expectedRevision)) throw Error("expectedRevision required");
         const state = processing.undo(channel,data.expectedRevision as number);
@@ -145,7 +159,7 @@ const server = http.createServer(async (req, res) => {
       const body: unknown = JSON.parse(raw);
       if (!body || typeof body !== "object" || !("value" in body) || typeof body.value !== "number") throw new Error("Numeric value required");
       xr18.setFader(Number(path.split("/")[3]), body.value);
-      res.end(JSON.stringify({ ok: true, note: mode === "real" ? "OSC command sent, not acknowledged" : "Simulation updated" }));
+      res.end(JSON.stringify({ ok: true, note: xr18.mode === "real" ? "OSC command sent, not acknowledged" : "Simulation updated" }));
     } catch (e) { res.writeHead(400); res.end(JSON.stringify({ error: (e as Error).message })); }
     return;
   }
@@ -171,6 +185,7 @@ const server = http.createServer(async (req, res) => {
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient:({req},done)=>done(sameOrigin(req)&&!!access.user(req),401) });
 const wsRequests=new WeakMap<WebSocket,http.IncomingMessage>();
 wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState() }));});
+xr18.on('reset',()=>{const message=JSON.stringify({type:'snapshot',channels:xr18.listChannels(),status:xr18.status(),main:xr18.mainState(),meters:xr18.meterState()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
 xr18.on("main", state => {const message=JSON.stringify({type:"main",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("meters",state=>{const message=JSON.stringify({type:"meters",state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
@@ -179,11 +194,12 @@ xr18.on("connection", () => {const message=JSON.stringify({type:"status",status:
 xr18.on("warning", warning => console.warn("[OSC]", warning));
 await xr18.start();
 const port = Number(process.env.HTTP_PORT ?? 3000);
-server.listen(port, "127.0.0.1", () => console.log(`XR18 Studio API on http://127.0.0.1:${port} (${mode})`));
+server.listen(port, "127.0.0.1", () => console.log(`XR18 Studio API on http://127.0.0.1:${port} (${xr18.mode})`));
 const statusTimer=setInterval(()=>{for(const ws of wss.clients){const req=wsRequests.get(ws);if(!req||!access.user(req))ws.terminate();}const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
 statusTimer.unref();
 function shutdown(){clearInterval(statusTimer);xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
 process.once("SIGINT",shutdown);
 process.once("SIGTERM",shutdown);
+
 
 

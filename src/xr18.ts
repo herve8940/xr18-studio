@@ -5,12 +5,13 @@ import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscAr
 export type Mode = "simulation" | "real";
 export interface ChannelState { channel: number; fader: number; on: boolean; updatedAt: string | null }
 export class XR18 extends EventEmitter {
-  readonly mode: Mode;
+  private currentMode: Mode;
+  get mode(): Mode { return this.currentMode; }
   private socket?: dgram.Socket;
   private timer?: NodeJS.Timeout;
-  private readonly host: string;
-  private readonly port: number;
-  private readonly writes: boolean;
+  private host: string;
+  private port: number;
+  private writes: boolean;
   private connected = false;
   private lastReplyAt: number | null = null;
   private readonly staleAfterMs = 18000;
@@ -21,7 +22,7 @@ export class XR18 extends EventEmitter {
   private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
   constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
-    super(); this.mode = opts.mode; this.host = opts.host; this.port = opts.port;
+    super(); this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
     this.writes = opts.mode === "real" && opts.enableWrites;
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
@@ -31,7 +32,7 @@ export class XR18 extends EventEmitter {
     }
     for(let i=1;i<=4;i++)this.advancedAddresses.add(`/fx/${i}/type`);
   }
-  status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
+  status() { const live=this.mode==="simulation"||this.isLive(); return { mode: this.mode, connected: live, writesEnabled: this.writes, port:this.port, host: this.mode === "real" ? this.host : undefined, lastReplyAt:this.lastReplyAt?new Date(this.lastReplyAt).toISOString():null, lastValuesAreVerified: live&&this.mode==="real" }; }
   private isLive(){return this.connected&&this.lastReplyAt!==null&&Date.now()-this.lastReplyAt<this.staleAfterMs;}
   listChannels() { return [...this.channels.values()]; }
   mainState() { return {...this.main}; }
@@ -62,7 +63,8 @@ export class XR18 extends EventEmitter {
       if (rinfo.address !== this.host || rinfo.port !== this.port) return;
       try { this.handle(decodeOsc(data)); } catch (err) { this.emit("warning", String(err)); }
     });
-    this.socket.on("error", err => { this.connected = false; this.emit("connection",{connected:false}); this.emit("warning", err.message); });
+    const transport=this.socket;
+    this.socket.on("error", err => { if(this.socket!==transport)return; this.connected = false; this.emit("connection",{connected:false}); this.emit("warning", err.message); });
     await new Promise<void>((resolve, reject) => {
       this.socket!.once("listening", resolve);
       this.socket!.once("error", reject);
@@ -172,6 +174,24 @@ export class XR18 extends EventEmitter {
     await write(`/fx/${f.slot}/type`,f.algorithm,'i');
     for(const [i,p] of f.parameters.entries())await write(`/fx/${f.slot}/par/${String(i+1).padStart(2,'0')}`,p.value,p.type);
   }
-  close() { if (this.timer) clearInterval(this.timer); this.socket?.close(); this.connected = false; }
+  /** Keep the same instance so scenes, API and subscriptions follow the new transport. */
+  async reconnect(opts: {mode: Mode; host: string; port: number; enableWrites: boolean}) {
+    this.close();
+    this.currentMode=opts.mode;this.host=opts.host;this.port=opts.port;
+    this.writes=opts.mode==='real'&&opts.enableWrites;
+    this.lastReplyAt=null;this.meters=null;this.advanced.clear();
+    for(let i=1;i<=16;i++)this.channels.set(i,{channel:i,fader:.5,on:true,updatedAt:null});
+    this.main={channel:0,fader:.5,on:true,updatedAt:null};
+    this.connected=opts.mode==='simulation';
+    this.emit('reset');this.emit('connection');
+    try { await this.start(); } catch(e) { this.close();this.emit('connection');throw e; }
+  }
+  close() {
+    if(this.timer)clearInterval(this.timer);this.timer=undefined;
+    const socket=this.socket;this.socket=undefined;
+    if(socket){socket.removeAllListeners('message');try{socket.close();}catch{}}
+    this.connected=false;
+  }
 }
+
 
