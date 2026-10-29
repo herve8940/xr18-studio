@@ -24,6 +24,7 @@ jobs:
             name: macos-apple-silicon
           - os: ubuntu-latest
             name: linux
+    timeout-minutes: 30
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

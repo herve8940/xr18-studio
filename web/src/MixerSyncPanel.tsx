@@ -1,3 +1,4 @@
+import './mixer-sync.css';
 import {useEffect,useState} from 'react';
 type Status={mode:'real'|'simulation';connected:boolean;writesEnabled:boolean;host?:string};
 type Source={id:string;name:string;createdAt:string};
@@ -10,7 +11,7 @@ export function MixerSyncPanel({status}:{status:Status}){
  useEffect(()=>{setPreview(null);setConfirmPhantom(false);void api('').then(load).catch(e=>setError(e.message));},[status.mode,status.connected,status.writesEnabled,status.host]);
  async function run(action:()=>Promise<void>){setBusy(true);setError('');setMessage('Lecture des paramètres… Ne manipule pas les autres applications pendant cette opération.');try{await action();}catch(e){setMessage('');setError((e as Error).message);setPreview(null);}finally{setBusy(false);}}
  const connected=status.mode==='real'&&status.connected;
- return <section aria-label="Synchronisation du mixeur" style={{border:'1px solid #42627a',padding:18,borderRadius:10,margin:'18px 0'}}>
+ return <section aria-label="Synchronisation du mixeur" className="mixer-sync">
  <h3>{connected?'Étape après connexion : choisir le sens de synchronisation':'Préparer la synchronisation'}</h3>
  <p>La connexion reste en lecture seule au départ. Aucun réglage PC n’est envoyé automatiquement.</p>
  <fieldset disabled={busy}>
@@ -20,7 +21,7 @@ export function MixerSyncPanel({status}:{status:Status}){
  <label><input type="radio" name="sync-direction" checked={direction==='push'} onChange={()=>{setDirection('push');setPreview(null);}}/> PC → Table — envoyer une copie PC sauvegardée</label>
  <p>Table → PC est le choix conseillé après des changements dans X Air ou une autre application. Les anciennes copies PC sont conservées.</p>
  <div hidden={direction!=='push'}>
- <label>État PC ou scène complète à envoyer<select aria-label="État PC à synchroniser" value={sourceId} onChange={e=>{setSourceId(e.target.value);setPreview(null);}}><option value="">Choisir une copie PC</option>{sources.map(s=><option key={s.id} value={s.id}>{s.name} · {new Date(s.createdAt).toLocaleString('fr-BE')}</option>)}</select></label>
+ <label className="sync-source">État PC ou scène complète à envoyer<select aria-label="État PC à synchroniser" value={sourceId} onChange={e=>{setSourceId(e.target.value);setPreview(null);}}><option value="">Choisir une copie PC</option>{sources.map(s=><option key={s.id} value={s.id}>{s.name} · {new Date(s.createdAt).toLocaleString('fr-BE')}</option>)}</select></label>
  {!sources.length&&<p>Aucune copie PC : utiliser Table → PC ou conserver une préparation en simulation.</p>}
  <label><input type="checkbox" checked={includePhantom} onChange={e=>{setIncludePhantom(e.target.checked);setPreview(null);setConfirmPhantom(false);}}/> Inclure les éventuels changements d’alimentation 48 V (exclus par défaut)</label>
  </div>
