@@ -1,6 +1,8 @@
 import {PARAMETERS,descriptor,validateWire,defaultWire,type Value} from "./parameters.js";
 import dgram from "node:dgram";
 import {METER_BANKS} from './meter-banks.js';
+import {SCENE_SCHEMA} from './scene-schema.js';
+import {compileNativeScene} from './native-scene.js';
 import { EventEmitter } from "node:events";
 import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
 
@@ -15,6 +17,8 @@ export class XR18 extends EventEmitter {
   private port: number;
   private writes: boolean;
   private parameterValues=new Map<string,{value:Value;updatedAt:string}>();
+  private nodeReadSupport:'unknown'|'available'|'unavailable'='unknown';
+  private scalarAliases=new Map<string,string>();
   private generation=0;
   private operationEpoch=0;
   cancelOperations(){this.operationEpoch++;}
@@ -32,18 +36,48 @@ export class XR18 extends EventEmitter {
       if(address==='/lr/mix/fader')return this.main.fader;if(address==='/lr/mix/on')return this.main.on?1:0;
       return this.parameterValues.get(address)?.value??defaultWire(p);
     }
-    const reply=await this.query(address);const value=validateWire(address,reply.args[0]);this.remember(address,value);return value;
+    let reply:OscMessage;
+    try{reply=await this.query(this.scalarAliases.get(address)??address);}
+    catch(error){
+      // Some firmware/client implementations expose insert selection as sel.
+      // Probe by reading only; never send a guessed write to an alias.
+      if(!address.endsWith('/insert/fxslot')||this.scalarAliases.has(address)||!String(error).includes('Pas de réponse XR18'))throw error;
+      const alias=address.replace(/fxslot$/,'sel');reply=await this.query(alias);
+      validateWire(address,reply.args[0]);this.scalarAliases.set(address,alias);
+    }
+    const value=validateWire(address,reply.args[0]);this.remember(address,value);return value;
+  }
+  async readConsoleParameters(prefix=''){
+    const addresses=Object.keys(PARAMETERS).filter(a=>!prefix||a===prefix||a.startsWith(prefix+'/'));
+    if(!addresses.length)throw Error('Aucun paramètre pour ce groupe');
+    const wanted=new Set(addresses),values:Record<string,Value>={},operation=this.operationId(),generation=this.generation;
+    const check=()=>{if(operation!==this.operationId()||generation!==this.generation)throw Error('Lecture interrompue : opération ou connexion modifiée');};
+    const groups=Object.entries(SCENE_SCHEMA).filter(([node,fields])=>fields.some(f=>wanted.has(node+'/'+(node.endsWith('/geq')?f.leaf.replace(/^geq\//,''):f.leaf)))).map(([node])=>node);
+    const readGroup=async(node:string)=>{
+      let line:string;
+      try{line=await this.node(node);}catch(e){check();if(!String(e).includes('Nœud XR18 absent'))throw e;line=await this.node(node);}
+      check();
+      let commands;try{const parsed=compileNativeScene(line);if(parsed.nodes.length!==1||parsed.nodes[0]!==node)throw Error('Un seul bloc correspondant à la requête est requis');commands=parsed.commands;}catch(e){throw Error(`Bloc XR18 incompatible ${node} : ${(e as Error).message}`);}
+      for(const c of commands)if(wanted.has(c.address)){const value=validateWire(c.address,c.value);values[c.address]=value;this.remember(c.address,value);}
+    };
+    if(this.mode==='real'&&this.nodeReadSupport==='unknown'){
+      try{await readGroup(groups[0]!);this.nodeReadSupport='available';}
+      catch(e){check();if(!String(e).includes('Nœud XR18 absent'))throw e;this.nodeReadSupport='unavailable';}
+    }
+    if(this.mode==='real'&&this.nodeReadSupport==='available'){
+      for(let offset=0;offset<groups.length;offset+=4){check();await Promise.all(groups.slice(offset,offset+4).map(readGroup));await new Promise(r=>setTimeout(r,5));}
+    }else{
+      for(let offset=0;offset<addresses.length;offset+=8){check();await Promise.all(addresses.slice(offset,offset+8).map(async a=>{values[a]=await this.readParameter(a);this.remember(a,values[a]!);}));await new Promise(r=>setTimeout(r,5));}
+    }
+    check();const missing=addresses.filter(a=>!Object.hasOwn(values,a));
+    if(missing.length)throw Error('Capture incomplète : '+missing.slice(0,5).join(', '));
+    return values;
   }
   async refreshParameters(prefix:string){
     if(!prefix.startsWith('/')||prefix.length<3)throw Error('Groupe requis');
     const addresses=Object.keys(PARAMETERS).filter(a=>a===prefix||a.startsWith(prefix+'/'));
     if(!addresses.length||addresses.length>500)throw Error('Choisir un groupe de 1 à 500 paramètres');
-    const generation=this.generation;
-    for(let offset=0;offset<addresses.length;offset+=8){
-      if(generation!==this.generation)throw Error('Connexion modifiée');
-      await Promise.all(addresses.slice(offset,offset+8).map(async a=>{const v=await this.readParameter(a);if(this.mode==='simulation')this.remember(a,v);}));
-      await new Promise(r=>setTimeout(r,10));
-    }
+    await this.readConsoleParameters(prefix);
     return this.parameterState();
   }
   async writeParameter(address:string,value:Value,allowPhantom=false){
@@ -59,9 +93,11 @@ export class XR18 extends EventEmitter {
       return checked;
     }
     if(!this.writes||!this.isLive())throw Error('Écritures désactivées ou XR18 déconnectée');
-    const generation=this.generation;
+    const generation=this.generation,operation=this.operationId();
+    if(address.endsWith('/insert/fxslot'))await this.readParameter(address);
+    if(generation!==this.generation||operation!==this.operationId()||!this.writes||!this.isLive())throw Error('Écriture interrompue');
     // Request readback after sending, never update optimistically.
-    this.send(address,[p.type==='f'?oscFloat(checked as number):checked]);
+    this.send(this.scalarAliases.get(address)??address,[p.type==='f'?oscFloat(checked as number):checked]);
     const observed=await this.readParameter(address);
     if(generation!==this.generation)throw Error('Connexion modifiée pendant écriture');
     if(typeof observed==='number'&&typeof checked==='number'?Math.abs(observed-checked)>.003:observed!==checked)throw Error('Lecture différente : '+address);
@@ -144,6 +180,7 @@ export class XR18 extends EventEmitter {
   }
   private handle(msg: OscMessage) {
     this.emit("osc-reply",msg);
+    for(const [canonical,alias] of this.scalarAliases)if(msg.address===alias){msg={...msg,address:canonical};break;}
     if(PARAMETERS[msg.address]){try{this.remember(msg.address,validateWire(msg.address,msg.args[0]));}catch{return;}}
     if(METER_BANKS[msg.address]&&Buffer.isBuffer(msg.args[0])){
       const levels=decodeXAirMeterBlob(msg.args[0],METER_BANKS[msg.address]!.count,false),updatedAt=new Date().toISOString();
@@ -235,7 +272,13 @@ export class XR18 extends EventEmitter {
   }
   async node(path:string):Promise<string>{
     if(this.mode!=='real'||!this.isLive())throw Error('XR18 déconnectée');
-    return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&a.startsWith(path+' '));if(typeof text!=='string')return;clearTimeout(timer);this.off('osc-reply',done);resolve(text.trim());};const timer=setTimeout(()=>{this.off('osc-reply',done);reject(Error('Nœud XR18 absent : '+path));},1000);this.on('osc-reply',done);this.send('/node',[path.slice(1)]);});
+    return new Promise((resolve,reject)=>{
+      const cleanup=()=>{clearTimeout(timer);this.off('osc-reply',done);this.off('transport-closed',closed);};
+      const closed=()=>{cleanup();reject(Error('Connexion modifiée'));};
+      const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&a.startsWith(path+' '));if(typeof text!=='string')return;cleanup();resolve(text.trim());};
+      const timer=setTimeout(()=>{cleanup();reject(Error('Nœud XR18 absent : '+path));},1000);
+      this.on('osc-reply',done);this.once('transport-closed',closed);this.send('/node',[path.slice(1)]);
+    });
   }
   async applyNative(commands:{address:string;type:'f'|'i'|'s';value:number|string}[]){
     if(process.env.XR18_EXPERIMENTAL_SCENES!=="true"||!this.writes||!this.isLive())throw Error('Rappel matériel expérimental désactivé ou XR18 déconnectée');
@@ -268,7 +311,7 @@ export class XR18 extends EventEmitter {
     this.close();
     this.currentMode=opts.mode;this.host=opts.host;this.port=opts.port;
     this.writes=opts.mode==='real'&&opts.enableWrites;
-    this.lastReplyAt=null;this.meters=null;this.meterBanks.clear();this.advanced.clear();this.parameterValues.clear();this.fxValues.clear();
+    this.lastReplyAt=null;this.meters=null;this.meterBanks.clear();this.advanced.clear();this.parameterValues.clear();this.fxValues.clear();this.nodeReadSupport='unknown';this.scalarAliases.clear();
     for(let i=1;i<=16;i++)this.channels.set(i,{channel:i,fader:.5,on:true,updatedAt:null});
     this.main={channel:0,fader:.5,on:true,updatedAt:null};
     this.connected=opts.mode==='simulation';

@@ -1,6 +1,12 @@
-# XR18 Studio 2.0.0-beta.2
+# XR18 Studio 2.0.0-beta.3
 
 Cette première bêta prépare la nouvelle version majeure. Elle améliore l’accès aux commandes existantes ; elle ne prétend pas encore remplacer toutes les fonctions de X AIR Edit. Elle ne modifie pas le format des scènes JSON version 2 ni les bases de données existantes.
+
+## Correctif beta.3 — compatibilité des captures
+
+Capture par blocs natifs `/node`, nouvelle tentative après perte d’une réponse, validation stricte du bloc et de tous les paramètres attendus. Sources L/R prises en charge. Alias d’insertion `sel` découvert uniquement par une lecture valide quand `fxslot` ne répond pas, puis utilisé pour les écritures avec lecture comparée. L’absence d’un bloc requis interrompt la capture ; aucun réglage n’est inventé ou ignoré.
+
+La comparaison locale avec un export réel couvre les 2 636 paramètres du catalogue. Les quatre vecteurs FX ont été simulés uniquement pour vérifier le transport du test ; leurs valeurs réelles n’ont pas été déduites des tokens textuels. La validation sur console physique demeure nécessaire.
 
 ## Nouveautés
 

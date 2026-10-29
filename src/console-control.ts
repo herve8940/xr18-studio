@@ -22,9 +22,9 @@ export class ConsoleControl {
   return structuredClone(s);
  }
  async capture():Promise<CompleteScene>{
-  const identity=this.identity(),values:Record<string,Value>={};const addresses=Object.keys(PARAMETERS);
-  for(let i=0;i<addresses.length;i+=8){if(identity!==this.identity())throw Error('Connexion modifiée');await Promise.all(addresses.slice(i,i+8).map(async a=>{values[a]=await this.xr.readParameter(a);}));await new Promise(r=>setTimeout(r,5));}
-  const fx=[];for(let slot=1;slot<=4;slot++)fx.push(await this.xr.readFx(slot));
+  const identity=this.identity(),operation=this.xr.operationId(),values=await this.xr.readConsoleParameters();
+  const check=()=>{if(identity!==this.identity()||operation!==this.xr.operationId())throw Error('Connexion modifiée');};
+  check();const fx=[];for(let slot=1;slot<=4;slot++){check();fx.push(await this.xr.readFx(slot));}check();
   return {version:2,scope:'console',values,fx};
  }
  async preview(input:unknown,wire=false){

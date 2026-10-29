@@ -1,3 +1,15 @@
+# XR18 Studio 2.0.0-beta.3 — Capture par blocs XR18
+
+- Table → PC et la lecture des groupes utilisent les blocs natifs `/node` lorsque la console les fournit, avec vérification de chaque bloc et de la complétude du catalogue. Une lecture manquante ne devient jamais une valeur par défaut.
+- Une réponse de bloc perdue est redemandée une fois. L’ancienne lecture scalaire reste disponible si le premier bloc ne répond pas ; les changements de connexion interrompent la capture.
+- Sources d’entrée L/R ajoutées au catalogue ; la source R ne bloque plus la lecture d’un canal.
+- Pour les commandes individuelles d’insertion, un alias `/insert/sel` est essayé en lecture si `/insert/fxslot` ne répond pas. Une écriture utilise cet alias seulement après une réponse valide, puis une lecture comparée. Il n’est pas choisi aveuglément.
+- Tests synthétiques du protocole pour capture complète par blocs, perte de paquet, bloc malformé et alias d’insertion. Comparaison locale avec un export fourni par l’utilisateur : 693 lignes décodables, 2 636 paramètres du catalogue lus sans écart ; huit entrées auxiliaires de trim hors catalogue restent exclues. L’export privé n’est pas publié.
+
+Cette comparaison est un test de transport émulé, pas une validation physique. Les paramètres FX textuels de l’export restent opaques ; les vecteurs typés doivent être reçus du matériel. Installer beta.3 et relancer Table → PC pour confirmer le résultat sur la console.
+
+## Versions précédentes
+
 # XR18 Studio 2.0.0-beta.2 — Correctif de synchronisation
 
 Corrige l’adresse DIM-PFL du catalogue : `/config/solo/dimpfl` remplace la faute `/config/solo/dimplf`, qui provoquait « Pas de réponse XR18 » pendant Table → PC. Les anciens fichiers de scènes JSON version 2 contenant la faute sont normalisés lors de leur validation ; aucune lecture manquante n’est ignorée.
