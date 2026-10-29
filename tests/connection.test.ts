@@ -13,6 +13,7 @@ import {permitted,type User} from '../src/access.js';
 test('identity uses console name, rejects other models and malformed replies',()=>{
  assert.equal(parseIdentity(encodeOsc('/info',['V0.50','Mon groupe','XR18','1.22']),'127.0.0.1',10024)?.name,'Mon groupe');
  for(const data of [Buffer.from('bad'),encodeOsc('/info',['XR18','wrong','XR16']),encodeOsc('/info',['XR18','XR18']),encodeOsc('/other',['V','name','XR18'])])assert.equal(parseIdentity(data,'127.0.0.1',10024),null);
+ assert.equal(parseIdentity(encodeOsc('/xinfo',['192.168.68.94','Console','XR18','1.17']),'192.168.68.94',10024)?.name,'Console');
  assert.deepEqual(broadcastTargets({eth0:[{family:'IPv4',address:'10.1.2.42',netmask:'255.255.254.0',internal:false,cidr:'10.1.2.42/23',mac:'00:00:00:00:00:00'}]}),['10.1.3.255']);
  for(const host of ['999.1.2.3','0.0.0.0','224.0.0.1','host.local'])assert.throws(()=>connectionConfig({mode:'real',host}));
  for(const role of ['guest','musician'] as const){const u:User={id:'u',name:'u',role,buses:[1]};assert.equal(permitted(u,'POST','/api/connection'),false);assert.equal(permitted(u,'GET','/api/discovery'),false);}
@@ -48,4 +49,16 @@ test('UDP discovery and live switching, no mixer writes, persistence, failure an
   xr.setFader(1,.2);assert.equal(xr.listChannels()[0]?.fader,.2);assert.ok(resets>=3);
   assert.equal((await loadConnection(path,initial)).mode,'simulation');
  }finally{xr.close();socket.close();await rm(directory,{recursive:true,force:true});}
+});
+
+test('discovery retries dropped packets, accepts xinfo and records rejected identity without writes',async()=>{
+ const socket=dgram.createSocket('udp4');await new Promise<void>(r=>socket.bind(0,'127.0.0.1',r));
+ const port=(socket.address() as {port:number}).port;let probes=0;
+ socket.on('message',(data,remote)=>{
+  const msg=decodeOsc(data);assert.equal(msg.args.length,0);
+  if(msg.address==='/info')socket.send(encodeOsc('/info',['V','Other','XR16','1']),remote.port,remote.address);
+  if(msg.address==='/xinfo'&&++probes>=2)socket.send(encodeOsc('/xinfo',['127.0.0.1','Retry console','XR18','1']),remote.port,remote.address);
+ });
+ const diagnostics={received:0,unrecognized:0,sendErrors:[] as string[]};
+ try{const found=await discoverXR18(800,['127.0.0.1'],port,diagnostics);assert.equal(found[0]?.name,'Retry console');assert.ok(probes>=2);assert.ok(diagnostics.unrecognized>0);assert.deepEqual(diagnostics.sendErrors,[]);}finally{socket.close();}
 });

@@ -31,8 +31,9 @@ export class ConnectionManager {
   try{
    // Verify identity before touching the running transport. No mixer writes.
    if(next.mode==='real'){
-    const devices=await discoverXR18(900,[next.host],next.port);
-    if(!devices.some(d=>d.host===next.host))throw Error('La XR18 ne répond pas. Vérifie son alimentation et le réseau local.');
+    const diagnostics={received:0,unrecognized:0,sendErrors:[] as string[]};
+    const devices=await discoverXR18(2500,[next.host],next.port,diagnostics);
+    if(!devices.some(d=>d.host===next.host))throw Error(diagnostics.received?`Réponse UDP reçue de ${next.host}:${next.port}, mais identité XR18 non reconnue (${diagnostics.unrecognized} réponse(s)).`:`La XR18 ne répond pas aux demandes /info et /xinfo à ${next.host}:${next.port} après plusieurs essais.${diagnostics.sendErrors.length?' Erreur réseau : '+diagnostics.sendErrors.join('; '):' Vérifie l’autorisation Réseau local et le pare-feu de XR18 Studio.'}`);
    }
    switched=true;await this.xr.reconnect(next);
    if(next.mode==='real'){
