@@ -99,8 +99,8 @@ export default function App() {
         if (msg.type === "channel" && msg.state) {updateChannel(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="main"&&msg.state){setMainState(msg.state);setLastOscUpdate(new Date().toISOString());}
         if(msg.type==="status"&&msg.status)setStatus(msg.status);
-        if(msg.type==="meters"&&msg.state)setMeterState(msg.state as {channels:number[];updatedAt:string|null;available:boolean});
-        if(msg.type==="advanced"&&msg.state){const a=msg.state as {address:string;value:number|string;updatedAt:string};setAdvancedReadback(prev=>({...prev,[a.address]:{value:a.value,updatedAt:a.updatedAt}}));}
+        if(msg.type==="meters"&&msg.state)setMeterState(msg.state as unknown as {channels:number[];updatedAt:string|null;available:boolean});
+        if(msg.type==="advanced"&&msg.state){const a=msg.state as unknown as {address:string;value:number|string;updatedAt:string};setAdvancedReadback(prev=>({...prev,[a.address]:{value:a.value,updatedAt:a.updatedAt}}));}
       } catch { /* malformed message */ } };
       socket.onclose = () => { if(active) { setSocketOk(false); retry = setTimeout(connect,3000); } };
       socket.onerror = () => socket?.close();
