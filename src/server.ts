@@ -34,6 +34,18 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify({ok:true,acknowledged:mode==="simulation"}));return;
     }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
   }
+  if(req.method==="POST"&&path==="/api/osc/advanced/write"){
+    try{
+      if(req.headers.origin && !["http://127.0.0.1","http://localhost"].some(base=>req.headers.origin!.startsWith(base+":")))throw Error("Remote origin denied");
+      let raw="";for await(const part of req){raw+=part;if(raw.length>512)throw Error("Payload too large");}
+      const data:unknown=JSON.parse(raw);
+      if(!data||typeof data!=="object"||Array.isArray(data))throw Error("Invalid request");
+      const {address,value,confirm} = data as Record<string,unknown>;
+      if(confirm!==true||typeof address!=="string"||typeof value!=="number")throw Error("Explicit confirmation and numeric OSC value required");
+      xr18.writeAdvanced(address,value);
+      res.end(JSON.stringify({ok:true,sent:true,hardwareAcknowledged:false,address}));return;
+    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));return;}
+  }
   if(req.method==="GET"&&path==="/api/osc/advanced"){res.end(JSON.stringify({values:xr18.advancedState(),readOnly:true,verifiedOnHardware:false}));return;}
   const advancedMatch=/^\/api\/osc\/advanced\/channels\/(\d+)\/refresh$/.exec(path);
   if(req.method==="POST"&&advancedMatch){try{xr18.refreshAdvanced(Number(advancedMatch[1]));res.end(JSON.stringify({ok:true,readOnly:true}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;}
