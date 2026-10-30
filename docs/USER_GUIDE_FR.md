@@ -102,6 +102,8 @@ En bas à gauche, la carte de connexion indique si le contrôle est activé.
 
 ## 6. Faire la balance avec « Mon ingé son »
 
+> 📘 Débutant ? Suis le **[tuto illustré pas à pas](TUTO_MON_INGE_SON.md)**.
+
 **Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes : brancher, dire qui est branché où, régler le gain de chaque instrument, écouter et corriger, préparer les retours, garder le bon réglage.
 
 Un doute sur un mot (gain, compresseur, gate, repisse, pré-fader…) ? Ouvre **Les mots du son, expliqués simplement** en haut de la page.

@@ -102,6 +102,8 @@ The connection card at the bottom left shows whether control is enabled.
 
 ## 6. Soundcheck with “Mon ingé son”
 
+> 📘 Beginner? Follow the **[illustrated step-by-step tutorial](TUTO_MON_INGE_SON_EN.md)**.
+
 **Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps: plug in, say who is plugged in where, set each instrument's gain, listen and fix, prepare monitors, keep the good setting.
 
 Unsure about a word (gain, compressor, gate, bleed, pre-fader…)? Open **Les mots du son** (sound words, explained simply) at the top of the page. Before any change, a window shows what will be modified; close it without changes with the X, **Annuler, ne rien changer**, Escape or a click outside.
