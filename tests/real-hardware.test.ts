@@ -1,0 +1,31 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {decodeOsc} from '../src/osc.js';
+import {readbackTolerance,PARAMETERS} from '../src/parameters.js';
+import {XR18} from '../src/xr18.js';
+import {ConsoleControl} from '../src/console-control.js';
+import {LibraryStore} from '../src/library-store.js';
+
+// Behaviours found on a physical XR18 (firmware 1.x), not reproduced by the simulator.
+test('a /node reply sent back as "node" (no leading slash) is accepted',()=>{
+ const pad=(t:string)=>{const b=Buffer.from(t+'\0','latin1');return Buffer.concat([b,Buffer.alloc((4-b.length%4)%4)]);};
+ const raw=Buffer.concat([pad('node'),pad(',s'),pad('/config/chlink OFF OFF')]);
+ const m=decodeOsc(raw);assert.equal(m.address,'/node');assert.equal(m.args[0],'/config/chlink OFF OFF');
+});
+test('read-back tolerates one hardware step on log-scaled values (HPF, Q, times)',()=>{
+ const hpf=Object.keys(PARAMETERS).find(a=>a.endsWith('/preamp/hpf'))!;
+ const tol=readbackTolerance(hpf);assert.ok(tol>=.003);
+ // The XR18 stores 35 Hz as the step just below (34.3 Hz): a difference of about one step must pass.
+ assert.ok(tol>=1/200,'tolerance '+tol);
+});
+test('a full capture survives a few addresses the console never answers',async()=>{
+ const xr=new XR18({mode:'simulation',host:'127.0.0.1',port:10024,enableWrites:false}),library=new LibraryStore(':memory:');
+ const silent=new Set(['/config/solo/dimpfl','/ch/16/automix/group']);
+ const original=xr.readParameter.bind(xr);
+ (xr as unknown as {readParameter:(a:string)=>Promise<unknown>}).readParameter=async(a:string)=>{if(silent.has(a))throw Error('Pas de réponse XR18 : '+a);return original(a);};
+ try{
+  const scene=await new ConsoleControl(xr,library).capture();
+  assert.deepEqual([...(scene.missing??[])].sort(),[...silent].sort());
+  assert.equal(Object.keys(scene.values).length,Object.keys(PARAMETERS).length-silent.size);
+ }finally{xr.close();library.close();}
+});

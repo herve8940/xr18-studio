@@ -48,8 +48,19 @@ app.whenReady().then(async () => {
     win=new BrowserWindow({
       show:!smoke,
       width:1440,height:900,minWidth:800,minHeight:600,
+      icon:path.join(__dirname,"icon.png"),
       backgroundColor:"#0d1621",
       webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,preload:path.join(__dirname,"preload.cjs")}
+    });
+    const appIcon=path.join(__dirname,"icon.png");
+    const fromWindow=(event)=>event.sender===win.webContents&&event.senderFrame===win.webContents.mainFrame;
+    ipcMain.on('xr18-confirm',(event,message)=>{
+      if(!fromWindow(event)){event.returnValue=false;return;}
+      event.returnValue=dialog.showMessageBoxSync(win,{type:"question",icon:appIcon,title:"XR18 Studio",message:String(message).slice(0,2000),buttons:["Annuler","Confirmer"],defaultId:1,cancelId:0,noLink:true})===1;
+    });
+    ipcMain.on('xr18-alert',(event,message)=>{
+      if(fromWindow(event))dialog.showMessageBoxSync(win,{type:"info",icon:appIcon,title:"XR18 Studio",message:String(message).slice(0,2000),buttons:["OK"],noLink:true});
+      event.returnValue=null;
     });
     ipcMain.handle('xr18-ai-configure',async(event,input)=>{
       try{

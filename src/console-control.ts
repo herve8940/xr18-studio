@@ -2,7 +2,7 @@ import {randomUUID,createHash} from 'node:crypto';
 import {PARAMETERS,descriptor,validateWire,toWire,fromWire,defaultWire,type Value} from './parameters.js';
 import type {XR18} from './xr18.js';
 import type {LibraryStore} from './library-store.js';
-export type CompleteScene={version:2;scope:'console';values:Record<string,Value>;fx:Awaited<ReturnType<XR18['readFx']>>[]};
+export type CompleteScene={version:2;scope:'console';values:Record<string,Value>;fx:Awaited<ReturnType<XR18['readFx']>>[];missing?:string[]};
 export class ConsoleControl {
  private previews=new Map<string,{values:Record<string,Value>;before:Record<string,Value>;identity:string;expires:number}>();
  constructor(private xr:XR18,private library:LibraryStore){}
@@ -17,9 +17,14 @@ export class ConsoleControl {
  }
  async capture():Promise<CompleteScene>{
   const identity=this.identity(),values:Record<string,Value>={};const addresses=Object.keys(PARAMETERS);
-  for(let i=0;i<addresses.length;i+=8){if(identity!==this.identity())throw Error('Connexion modifiée');await Promise.all(addresses.slice(i,i+8).map(async a=>{values[a]=await this.xr.readParameter(a);}));await new Promise(r=>setTimeout(r,5));}
+  // A value the console does not answer is asked once more, then listed as missing: one silent
+  // address (firmware difference, lost UDP packet) must not make the whole capture fail.
+  const missing:string[]=[];
+  const read=async(a:string)=>{try{values[a]=await this.xr.readParameter(a);}catch(e){if(identity!==this.identity()||!/Pas de réponse/.test((e as Error).message))throw e;try{values[a]=await this.xr.readParameter(a);}catch(e2){if(!/Pas de réponse/.test((e2 as Error).message))throw e2;missing.push(a);}}};
+  for(let i=0;i<addresses.length;i+=8){if(identity!==this.identity())throw Error('Connexion modifiée');await Promise.all(addresses.slice(i,i+8).map(read));await new Promise(r=>setTimeout(r,5));}
+  if(missing.length>addresses.length*.05)throw Error(`La console n’a pas répondu pour ${missing.length} réglages : vérifie la connexion (câble ou Wi-Fi) puis recommence.`);
   const fx=[];for(let slot=1;slot<=4;slot++)fx.push(await this.xr.readFx(slot));
-  return {version:2,scope:'console',values,fx};
+  return missing.length?{version:2,scope:'console',values,fx,missing}:{version:2,scope:'console',values,fx};
  }
  async preview(input:unknown,wire=false){
   if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length<1||Object.keys(input).length>1000)throw Error('1 à 1000 paramètres requis');

@@ -295,7 +295,7 @@ export class XR18 extends EventEmitter {
   }
   async node(path:string):Promise<string>{
     if(this.mode!=='real'||!this.isLive())throw Error('XR18 déconnectée');
-    return new Promise((resolve,reject)=>{const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&a.startsWith(path+' '));if(typeof text!=='string')return;clearTimeout(timer);this.off('osc-reply',done);resolve(text.trim());};const timer=setTimeout(()=>{this.off('osc-reply',done);reject(Error('Nœud XR18 absent : '+path));},1000);this.on('osc-reply',done);this.send('/node',[path.slice(1)]);});
+    return new Promise((resolve,reject)=>{const bare=path.slice(1);const done=(msg:OscMessage)=>{const text=msg.args.find(a=>typeof a==='string'&&(a.startsWith(path+' ')||a.startsWith(bare+' ')||a.trim()===path));if(typeof text!=='string')return;clearTimeout(timer);this.off('osc-reply',done);resolve((text.startsWith('/')?text:'/'+text).trim());};const timer=setTimeout(()=>{this.off('osc-reply',done);reject(Error('Nœud XR18 absent : '+path));},1500);this.on('osc-reply',done);this.send('/node',[path.slice(1)]);});
   }
   async applyNative(commands:{address:string;type:'f'|'i'|'s';value:number|string}[]){
     if(process.env.XR18_EXPERIMENTAL_SCENES!=="true"||!this.writes||!this.isLive())throw Error('Rappel matériel expérimental désactivé ou XR18 déconnectée');

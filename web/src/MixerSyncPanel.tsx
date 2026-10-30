@@ -27,7 +27,7 @@ export function MixerSyncPanel({status}:{status:Status}){
  </div>
  <button disabled={!connected||(direction==='push'&&(!status.writesEnabled||!sourceId))} onClick={()=>void run(async()=>{
   setPreview(null);setConfirmPhantom(false);
-  if(direction==='pull'){const result=await api('/pull',{});load(result);setMessage(`Table → PC terminée : ${result.count} paramètres et les quatre effets conservés sur le PC.`);}
+  if(direction==='pull'){const result=await api('/pull',{});load(result);setMessage(`Table → PC terminée : ${result.count} paramètres et les quatre effets conservés sur le PC.${result.missing?.length?` ${result.missing.length} réglage(s) sans réponse de la console, ignoré(s) : ${result.missing.slice(0,4).join(', ')}${result.missing.length>4?'…':''}.`:''}`);}
   else{setPreview(await api('/preview',{sourceId,includePhantom}));setMessage('Aperçu prêt. Rien n’a été envoyé à la table.');}
  })}>Synchroniser {direction==='pull'?'Table → PC':'PC → Table'}</button>
  {connected&&direction==='push'&&!status.writesEnabled&&<p>Pour préparer PC → Table, active d’abord le contrôle avec le bouton ci-dessus. Table → PC fonctionne en lecture seule.</p>}
