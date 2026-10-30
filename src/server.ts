@@ -10,6 +10,7 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import {discoverXR18} from "./discovery.js";
+import {EarsShare} from "./ears.js";
 import {ConnectionManager,loadConnection} from "./connection.js";
 import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
@@ -36,6 +37,8 @@ const mixerSync=new MixerSync(xr18,show.console,library);
 const coach=new SoundCoach(xr18,show.console,library);
 let aiRequestAt=0;
 const studioApi=new StudioApi(xr18,access,library,show);
+// Musicians' monitor mixes on the local network (QR links). Off until started from the app.
+const ears=new EarsShare(dbPath,xr18,()=>process.env.XR18_WEB_DIST,()=>studioApi.busy?'Une opération est en cours sur l’ordinateur, réessaie dans un instant':null,()=>show.manualOverride());
 const listenHost=process.env.XR18_HTTP_HOST??'127.0.0.1';
 const tls=process.env.XR18_TLS_CERT&&process.env.XR18_TLS_KEY?{cert:await readFile(process.env.XR18_TLS_CERT),key:await readFile(process.env.XR18_TLS_KEY)}:undefined;
 if(!['127.0.0.1','localhost'].includes(listenHost)&&(!tls||!access.enabled()))throw Error('Accès réseau : HTTPS et comptes configurés requis.');
@@ -59,12 +62,29 @@ const handler: http.RequestListener = async (req, res) => {
   if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
   const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/undo'].includes(path);
   if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
-    const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply');
+    const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply')||path.startsWith('/api/ears-share');
     if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
     if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
     if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
+  }
+  if(path.startsWith('/api/ears-share')){
+   try{
+    const m=/^\/api\/ears-share(?:\/(start|stop|musicians)(?:\/([a-f0-9-]{36})(?:\/(regenerate|qr))?)?)?$/.exec(path);
+    if(!m){res.writeHead(404);res.end(JSON.stringify({error:'Introuvable'}));return;}
+    let result:unknown;
+    if(req.method==='GET'&&!m[1])result=ears.status();
+    else if(req.method==='POST'&&m[1]==='start')result=await ears.start();
+    else if(req.method==='POST'&&m[1]==='stop')result=await ears.stop();
+    else if(req.method==='POST'&&m[1]==='musicians'&&!m[2]){const d=await body(req);ears.create(d.name,d.bus);result=ears.status();}
+    else if(req.method==='POST'&&m[3]==='regenerate'){ears.regenerate(m[2]!);result=ears.status();}
+    else if(req.method==='DELETE'&&m[2]&&!m[3]){ears.remove(m[2]);result=ears.status();}
+    else if(req.method==='GET'&&m[3]==='qr')result=await ears.qr(m[2]!,new URL(req.url!,'http://localhost').searchParams.get('host')??undefined);
+    else{res.writeHead(405);res.end(JSON.stringify({error:'Méthode non autorisée'}));return;}
+    res.end(JSON.stringify(result));
+   }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}
+   return;
   }
   if(path==='/api/mixer-sync'&&req.method==='GET'){res.end(JSON.stringify(mixerSync.status()));return;}
   if(path.startsWith('/api/mixer-sync/')&&req.method==='POST'){
@@ -312,7 +332,7 @@ const port = Number(process.env.HTTP_PORT ?? 3000);
 server.listen(port, listenHost, () => console.log(`XR18 Studio API on ${tls?"https":"http"}://${listenHost}:${port} (${xr18.mode})`));
 const statusTimer=setInterval(()=>{for(const ws of wss.clients){const req=wsRequests.get(ws);if(!req||!access.user(req))ws.terminate();}const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
 statusTimer.unref();
-function shutdown(){clearInterval(statusTimer);xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
+function shutdown(){clearInterval(statusTimer);ears.close();xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
 process.once("SIGINT",shutdown);
 process.once("SIGTERM",shutdown);
 

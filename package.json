@@ -21,11 +21,13 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
     "better-sqlite3": "^12.11.1",
+    "qrcode": "^1.5.4",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.5",
     "@types/ws": "^8.5.0",
     "concurrently": "^9.1.2",
     "electron": "^33.4.11",
