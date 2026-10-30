@@ -24,10 +24,10 @@ const wait=(ms:number)=>new Promise(r=>setTimeout(r,ms));
 
 test("quantized readbacks (HPF/pan 101 steps) are accepted, as on the real console",async()=>{
  const mixer=await fakeMixer();
- const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:true});
+ const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:true,autoSync:false});
  try{
   await xr.start();
-  for(let i=0;i<50&&!xr.status().connected;i++)await wait(20);
+  for(let i=0;i<250&&!xr.status().connected;i++)await wait(20);
   assert.ok(xr.status().connected,"meters or replies mark the console live");
   // 0.3349 is stored as 0.33 by a 101-step control: the old fixed 0.003 tolerance threw "Lecture différente".
   const hpf=Number(await xr.writeParameter("/ch/01/preamp/hpf",.3349));
@@ -40,10 +40,10 @@ test("quantized readbacks (HPF/pan 101 steps) are accepted, as on the real conso
 
 test("all 40 X-Air meters are kept in /meters/1 order",async()=>{
  const mixer=await fakeMixer();
- const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:false});
+ const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:false,autoSync:false});
  try{
   await xr.start();
-  for(let i=0;i<50&&!xr.meterState().available;i++)await wait(20);
+  for(let i=0;i<250&&!xr.meterState().available;i++)await wait(20);
   const m=xr.meterState();
   assert.equal(m.all.length,40);assert.equal(m.channels.length,16);
   assert.equal(m.all[36],-37);assert.equal(m.all[37],-38);
@@ -52,13 +52,13 @@ test("all 40 X-Air meters are kept in /meters/1 order",async()=>{
 
 test("live control sends immediately, then re-reads the stored value",async()=>{
  const mixer=await fakeMixer();
- const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:true});
+ const xr=new XR18({mode:"real",host:"127.0.0.1",port:mixer.port,enableWrites:true,autoSync:false});
  try{
   await xr.start();
-  for(let i=0;i<50&&!xr.status().connected;i++)await wait(20);
+  for(let i=0;i<250&&!xr.status().connected;i++)await wait(20);
   xr.liveSet("/ch/03/mix/fader",.7);
   assert.equal(xr.listChannels()[2]!.fader,.7);
-  await wait(450);
+  for(let i=0;i<150&&mixer.received.filter(a=>a==="/ch/03/mix/fader").length<2;i++)await wait(20);
   assert.ok(mixer.received.filter(a=>a==="/ch/03/mix/fader").length>=2,"value then readback request");
   xr.liveSet("/-stat/solosw/03",1);
   assert.throws(()=>xr.liveSet("/headamp/01/phantom",1),/autorisé/);

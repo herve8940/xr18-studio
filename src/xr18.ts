@@ -88,8 +88,8 @@ export class XR18 extends EventEmitter {
   private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
   private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
-  constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
-    super(); this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
+  constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean; autoSync?: boolean }) {
+    super(); this.autoSync = opts.autoSync !== false; this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
     this.writes = opts.mode === "real" && opts.enableWrites;
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
@@ -143,6 +143,7 @@ export class XR18 extends EventEmitter {
     if(this.advancedAddresses.has(address)){const state={value,updatedAt:now};this.advanced.set(address,state);this.emit('advanced',{address,...state});}
   }
   private syncing=false;
+  private autoSync=true;
   /** Full pull of the console state, as X-AIR Edit does on "Mixer -> PC" synchronisation. */
   async syncLiveView(){
     const addresses=[...Object.keys(PARAMETERS),...Array.from({length:16},(_,i)=>`/-stat/solosw/${String(i+1).padStart(2,'0')}`)];
@@ -153,10 +154,11 @@ export class XR18 extends EventEmitter {
     if(this.syncing||!this.socket)return {requested:0};
     this.syncing=true;const generation=this.generation;
     try{
-      for(let i=0;i<addresses.length;i+=12){
+      // ~800 requests per second: gentle on the console's network stack (full pull in ~3 s).
+      for(let i=0;i<addresses.length;i+=8){
         if(generation!==this.generation)break;
-        for(const a of addresses.slice(i,i+12))this.send(a);
-        await new Promise(r=>setTimeout(r,6));
+        for(const a of addresses.slice(i,i+8))this.send(a);
+        await new Promise(r=>setTimeout(r,10));
       }
     }finally{this.syncing=false;}
     return {requested:addresses.length};
@@ -192,7 +194,7 @@ export class XR18 extends EventEmitter {
     }
     // Then pull everything else in the background so the graphical mixer shows the real console.
     const generation=this.generation;
-    setTimeout(()=>{if(generation===this.generation)void this.syncLiveView().catch(e=>this.emit('warning',String(e)));},400).unref();
+    if(this.autoSync)setTimeout(()=>{if(generation===this.generation)void this.syncLiveView().catch(e=>this.emit('warning',String(e)));},400).unref();
   }
   private send(address: string, args: OutgoingOscArg[] = []) {
     if (!this.socket) return;
