@@ -10,14 +10,16 @@
 
 ## Nouveautés 1.3 / What’s new in 1.3
 
-- **Console graphique** : tranches avec nom et couleur lus sur la console, gain, pan, M / S / LR, fader gradué en dB, vumètres temps réel.
-- **Faders par mix** (« sends on fader ») : Main LR, Bus 1-6 ou FX 1-4, plus une vue Bus · FX · DCA.
-- **Égaliseur interactif** (points déplaçables), gate, compresseur et envois de la tranche sélectionnée.
+- **Console graphique façon X-AIR Edit** : onglets Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres, avec la banque de faders en bas et la barre de mix à droite.
+- **Explications intégrées** : chaque vue explique en langage simple ce que fait chaque option. Voir le [guide de la console](docs/GUIDE_CONSOLE.md).
+- **Faders par mix** (« sends on fader ») pour faire le retour de chaque musicien.
 - **Corrections issues de la comparaison avec X-AIR Edit 1.8.1** : les écritures ne sont plus refusées à tort, l’affichage dB est exact, les 40 vumètres sont lus, X18 et MR18 sont reconnues. Détails : [XAIR_EDIT_PARITY](docs/XAIR_EDIT_PARITY.md).
 
-| Console graphique | Égaliseur | Envois sur les faders |
+| Égaliseur | Gate | Entrée |
 |---|---|---|
-| ![](docs/images/console.png) | ![](docs/images/mixer-eq.png) | ![](docs/images/mixer-sends-on-fader.png) |
+| ![](docs/images/xair-eq.png) | ![](docs/images/xair-gate.png) | ![](docs/images/xair-input.png) |
+| **Compresseur** | **Envois** | **Effets** |
+| ![](docs/images/xair-comp.png) | ![](docs/images/xair-sends.png) | ![](docs/images/xair-fx.png) |
 
 ---
 
@@ -31,6 +33,7 @@ npm run studio
 Backend et interface compilés : `npm run build:all`. Application de bureau : `npm run desktop:package`. Les installateurs sont produits par GitHub Actions : le workflow « Desktop packages » à chaque PR, et le workflow « Release » quand la version de `package.json` change sur `main`.
 
 - [Guide utilisateur (FR)](docs/USER_GUIDE_FR.md) · [User guide (EN)](docs/USER_GUIDE_EN.md)
+- [Guide de la console : chaque option expliquée](docs/GUIDE_CONSOLE.md)
 - [Alignement sur X-AIR Edit et protocole OSC](docs/XAIR_EDIT_PARITY.md)
 - [Mon ingé son : parcours guidé et dialogue](docs/INGE_SON.md)
 - [État vérifié et limites](docs/ETAT_DU_PROJET.md)

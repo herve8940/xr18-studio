@@ -1,4 +1,3 @@
-import {InputGainPanel} from './InputGainPanel';
 import {SoundCoach} from "./SoundCoach";
 import {MonitorPanel} from "./MonitorPanel";
 import {ConsolePanel} from "./ConsolePanel";
@@ -38,8 +37,7 @@ const MENU: { page: Page; name: string; icon: typeof AudioLines }[] = [
   { page:"scenes", name:"Snapshots", icon:Disc3 }, { page:"settings", name:"Configuration", icon:Settings2 },
 ];
 const TABS: { id: Tab; name: string }[] = [
-  {id:"controls",name:"Contrôles"},{id:"mixer",name:"Mixage"},{id:"eq",name:"EQ"},{id:"dynamics",name:"Dynamics"},
-  {id:"sends",name:"Envois"},{id:"fx",name:"Effets"},{id:"routing",name:"Routage"},{id:"dca",name:"DCA"},
+  {id:"mixer",name:"Console"},{id:"eq",name:"Préréglages par instrument"},{id:"fx",name:"Bibliothèque d’effets"},{id:"controls",name:"Tous les paramètres"},
 ];
 export default function App() {
   const [page, setPage] = useState<Page>("coach");
@@ -286,7 +284,7 @@ export default function App() {
           {tab==="mixer" ? <>
             <XAirMixer canWrite={canWrite} selectedChannel={selected} onSelectChannel={setSelected}/>
             <div className="studio-bottom-grid">
-              <div id="input-gain-details"><InputGainPanel key={`${selected}-${status.mode}-${status.host??''}`} channel={selected} name={labelFor(selected)} canWrite={canWrite} onEq={()=>setTab('eq')} onDynamics={()=>setTab('dynamics')} onSends={()=>setTab('sends')}/></div>
+              
               
               <section className="studio-panel"><div className="panel-title"><div><b>Scènes rapides</b><small>Snapshots locaux</small></div><Save size={16}/></div><div className="quick-scenes">{store.scenes.slice(0,4).map(s=><button key={s.id} onClick={()=>void recallScene(s)}><Disc3 size={16}/>{s.name}</button>)}{store.scenes.length===0&&<p>Aucune scène enregistrée.</p>}<button className="quick-add" onClick={()=>setPage("scenes")}><Plus size={16}/> Nouvelle scène</button></div></section>
             </div>

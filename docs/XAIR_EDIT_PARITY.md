@@ -22,14 +22,10 @@ Analyse du binaire macOS de X-AIR Edit 1.8.1 (Intel, JUCE). Les chaînes OSC ont
 
 ## Console graphique
 
-L’onglet **Console › Mixage** propose :
+Le menu **Console**, onglet **Console**, reproduit les vues de X-AIR Edit : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite. Chaque option est expliquée dans l’application (« ? Explications ») et dans le [guide de la console](GUIDE_CONSOLE.md).
 
-- des tranches avec scribble strip (nom et couleur lus sur la console), gain (selon la source), pan, M / S / LR, fader gradué en dB et vumètre avec maintien de crête ;
-- un sélecteur Main LR / Bus 1-6 / FX 1-4 qui affiche les envois sur les faders (« sends on fader ») ;
-- une vue Bus · FX · DCA ;
-- un égaliseur interactif : courbe calculée, points déplaçables, molette pour le Q et coupe-bas ;
-- gate et compresseur avec courbe de transfert, et 10 envois avec leur point de prélèvement.
+Le contrôle direct passe par le WebSocket (`{type:'set'}`), comme les gestes de X-AIR Edit : la valeur est envoyée immédiatement, puis relue 300 ms après le dernier mouvement. Le 48 V, le routage et le type d’effet passent par la prévisualisation avec confirmation (`/api/console/preview` puis `/api/console/apply`). Un musicien ne peut régler que les envois de ses propres bus.
 
-Le contrôle direct passe par le WebSocket (`{type:'set'}`), comme les gestes de X-AIR Edit : la valeur est envoyée immédiatement, puis relue 300 ms après le dernier mouvement. Le 48 V, le routage et le type de moteur FX restent dans le flux prévisualisation + confirmation. Un musicien ne peut régler que les envois de ses propres bus.
+Les noms complets des 61 algorithmes d’effet ont été relevés dans le binaire de X-AIR Edit (Hall Reverb, Stereo Delay, Modulation Delay…).
 
 À vérifier sur la XR18 physique : le mapping solo `/-stat/solosw/01-16` et la cadence des vumètres.

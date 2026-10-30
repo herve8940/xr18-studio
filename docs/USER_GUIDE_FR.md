@@ -93,54 +93,38 @@ Saisir le gain en dB, prévisualiser, puis confirmer. Le panneau permet aussi de
 
 ## Console graphique (1.3)
 
-Ouvrir **Console › Mixage**. L’affichage reprend l’organisation de X-AIR Edit et se met à jour en direct depuis la console. Les noms, couleurs et réglages sont relus automatiquement à la connexion.
+Ouvrir **Console** dans le menu de gauche, puis l’onglet **Console**. L’écran reprend l’organisation de X-AIR Edit. Il se met à jour en direct depuis la XR18 : noms, couleurs et réglages sont relus automatiquement à la connexion.
 
 ![Console graphique](images/console.png)
 
-**Sur chaque tranche**, de haut en bas :
+- **En haut, les onglets** : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage, Vumètres.
+- **Au milieu, la vue du canal sélectionné**, avec son vumètre à gauche et celui de la sortie à droite.
+- **En bas, la banque de faders** : nom, Solo, niveau en dB, fader avec vumètre, Mute.
+- **À droite, la barre de réglages** : mix affiché sur les faders (Main LR, un retour ou un effet), DCA, Clr Solo, groupes de mute, auto-mix.
 
-- Le nom et la couleur de la console. Cliquer dessus sélectionne la tranche.
-- **Gain** : le préampli réellement affecté au canal, ou **Trim USB** pour un retour USB. Le gain agit sur la prise physique, donc aussi sur les autres canaux qui l’utilisent.
-- **Pan**.
-- **M** (mute), **S** (solo), **LR** (affectation au Main).
-- **Fader** en dB : 0 dB est aux trois quarts de la course.
-- **Vumètre** avec maintien de crête : le rouge en haut signale une saturation.
+Le bouton **? Explications** affiche à côté de chaque vue, en langage simple, ce que fait chaque option. Le **[Guide de la console](GUIDE_CONSOLE.md)** reprend toutes ces explications, vue par vue, avec des captures et la liste des 61 effets.
 
-Commandes de la souris et du clavier :
+| Vue | Ce qu’on y règle |
+|---|---|
+| ![Mixer](images/xair-mixer.png) | **Mixer** : vue d’ensemble de toutes les tranches (gain, 48 V, envois, gate, EQ, comp, pan). Un clic sur une vignette ouvre le réglage. |
+| ![Entrée](images/xair-input.png) | **Entrée** : source A/D ou USB, prise utilisée, gain, trim, 48 V, polarité, couplage stéréo, coupe-bas, insert. |
+| ![Gate](images/xair-gate.png) | **Gate** : porte de bruit avec presets, seuil, plage, enveloppe et filtre de déclenchement. |
+| ![EQ](images/xair-eq.png) | **EQ** : courbe interactive, 4 bandes (6 sur bus et façade), coupe-bas, RESET. |
+| ![Comp](images/xair-comp.png) | **Comp** : compresseur avec presets, courbe, ratio, knee, attaque, relâchement, mix. |
+| ![Envois](images/xair-sends.png) | **Envois** : 6 retours et 4 effets, avec le point de prélèvement. |
+| ![Main](images/xair-main.png) | **Main** : façade, panoramique, DCA, groupes de mute, auto-mix. |
+| ![Effets](images/xair-fx.png) | **Effets** : les 4 processeurs, leur type expliqué, le retour, les canaux qui y envoient. |
+| ![Routage](images/xair-routing.png) | **Routage** : sorties Aux, USB et P16, modifiées avec aperçu et confirmation. |
+| ![Vumètres](images/xair-meter.png) | **Vumètres** : tous les niveaux de la console. |
 
-- **Glisser** un fader ou un bouton rotatif pour le régler. **Maj** permet un réglage fin.
-- La **molette** ajuste par petits pas.
-- Un **double-clic** remet la valeur par défaut (0 dB pour un fader, centre pour le pan).
-- Les flèches du clavier fonctionnent quand le contrôle a le focus.
+**Pour régler le retour d’un musicien**, choisis son bus dans la barre de droite : les faders du bas deviennent ses envois (« sends on fader »).
 
-Chaque geste est envoyé immédiatement à la XR18, puis la valeur réellement retenue est relue. Le statut en haut à droite indique **Contrôle direct**, **Lecture seule** ou **Hors ligne**. En lecture seule, activer le contrôle dans Configuration.
+![Faders en mode envoi vers un retour](images/xair-sends-on-fader.png)
 
-### Envois sur les faders
+**Gestes** : glisser pour régler (Maj pour un réglage fin), molette pour de petits pas, double-clic pour la valeur par défaut. Chaque geste part tout de suite vers la XR18, puis la valeur retenue est relue.
 
-![Faders en mode envoi vers un retour](images/mixer-sends-on-fader.png)
+**Ce qui reste protégé** : le 48 V, le routage et le changement d’effet demandent une confirmation, avec aperçu et sauvegarde. Changer la prise d’entrée ou coupler deux canaux demande aussi un accord. Un compte musicien ne règle que les envois de ses propres bus.
 
-Le sélecteur **Main LR / Bus 1-6 / FX 1-4** affiche sur les faders les envois vers le mix choisi, comme « Sends on fader » dans X-AIR Edit. La tranche de droite devient le master de ce bus. C’est le moyen le plus rapide de régler le retour d’un musicien : choisir son bus, puis monter les instruments qu’il veut entendre. Revenir sur **Main LR** pour retrouver le mix de façade.
+Les onglets **Préréglages par instrument**, **Bibliothèque d’effets** et **Tous les paramètres** restent disponibles à côté de la console.
 
-### Bus, envois FX et DCA
-
-![Vue Bus · FX · DCA](images/mixer-outputs.png)
-
-Le bouton **Bus · FX · DCA** affiche les masters des 6 bus, des 4 envois FX et des 4 DCA, à côté du Main LR.
-
-### Égaliseur, dynamique et envois de la tranche sélectionnée
-
-![Égaliseur interactif](images/mixer-eq.png)
-
-- **Égaliseur** : la courbe est calculée à partir des réglages de la console. **Glisser un point** change la fréquence et le gain, la **molette** sur un point change la largeur (Q). Le type de bande se choisit sous le graphique. **EQ** et **Coupe-bas** activent ou coupent l’égaliseur et le filtre.
-- **Dynamique** : gate (mode, seuil, plage, attaque, maintien, relâchement) et compresseur (ratio, seuil, knee, gain, attaque, relâchement, mix), avec la courbe de transfert.
-- **Envois** : les 10 envois de la tranche avec leur point de prélèvement (IN, PRE EQ, POST EQ, PRE, POST).
-
-![Gate et compresseur](images/mixer-dynamics.png)
-
-![Envois de la tranche](images/mixer-sends-list.png)
-
-### Ce qui reste protégé
-
-Le **48 V**, le **routage** et le **changement d’algorithme FX** ne se règlent pas d’un simple geste. Ils passent par **Entrée / Gain**, **Contrôles** ou **Effets**, avec aperçu et confirmation. Un compte **musicien** ne peut régler que les envois de ses propres bus.
-
-Le bouton solo utilise les commandes de X-AIR Edit, mais il n’a pas encore été vérifié sur une XR18 physique. Écouter ses retours avec précaution après une mise à jour.
+Le bouton Solo utilise les commandes de X-AIR Edit, mais il n’a pas encore été vérifié sur une XR18 physique. Écouter ses retours avec précaution après une mise à jour.

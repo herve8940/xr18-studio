@@ -93,54 +93,38 @@ Enter gain in dB, preview and confirm. The panel also exposes high-pass filterin
 
 ## Graphical console (1.3)
 
-Open **Console › Mixage**. The layout follows X-AIR Edit and updates live from the console. Names, colours and settings are read back automatically when connecting.
+Open **Console** in the left menu, then the **Console** tab. The screen follows X-AIR Edit’s layout and updates live from the XR18: names, colours and settings are read back automatically on connection.
 
 ![Graphical console](images/console.png)
 
-**Each strip**, top to bottom:
+- **Tabs at the top**: Mixer, Canal (channel), Entrée (input), Gate, EQ, Comp, Envois (sends), Main, Effets (effects), Routage (routing), Vumètres (meters).
+- **In the middle, the selected channel view**, with its meter on the left and the output meter on the right.
+- **At the bottom, the fader bank**: name, Solo, level in dB, fader with meter, Mute.
+- **On the right, the settings bar**: mix shown on the faders (Main LR, a monitor or an effect), DCA, Clr Solo, mute groups, auto mix.
 
-- The console name and colour. Click it to select the strip.
-- **Gain**: the preamp actually mapped to the channel, or **USB trim** for a USB return. Gain belongs to the physical input, so it also affects other channels using it.
-- **Pan**.
-- **M** (mute), **S** (solo), **LR** (main assignment).
-- **Fader** in dB: 0 dB sits at three quarters of the travel.
-- **Meter** with peak hold: red at the top means clipping.
+The **? Explications** button shows, next to each view, what each option does in plain language. The **[console guide](GUIDE_CONSOLE.md)** (in French) collects all these explanations view by view, with screenshots and the list of all 61 effects.
 
-Mouse and keyboard controls:
+| View | What it controls |
+|---|---|
+| ![Mixer](images/xair-mixer.png) | **Mixer**: overview of every strip (gain, phantom, sends, gate, EQ, comp, pan). Click a thumbnail to open that setting. |
+| ![Input](images/xair-input.png) | **Entrée**: A/D or USB source, physical input, gain, trim, phantom, polarity, stereo link, low cut, insert. |
+| ![Gate](images/xair-gate.png) | **Gate**: noise gate with presets, threshold, range, envelope and side-chain filter. |
+| ![EQ](images/xair-eq.png) | **EQ**: interactive curve, 4 bands (6 on buses and main), low cut, RESET. |
+| ![Comp](images/xair-comp.png) | **Comp**: compressor with presets, curve, ratio, knee, attack, release, mix. |
+| ![Sends](images/xair-sends.png) | **Envois**: 6 monitor buses and 4 effects, with tap points. |
+| ![Main](images/xair-main.png) | **Main**: main assignment, pan, DCA, mute groups, auto mix. |
+| ![Effects](images/xair-fx.png) | **Effets**: the 4 processors, an explanation of each type, return level and the channels sending to it. |
+| ![Routing](images/xair-routing.png) | **Routage**: Aux, USB and P16 outputs, changed with preview and confirmation. |
+| ![Meters](images/xair-meter.png) | **Vumètres**: every console level. |
 
-- **Drag** a fader or knob to adjust it. Hold **Shift** for fine control.
-- The **mouse wheel** adjusts in small steps.
-- **Double-click** restores the default (0 dB for a fader, centre for pan).
-- Arrow keys work when the control has focus.
+**To set a musician’s monitor mix**, pick their bus in the right-hand bar: the bottom faders become their sends (“sends on fader”).
 
-Each move is sent to the XR18 immediately, then the value the console actually stored is read back. The status at the top right shows **Contrôle direct** (direct control), **Lecture seule** (read-only) or **Hors ligne** (offline). In read-only mode, enable control in Configuration.
+![Faders showing sends to a monitor bus](images/xair-sends-on-fader.png)
 
-### Sends on fader
+**Gestures**: drag to adjust (Shift for fine control), mouse wheel for small steps, double-click for the default. Each move goes to the XR18 immediately, then the stored value is read back.
 
-![Faders showing sends to a monitor bus](images/mixer-sends-on-fader.png)
+**Still protected**: phantom power, routing and effect changes require confirmation, with preview and backup. Changing the input socket or linking two channels also asks first. A musician account can only adjust its own bus sends.
 
-The **Main LR / Bus 1-6 / FX 1-4** selector puts the sends to that mix on the faders, like “Sends on fader” in X-AIR Edit. The right-hand strip becomes that bus master. This is the quickest way to build a musician’s monitor mix: pick their bus, then bring up what they want to hear. Go back to **Main LR** for the front-of-house mix.
-
-### Buses, FX sends and DCAs
-
-![Bus · FX · DCA view](images/mixer-outputs.png)
-
-The **Bus · FX · DCA** button shows the masters of the 6 buses, 4 FX sends and 4 DCAs, next to Main LR.
-
-### EQ, dynamics and sends of the selected strip
-
-![Interactive EQ](images/mixer-eq.png)
-
-- **Égaliseur** (EQ): the curve is calculated from the console settings. **Drag a point** to change frequency and gain; use the **wheel** on a point to change the width (Q). The band type is chosen below the graph. **EQ** and **Coupe-bas** (low cut) switch the equaliser and the filter on or off.
-- **Dynamique** (dynamics): gate (mode, threshold, range, attack, hold, release) and compressor (ratio, threshold, knee, gain, attack, release, mix), with the transfer curve.
-- **Envois** (sends): the strip’s 10 sends with their tap point (IN, PRE EQ, POST EQ, PRE, POST).
-
-![Gate and compressor](images/mixer-dynamics.png)
-
-![Strip sends](images/mixer-sends-list.png)
-
-### Still protected
-
-**Phantom power**, **routing** and **FX algorithm changes** cannot be changed with a single move. They go through **Entrée / Gain**, **Contrôles** or **Effets**, with preview and confirmation. A **musician** account can only adjust the sends of its own buses.
+The **Préréglages par instrument** (instrument presets), **Bibliothèque d’effets** (effects library) and **Tous les paramètres** (all parameters) tabs remain available next to the console.
 
 The solo button uses X-AIR Edit’s commands but has not yet been verified on a physical XR18. Listen to monitors carefully after an update.

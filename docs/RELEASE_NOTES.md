@@ -4,12 +4,12 @@
 
 ## Français
 
-**Console graphique façon X-AIR Edit** (Console › Mixage) :
+**Console graphique façon X-AIR Edit** (menu Console, onglet Console) :
 
-- **Tranches** : nom et couleur lus sur la console, gain du préampli réellement affecté (ou trim USB), pan, M / S / LR, fader gradué en dB et vumètre avec maintien de crête.
-- **Mix sur les faders** : Main LR, Bus 1-6 ou FX 1-4 (« sends on fader »), plus une vue Bus · FX · DCA.
-- **Tranche sélectionnée** : égaliseur interactif (courbe calculée, points déplaçables, Q à la molette, coupe-bas), gate et compresseur avec courbe de transfert, 10 envois avec leur point de prélèvement.
-- **Contrôle direct** par WebSocket : chaque geste est envoyé immédiatement puis relu. Le 48 V, le routage et l’algorithme FX gardent l’aperçu avec confirmation. Un musicien ne règle que les envois de ses bus.
+- **Mêmes vues que X-AIR Edit** : Mixer (vue d’ensemble), Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite (Main LR / bus / FX, DCA, Clr Solo, groupes de mute, auto-mix).
+- **Explications intégrées** : chaque vue a un panneau « ? Explications » qui décrit chaque option en langage simple. Le [guide de la console](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) reprend tout, avec la description des 61 effets.
+- **Réglages graphiques** : barres verticales, courbes de gate et de compresseur, enveloppes, filtre de déclenchement, EQ interactif, presets gate et compresseur (Kick, Snare, Acoustic/Bass, Vocal), envois avec point de prélèvement, groupes DCA et mute, panoramique.
+- **Contrôle direct** par WebSocket : chaque geste est envoyé immédiatement puis relu. Le 48 V, le routage et le type d’effet gardent l’aperçu avec confirmation et sauvegarde. Un musicien ne règle que les envois de ses bus.
 - **Synchronisation complète** de l’état de la console à la connexion (Table → PC), comme X-AIR Edit.
 
 **Corrections** (comparaison avec le binaire X-AIR Edit 1.8.1 ; les 689 nœuds OSC du catalogue y sont tous présents) :
@@ -21,16 +21,16 @@
 - **Connexion** : toute réponse OSC valide la liaison.
 - **Divers** : IP par défaut 192.168.1.1 (point d’accès XR18), lecture du catalogue plus rapide.
 
-**Validation** : 61 tests, dont 6 avec un faux mixeur UDP qui arrondit les valeurs comme la console. Paquets Windows, macOS Intel / Apple Silicon et Linux compilés en CI. Navigateur testé contre une XR18 émulée, sans erreur JavaScript. **Non vérifié sur une XR18 physique** : le solo `/-stat/solosw/01-16` et la cadence des vumètres. Paquets non signés / non notariés.
+**Validation** : 61 tests, dont 6 avec un faux mixeur UDP qui arrondit les valeurs comme la console. Paquets Windows, macOS Intel / Apple Silicon et Linux compilés en CI. Les 11 vues ont été testées dans le navigateur contre une XR18 émulée, sans erreur JavaScript. **Non vérifié sur une XR18 physique** : le solo `/-stat/solosw/01-16` et la cadence des vumètres. Paquets non signés / non notariés.
 
 ## English
 
-**X-AIR Edit–style graphical console** (Console › Mixage):
+**X-AIR Edit–style graphical console** (Console menu, Console tab):
 
-- **Strips**: console name and colour, mapped preamp gain (or USB trim), pan, M / S / LR, dB-scaled fader and peak-hold meter.
-- **Mix on faders**: Main LR, Bus 1-6 or FX 1-4 (“sends on fader”), plus a Bus · FX · DCA view.
-- **Selected strip**: interactive EQ (calculated curve, draggable points, wheel for Q, low cut), gate and compressor with transfer curve, 10 sends with tap points.
-- **Direct control** over WebSocket: each move is sent at once, then read back. Phantom power, routing and FX algorithm keep preview and confirmation. Musicians can only adjust their own bus sends.
+- **Same views as X-AIR Edit**: Mixer (overview), Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing and Meters. The fader bank is at the bottom and the mix bar on the right (Main LR / bus / FX, DCA, Clr Solo, mute groups, auto mix).
+- **Built-in explanations**: each view has a “? Explications” panel describing every option in plain language (French). The [console guide](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) collects them all, including all 61 effects.
+- **Graphical controls**: vertical bars, gate and compressor curves, envelopes, side-chain filter, interactive EQ, gate and compressor presets, sends with tap points, DCA and mute groups, panorama.
+- **Direct control** over WebSocket: each move is sent at once, then read back. Phantom power, routing and effect type keep preview, confirmation and backup. Musicians can only adjust their own bus sends.
 - **Full console state pull** on connect (Mixer → PC), like X-AIR Edit.
 
 **Fixes** (compared with the X-AIR Edit 1.8.1 binary; all 689 catalogue OSC nodes exist there):
@@ -42,7 +42,7 @@
 - **Connection**: any OSC reply confirms the link.
 - **Other**: default IP 192.168.1.1 (XR18 access point), faster catalogue reads.
 
-**Validation**: 61 tests, 6 of them against a fake UDP mixer that rounds values like the console. Windows, Intel / Apple Silicon macOS and Linux packages built in CI. Browser tested against an emulated XR18 with no JavaScript errors. **Not verified on a physical XR18**: solo `/-stat/solosw/01-16` and meter rate. Packages remain unsigned / non-notarized.
+**Validation**: 61 tests, 6 of them against a fake UDP mixer that rounds values like the console. Windows, Intel / Apple Silicon macOS and Linux packages built in CI. All 11 views were tested in the browser against an emulated XR18, with no JavaScript errors. **Not verified on a physical XR18**: solo `/-stat/solosw/01-16` and meter rate. Packages remain unsigned / non-notarized.
 
 ---
 
