@@ -20,7 +20,9 @@ export function SimpleMixer({ canWrite, onExpert }: { canWrite: boolean; onExper
     const name = values[`${s.prefix}/config/name`];
     return (typeof name === "string" && name.trim() !== "") || num(values, `${s.prefix}/config/color`) > 0;
   };
-  const strips = INPUTS.filter(used);
+  // A console with no named input (new or just reset to a blank scene) shows all 16 inputs.
+  const noneNamed = !INPUTS.some(s => s.kind === "ch" && !showAll && used(s));
+  const strips = noneNamed ? INPUTS : INPUTS.filter(used);
 
   const card = (strip: Strip, isMaster = false) => {
     const fAddr = faderAddress(strip, isMaster ? 0 : layer), oAddr = onAddress(strip), solo = soloAddress(strip);
@@ -61,7 +63,7 @@ export function SimpleMixer({ canWrite, onExpert }: { canWrite: boolean; onExper
       <div className="sm-master">{card(layer === 0 ? MAIN : master, true)}</div>
     </div>
     <div className="sm-foot">
-      <label className="sm-check"><input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} /> Afficher aussi les entrées sans nom</label>
+      {noneNamed ? <span>Aucune entrée n’a encore de nom : toutes sont affichées. Donne-leur un nom (Mon ingé son, étape 2) pour n’afficher que celles qui servent.</span> : <label className="sm-check"><input type="checkbox" checked={showAll} onChange={e => setShowAll(e.target.checked)} /> Afficher aussi les entrées sans nom</label>}
       <span>Astuce : touche le nom d’une source pour ouvrir son égaliseur, sa dynamique et ses envois.</span>
     </div>
   </section>;

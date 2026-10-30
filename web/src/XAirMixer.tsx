@@ -37,7 +37,7 @@ export function XAirMixer({ canWrite, selectedChannel, onSelectChannel, initialT
   const [bank, setBank] = useState<"inputs" | "outputs">("inputs");
   const [spill, setSpill] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState(selectedChannel ? `ch${selectedChannel}` : "ch1");
-  const [helpOpen, setHelpOpen] = usePersistentFlag("xr18-help-open", true);
+  const [helpOpen, setHelpOpen] = usePersistentFlag("xr18-help-open", typeof window === "undefined" || window.innerHeight >= 950);
   const bankRef = useRef<HTMLDivElement>(null), overviewRef = useRef<HTMLDivElement>(null);
   useEffect(() => { if (selectedChannel) setSelectedId(`ch${selectedChannel}`); }, [selectedChannel]);
 

@@ -1,8 +1,82 @@
-# XR18 Studio 2.0.0 — Ton ingé son de poche / Your pocket sound engineer
+# XR18 Studio 2.0.1 — Testée sur une vraie XR18 / Tested on a real XR18
 
 ![XR18 Studio](https://github.com/herve8940/xr18-studio/raw/main/docs/images/hero.png)
 
 🇫🇷 [Tuto illustré « Mon ingé son »](https://github.com/herve8940/xr18-studio/blob/main/docs/TUTO_MON_INGE_SON.md) · 🇬🇧 [Illustrated tutorial](https://github.com/herve8940/xr18-studio/blob/main/docs/TUTO_MON_INGE_SON_EN.md)
+
+## Français
+
+### Quel fichier télécharger ?
+
+| Ordinateur | Fichier |
+|---|---|
+| Windows | `XR18-Studio-Windows-2.0.1.exe` |
+| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.1-arm64.dmg` |
+| Mac Intel | `XR18-Studio-macOS-2.0.1-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.1-amd64.deb` |
+| Autre Linux | `XR18-Studio-Linux-2.0.1-x86_64.AppImage` |
+
+Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau local** (*Réglages Système › Confidentialité et sécurité*). Windows : si SmartScreen s’affiche, **Informations complémentaires › Exécuter quand même**. `SHA256SUMS.txt` permet de vérifier les fichiers.
+
+### Corrigé (trouvé en testant sur une XR18 physique)
+
+- **Synchronisation Table → PC, sauvegarde de scène, étape 6 du coach et rappel** : ils échouaient avec « Pas de réponse XR18 : /config/solo/dimplf ». Le nom du réglage était faux. Si la console ne répond pas pour quelques réglages, la lecture continue et les liste au lieu d’échouer.
+- **Capture en .scn** : elle échouait avec « Nœud XR18 absent ». La réponse de la vraie console est maintenant comprise.
+- **Coach, « Appliquer »** : des réglages corrects étaient annoncés « non confirmés » (coupe-bas, Q, relâchement). La console arrondit ces valeurs au cran inférieur ; la relecture l’accepte désormais.
+- **Mode Simple après une scène vierge** : il n’affichait plus aucune entrée. Tant qu’aucune entrée n’a de nom, les 16 sont affichées.
+- **Effets en mode Insert** : la scène vierge les remet en départ / retour (type et réglages gardés). La vue Effets prévient si un effet est en Insert sans qu’aucun canal ne l’utilise.
+
+### Amélioré
+
+- **Tout rallumer** : après **Tout couper**, le bouton remet chaque entrée comme avant (celles qui étaient déjà coupées le restent).
+- **Page Scènes refaite** : sauvegarder en un clic, **Rappeler…** ouvre la fenêtre « ce qui va changer », et les sauvegardes automatiques sont rangées à part.
+- **Mode Expert sur un portable** : dans les vues Gate, EQ, Comp, Envois…, la banque du bas devient compacte et la courbe d’égaliseur s’adapte. En 1440×800, Entrée, Gate, EQ, Envois et Main tiennent à l’écran ; Canal, Comp et Routage défilent encore un peu. Les explications se masquent d’un clic pour gagner de la place.
+- **Mon ingé son** : les messages s’affichent en bas de la fenêtre, toujours visibles, et l’appli se souvient de l’étape en cours.
+- **Fenêtres de confirmation** en français, avec l’icône de l’appli. L’appli a maintenant sa propre icône.
+- **Tous les paramètres** : les valeurs sont lues tout de suite, sans afficher « Non lu ». L’étiquette « Démonstration » n’apparaît plus avec une vraie console.
+- **Scène vierge** : le bouton affiche « Lecture de la console… » pendant la préparation.
+
+**Validation** : 75 tests automatiques, parcours testés dans le navigateur contre une XR18 émulée, et corrections vérifiées à partir des erreurs relevées sur une XR18 physique.
+
+## English
+
+### Which file?
+
+| Computer | File |
+|---|---|
+| Windows | `XR18-Studio-Windows-2.0.1.exe` |
+| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.1-arm64.dmg` |
+| Intel Mac | `XR18-Studio-macOS-2.0.1-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.1-amd64.deb` |
+| Other Linux | `XR18-Studio-Linux-2.0.1-x86_64.AppImage` |
+
+Mac: the first time, **right-click › Open**, then allow **Local Network** (*System Settings › Privacy & Security*). Windows: if SmartScreen appears, **More info › Run anyway**. Use `SHA256SUMS.txt` to check the files.
+
+### Fixed (found by testing on a physical XR18)
+
+- **Table → PC sync, scene save, coach step 6 and recall** failed with “Pas de réponse XR18 : /config/solo/dimplf”. The setting name was wrong. If the console does not answer a few settings, reading carries on and lists them instead of failing.
+- **.scn capture** failed with “Nœud XR18 absent”. The real console’s reply is now understood.
+- **Coach “Apply”** reported correct values as “not confirmed” (high-pass, Q, release). The console rounds these down one step; read-back now accepts it.
+- **Simple mode after a blank scene** showed no inputs. While no input has a name, all 16 are shown.
+- **Effects in Insert mode**: the blank scene puts them back to send/return (type and settings kept). The Effects view warns when an effect is in Insert mode but no channel uses it.
+
+### Improved
+
+- **Tout rallumer** *(unmute all)*: after **Tout couper**, the button puts each input back as it was (inputs already muted stay muted).
+- **Redesigned Scenes page**: save in one click, **Rappeler…** opens the “what will change” window, and automatic backups are listed separately.
+- **Expert mode on a laptop**: in the Gate, EQ, Comp, Sends… views the bottom bank becomes compact and the EQ curve adapts. At 1440×800, Input, Gate, EQ, Sends and Main fit on screen; Channel, Comp and Routing still scroll a little. Explanations hide in one click to make room.
+- **Mon ingé son**: messages appear at the bottom of the window, always visible, and the app remembers the current step.
+- **Confirmation windows** in French with the app icon. The app now has its own icon.
+- **Tous les paramètres**: values are read straight away instead of showing “Non lu”. The “Démonstration” label no longer appears with a real console.
+- **Blank scene**: the button shows “Lecture de la console…” while it prepares.
+
+**Validation**: 75 automated tests, journeys tested in the browser against an emulated XR18, and fixes checked against the errors seen on a physical XR18.
+
+---
+
+# Version précédente / Previous release : 2.0.0 — Ton ingé son de poche / Your pocket sound engineer
+
+
 
 ## Français
 

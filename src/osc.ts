@@ -29,7 +29,9 @@ function readString(b: Buffer, offset: number): [string, number] {
 }
 export function decodeOsc(b: Buffer): OscMessage {
   let pos = 0;
-  const [address, afterAddress] = readString(b, pos); pos = afterAddress;
+  let [address, afterAddress] = readString(b, pos); pos = afterAddress;
+  // The X-Air / X32 family answers a "/node" request with the address "node" (no leading slash).
+  if (address === "node") address = "/node";
   if (!address.startsWith("/") || address === "/#bundle") throw new Error("Unsupported OSC packet");
   if (pos === b.length) return { address, args: [] };
   const [tags, afterTags] = readString(b, pos); pos = afterTags;

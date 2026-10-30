@@ -39,7 +39,7 @@ export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyC
   update({...profile,inputs:inputs.sort((a,b)=>a.channel-b.channel)});notify('Batterie détaillée ajoutée : kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2. Vérifie les numéros d’entrée puis applique.');
  };
  return <div className="coach-section">
-  <div className="coach-blank"><Eraser size={18}/><p><b>La console garde les réglages d’un autre groupe ou d’un ancien concert ?</b> Repars d’une scène vierge : tout revient à neutre, volumes en bas. Le 48 V, les gains et le routage ne bougent pas.</p><button disabled={!admin||busy||!canApply} onClick={onBlank}>Partir d’une scène vierge</button></div>
+  <div className="coach-blank"><Eraser size={18}/><p><b>La console garde les réglages d’un autre groupe ou d’un ancien concert ?</b> Repars d’une scène vierge : tout revient à neutre, volumes en bas. Le 48 V, les gains et le routage ne bougent pas.</p><button disabled={!admin||busy||!canApply} onClick={onBlank}>{busy?"Lecture de la console…":"Partir d’une scène vierge"}</button></div>
   <h3>1. Pars d’un modèle</h3>
   <div className="coach-templates">{data.templates.map(t=><button key={t.id} disabled={!admin||busy} onClick={()=>{update({...profile,inputs:structuredClone(t.inputs)});notify(`Modèle « ${t.label} » chargé. Rien n’est encore envoyé à la console.`);}}><b>{t.label}</b><small>{t.description}</small></button>)}
    <button className="drums" disabled={!admin||busy} onClick={addDrums}><b><Drum size={16}/> Ajouter la batterie détaillée</b><small>Kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2 sur les entrées libres.</small></button></div>

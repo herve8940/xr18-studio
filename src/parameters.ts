@@ -14,7 +14,9 @@ for(const a of Object.keys(PARAMETERS))if(/^\/headamp\/(1[7-9]|2\d)\//.test(a))d
 /**
  * The XR18 quantizes every float to a fixed number of steps (as X-AIR Edit does):
  * faders 1024, send levels 161, pan 101, EQ frequency 201, HPF 101, Q 72, times 101…
- * A write is accepted when the readback lands within ~half a step of the request.
+ * A write is accepted when the readback lands within one step of the request: the real XR18
+ * truncates some log-scaled values (HPF, Q, times) to the step below instead of the nearest one
+ * (35 Hz asked → 34.3 Hz kept), so half a step was too strict on hardware.
  */
 const LIN_STEP:Record<string,number>={gain:.5,rtntrim:.25,g:.25,thr:.5,range:1,attack:1,knee:1,mgain:.5,weight:.5,sourcetrim:.5,dimatt:1};
 export function wireSteps(address:string):number|undefined{
@@ -32,7 +34,7 @@ export function wireSteps(address:string):number|undefined{
 }
 export function readbackTolerance(address:string):number{
  const steps=wireSteps(address);
- return steps?Math.max(.003,.6/(steps-1)):.011;
+ return steps?Math.max(.003,1.1/(steps-1)):.011;
 }
 export function descriptor(address:string){const p=PARAMETERS[address];if(!p)throw Error('Paramètre XR18 non autorisé : '+address);return p;}
 export function validateWire(address:string,value:unknown):Value {

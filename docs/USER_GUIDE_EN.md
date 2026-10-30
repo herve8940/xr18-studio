@@ -37,9 +37,9 @@ Download the file for your computer from the [releases page](https://github.com/
 
 | Computer | File | Install |
 |---|---|---|
-| Windows | `XR18-Studio-Windows-2.0.0.exe` | Double-click. Installs for your account and creates a shortcut. |
-| Intel Mac | `XR18-Studio-macOS-2.0.0-x64.dmg` | Open it and drag XR18 Studio to Applications. |
-| Apple Silicon Mac (M1, M2, M3…) | `XR18-Studio-macOS-2.0.0-arm64.dmg` | Same. |
+| Windows | `XR18-Studio-Windows-2.0.1.exe` | Double-click. Installs for your account and creates a shortcut. |
+| Intel Mac | `XR18-Studio-macOS-2.0.1-x64.dmg` | Open it and drag XR18 Studio to Applications. |
+| Apple Silicon Mac (M1, M2, M3…) | `XR18-Studio-macOS-2.0.1-arm64.dmg` | Same. |
 | Ubuntu / Debian | `.deb` file | Open it in the software installer. |
 | Other Linux | `.AppImage` file | Allow execution in its properties, then open it. |
 
@@ -91,7 +91,7 @@ The app has **three spaces**: in the left menu on a computer, as icons on a tabl
 At the top of every page:
 
 - the mixer status: **XR18 réelle** (green), **Simulation** (orange) or **Déconnectée** (red);
-- **Tout couper** (red): mutes all 16 inputs at once, for feedback or emergencies;
+- **Tout couper** (red): mutes all 16 inputs at once, for feedback or emergencies. The button then becomes **Tout rallumer** *(unmute all)*, which puts each input back as it was;
 - **Scènes**: save or recall settings.
 
 The connection card at the bottom left shows whether control is enabled. Just above it, **Réduire le menu** (collapse menu) folds the menu into icons to save space. On the Console page the menu folds automatically so every track fits on screen; the same button opens it again.
@@ -270,11 +270,10 @@ Each card shows whether that musician’s phone is connected. If a phone is lost
 
 ![Scenes](images/tuto-scenes.png)
 
-- **Sauvegarder la scène complète**: after every good soundcheck.
-- **Sauvegarder pour ReaCue (sans 48 V)**: for REAPER automation, see [ReaCue](SHOW_CONTROL.md).
-- X-AIR Edit `.scn` files can be imported for archiving. To recall one, load it in X-AIR Edit, connect XR18 Studio and capture a complete scene.
-
-The mixer is backed up automatically before every recall.
+- **Sauvegarder l’état actuel** *(save current state)*: type a name, then click. Do it after every good soundcheck.
+- **Rappeler…** *(recall)*: a window shows what will change; nothing moves until you confirm. 48 V is never changed.
+- **Plus d’options** *(more options)*: save without 48 V for [ReaCue](SHOW_CONTROL.md), create an X-AIR Edit–compatible `.scn` file, or import a scene (`.json` or `.scn`).
+- **Sauvegardes automatiques** *(automatic backups)*: the app makes one just before every change. They are listed separately (the 10 most recent) and let you go back.
 
 ## 11. Show day checklist
 
@@ -284,7 +283,7 @@ The mixer is backed up automatically before every recall.
 4. **Jouer › Retours › Démarrer le partage**. Musicians open their QR codes and check that their page shows “En direct” (live).
 5. Soundcheck: one musician at a time (**Mon ingé son**, step 3), then the whole band.
 6. During the show: **Simple** mode on front of house. **Tout couper** stays at the top for emergencies.
-7. After the show: **Scènes › Sauvegarder la scène complète** if anything changed.
+7. After the show: **Scènes › Sauvegarder l’état actuel** if anything changed.
 
 ## 12. Troubleshooting
 

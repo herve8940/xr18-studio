@@ -6,7 +6,8 @@ import {PARAMETERS,type Value} from './parameters.js';
  * Deliberately NOT touched (safety and wiring):
  *  - 48 V phantom power and preamp gains (/headamp/...): switching phantom can damage a mic or pop the PA;
  *  - routing, input sources and stereo links (/routing, /config/insrc, /config/chlink...): the cables stay valid;
- *  - effect engines (/fx/...): sends to them are closed anyway;
+ *  - effect engines (/fx/...): type and settings are kept; only their insert mode is switched off,
+ *    so FX 1-4 work as send/return again (channel inserts are switched off too);
  *  - network and console setup.
  * Every level starts fully down so nothing comes out loud: the user brings the faders up.
  */
@@ -32,12 +33,13 @@ const RULES:[RegExp,Value][]=[
  [/^\/(?:ch\/\d\d|rtn\/(?:aux|[1-4]))\/mix\/\d\d\/(?:level|pan)$/,NaN],
  [new RegExp(`^\\/(?:${STRIPS}|fxsend\\/[1-4])\\/grp\\/(?:dca|mute)$`),0],
  [/^\/ch\/\d\d\/automix\/group$/,0],
- [/^\/config\/mute\/[1-4]$/,0]
+ [/^\/config\/mute\/[1-4]$/,0],
+ [/^\/fx\/[1-4]\/insert$/,0]
 ];
 export function blankSceneValues():Record<string,Value>{
  const values:Record<string,Value>={};
  for(const address of Object.keys(PARAMETERS)){
-  if(/^\/(?:headamp|routing|fx)\//.test(address)||/\/(?:phantom|insrc|rtnsrc)$/.test(address))continue;
+  if((/^\/(?:headamp|routing|fx)\//.test(address)&&!/^\/fx\/[1-4]\/insert$/.test(address))||/\/(?:phantom|insrc|rtnsrc)$/.test(address))continue;
   const rule=RULES.find(([r])=>r.test(address));if(!rule)continue;
   // Sends: level fully down, pan centred.
   values[address]=Number.isNaN(rule[1])?(address.endsWith('/pan')?.5:0):rule[1];
@@ -46,5 +48,5 @@ export function blankSceneValues():Record<string,Value>{
 }
 export const BLANK_SCENE_TEXT={
  title:'Partir d’une scène vierge',
- explanation:'Toute la console revient à neutre : noms et couleurs effacés, coupe-bas, compresseurs, gates et inserts coupés, égaliseurs à plat, pan au centre, mutes enlevés, envois vers les retours et les effets fermés. Tous les volumes (canaux, retours, master) partent tout en bas : rien ne sort fort, c’est toi qui remontes. Le 48 V, les gains des préamplis, le routage des entrées/sorties et les effets ne sont pas touchés. Une sauvegarde est faite juste avant.'
+ explanation:'Toute la console revient à neutre : noms et couleurs effacés, coupe-bas, compresseurs, gates et inserts coupés, égaliseurs à plat, pan au centre, mutes enlevés, envois vers les retours et les effets fermés. Tous les volumes (canaux, retours, master) partent tout en bas : rien ne sort fort, c’est toi qui remontes. Les 4 effets repassent en départ/retour (leur type et leurs réglages sont gardés). Le 48 V, les gains des préamplis et le routage des entrées/sorties ne sont pas touchés. Une sauvegarde est faite juste avant.'
 };

@@ -37,9 +37,9 @@ Télécharge le fichier qui correspond à ton ordinateur sur la [page des versio
 
 | Ordinateur | Fichier | Installation |
 |---|---|---|
-| Windows | `XR18-Studio-Windows-2.0.0.exe` | Double-clic. L’installation se fait pour ton compte et crée un raccourci. |
-| Mac Intel | `XR18-Studio-macOS-2.0.0-x64.dmg` | Ouvre-le et glisse XR18 Studio dans Applications. |
-| Mac Apple Silicon (M1, M2, M3…) | `XR18-Studio-macOS-2.0.0-arm64.dmg` | Idem. |
+| Windows | `XR18-Studio-Windows-2.0.1.exe` | Double-clic. L’installation se fait pour ton compte et crée un raccourci. |
+| Mac Intel | `XR18-Studio-macOS-2.0.1-x64.dmg` | Ouvre-le et glisse XR18 Studio dans Applications. |
+| Mac Apple Silicon (M1, M2, M3…) | `XR18-Studio-macOS-2.0.1-arm64.dmg` | Idem. |
 | Ubuntu / Debian | fichier `.deb` | Ouvre-le avec l’installateur de logiciels. |
 | Autre Linux | fichier `.AppImage` | Autorise l’exécution dans ses propriétés, puis ouvre-le. |
 
@@ -91,7 +91,7 @@ L’application est rangée en **trois espaces**, dans le menu de gauche sur ord
 En haut de chaque page :
 
 - l’état de la table : **XR18 réelle** (vert), **Simulation** (orange) ou **Déconnectée** (rouge) ;
-- **Tout couper** (rouge) : coupe les 16 entrées d’un coup, en cas de larsen ou d’urgence ;
+- **Tout couper** (rouge) : coupe les 16 entrées d’un coup, en cas de larsen ou d’urgence. Le bouton devient ensuite **Tout rallumer**, qui remet chaque entrée comme avant ;
 - **Scènes** : sauvegarder ou rappeler des réglages.
 
 En bas à gauche, la carte de connexion indique si le contrôle est activé. Juste au-dessus, **Réduire le menu** le replie en icônes pour gagner de la place. Sur la page Console, le menu se replie tout seul pour que toutes les pistes tiennent à l’écran ; le même bouton le rouvre.
@@ -282,11 +282,10 @@ Chaque carte indique si le téléphone du musicien est connecté. Si un téléph
 
 ![Scènes](images/tuto-scenes.png)
 
-- **Sauvegarder la scène complète** : à faire après chaque balance réussie.
-- **Sauvegarder pour ReaCue (sans 48 V)** : version utilisable par l’automatisation REAPER, voir [ReaCue](SHOW_CONTROL.md).
-- **Importer** un fichier `.scn` de X-AIR Edit est possible pour l’archiver. Pour le rappeler, charge-le dans X-AIR Edit, connecte XR18 Studio, puis fais une capture de scène complète.
-
-Avant chaque rappel, la table est sauvegardée automatiquement.
+- **Sauvegarder l’état actuel** : donne un nom, puis clique. À faire après chaque balance réussie.
+- **Rappeler…** : une fenêtre montre ce qui va changer ; rien ne bouge avant que tu confirmes. Le 48 V n’est jamais changé.
+- **Plus d’options** : sauvegarder sans le 48 V pour [ReaCue](SHOW_CONTROL.md), créer un fichier `.scn` compatible X-AIR Edit, ou importer une scène (`.json` ou `.scn`).
+- **Sauvegardes automatiques** : l’appli en fait une juste avant chaque changement. Elles sont rangées à part (les 10 plus récentes) et servent à revenir en arrière.
 
 ## 11. Le jour du concert : check-list
 
@@ -296,7 +295,7 @@ Avant chaque rappel, la table est sauvegardée automatiquement.
 4. **Jouer › Retours › Démarrer le partage**. Les musiciens ouvrent leur QR code et vérifient que leur page affiche « En direct ».
 5. Balance : un musicien à la fois (**Mon ingé son**, étape 3), puis tout le groupe.
 6. Pendant le concert : mode **Simple** sur la façade. **Tout couper** reste en haut en cas de problème.
-7. Après le concert : **Scènes › Sauvegarder la scène complète** si des réglages ont changé.
+7. Après le concert : **Scènes › Sauvegarder l’état actuel** si des réglages ont changé.
 
 ## 12. Dépannage
 

@@ -416,6 +416,8 @@ export function FxView({ values, set, canWrite, confirmed, open }: ViewProps) {
       const type = num(values, `/fx/${n}/type`), info = FX_INFO[type], insert = num(values, `/fx/${n}/insert`) === 1;
       const rtn = INPUTS.find(s => s.id === `rtn${n}`)!;
       const senders = INPUTS.filter(s => s.kind !== "fxrtn" && num(values, `${s.prefix}/mix/${pad(n + 6)}/level`) > .01);
+      // Channels whose insert points at this FX slot (Fx{n}A or Fx{n}B).
+      const inserted = INPUTS.filter(s => s.kind === "ch" && num(values, `${s.prefix}/insert/on`) === 1 && Math.ceil(num(values, `${s.prefix}/insert/fxslot`) / 2) === n);
       return <section key={n} className="xm-fx-slot">
         <h4>FX {n}</h4>
         <select disabled={!canWrite} value={type} aria-label={`Type de l’effet ${n}`} onChange={e => { const next = Number(e.target.value); void confirmed({ [`/fx/${n}/type`]: next }, `Remplacer l’effet ${n} (${info?.name}) par ${FX_INFO[next]?.name} ? Tous les canaux qui l’utilisent seront concernés.`); }}>
@@ -427,6 +429,8 @@ export function FxView({ values, set, canWrite, confirmed, open }: ViewProps) {
             onClick={() => { if (confirm(insert ? `Repasser l’effet ${n} en départ / retour ?` : `Passer l’effet ${n} en mode Insert ? Il ne sera plus disponible en départ / retour.`)) set(`/fx/${n}/insert`, insert ? 0 : 1); }}>{insert ? "Mode Insert" : "Départ / retour"}</Toggle>
           <Toggle tone="red" disabled={!canWrite} on={num(values, `${rtn.prefix}/mix/on`, 1) === 0} onClick={() => set(`${rtn.prefix}/mix/on`, num(values, `${rtn.prefix}/mix/on`, 1) === 1 ? 0 : 1)}>Mute retour</Toggle>
         </div>
+        {insert && !inserted.length && <p className="xm-note warn">Cet effet est en mode Insert mais aucun canal ne l’utilise : les envois vers lui ne s’entendent pas. Clique sur « Mode Insert » pour le repasser en départ / retour.</p>}
+        {insert && inserted.length > 0 && <p className="xm-note">Inséré sur : {inserted.map(s => stripName(s, values)).join(", ")}.</p>}
         <HBar label="Retour" color="#22c55e" disabled={!canWrite} value={num(values, `${rtn.prefix}/mix/fader`)} onChange={v => set(`${rtn.prefix}/mix/fader`, v)} />
         <div className="xm-fx-meter"><Meter indexes={rtn.meters} /></div>
         <h5>Canaux envoyés</h5>
