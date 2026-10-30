@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {SoundCoach,GROUP_TEMPLATE,TEMPLATES,DRUM_KIT,MONITOR_RECIPES,OWN_LEVEL,suggestMusicians,consoleName,validateProfile,identifySymptom,levelReport} from '../src/sound-coach.js';
+import {SoundCoach,SOURCES,gainProposal,thresholdsFrom,GROUP_TEMPLATE,TEMPLATES,DRUM_KIT,MONITOR_RECIPES,OWN_LEVEL,suggestMusicians,consoleName,validateProfile,identifySymptom,levelReport} from '../src/sound-coach.js';
 import {XR18} from '../src/xr18.js';
 import {ConsoleControl} from '../src/console-control.js';
 import {LibraryStore} from '../src/library-store.js';
@@ -80,4 +80,41 @@ test('level observation collects fresh distinct events, cleans listeners and rej
  try{const report=await measurement;assert.equal(report.available,true);assert.equal(report.state,'present');assert.equal(stream.listenerCount('meters'),0);
   const pending=coach.measure(1,250);identity='console-B';await assert.rejects(pending,/Connexion modifiée/);assert.equal(stream.listenerCount('meters'),0);
  }finally{library.close();}
+});
+
+test('gain proposal aims at -6 dBFS peaks, in safe steps, never blind',()=>{
+ assert.equal(gainProposal(-7,20).state,'ok');assert.equal(gainProposal(-4,20).state,'ok');
+ const up=gainProposal(-20,20);assert.equal(up.state,'raise');assert.equal(up.targetGainDb,26);assert.equal(up.deltaDb,6);
+ const down=gainProposal(-2,30);assert.equal(down.state,'lower');assert.equal(down.targetGainDb,26);
+ assert.equal(gainProposal(-.5,30).state,'clip');assert.equal(gainProposal(-.5,30).targetGainDb,24);
+ assert.equal(gainProposal(-70,30).state,'none');assert.equal(gainProposal(-70,30).targetGainDb,null);
+ assert.equal(gainProposal(-20,60,-12,60).state,'limit');assert.equal(gainProposal(-20,null).targetGainDb,null);
+ const kick=SOURCES.find(s=>s.id==='kick')!,voice=SOURCES.find(s=>s.id==='lead-rock')!,bass=SOURCES.find(s=>s.id==='bass-di')!;
+ assert.deepEqual(thresholdsFrom(voice,-6),{compThrDb:-14,gateThrDb:null,note:''});
+ assert.equal(thresholdsFrom(kick,-6).gateThrDb,-30);assert.equal(thresholdsFrom(kick,-6,-40).gateThrDb,-36);
+ assert.match(thresholdsFrom(kick,-6,-20).note,/rapproche le micro/);assert.equal(thresholdsFrom(bass,-8).compThrDb,-16);
+});
+test('guided gain staging: measure, raise the preamp, re-measure, then thresholds follow the real signal',async()=>{
+ const values=new Map<string,unknown>([['/ch/06/preamp/rtnsw',0],['/ch/06/config/insrc',5],['/headamp/06/gain',(20+12)/72]]);
+ let level=-18;const xr=Object.assign(new EventEmitter(),{mode:'real',status:()=>({connected:true}),readParameter:async(a:string)=>values.get(a)??0});
+ const previews:Record<string,unknown>[]=[];
+ const control={identity:()=>'A',preview:async(v:Record<string,unknown>)=>{previews.push(v);return {token:'t',changes:Object.entries(v).map(([address,after])=>({address,before:0,after}))};}} as unknown as ConsoleControl;
+ const library=new LibraryStore(':memory:'),coach=new SoundCoach(xr as unknown as XR18,control,library);
+ const pump=setInterval(()=>{const now=new Date().toISOString();xr.emit('meters',{available:true,updatedAt:now,channels:Array.from({length:16},(_,i)=>i===5?level-Math.random():-80)});},20);
+ try{
+  coach.saveProfile({version:1,inputs:[{channel:6,source:'kick',name:'Kick'}],completed:[]});
+  const first=await coach.gainCheck(6,200);assert.equal(first.decision?.state,'raise');assert.deepEqual(previews.at(-1),{'/headamp/06/gain':26});assert.match(first.proposal!.title,/Kick : \+6/);
+  assert.equal((await coach.calibrationStatus())[0]!.state,'todo');
+  values.set('/headamp/06/gain',(26+12)/72);level=-7;
+  const second=await coach.gainCheck(6,200);assert.equal(second.decision?.state,'ok');assert.equal(second.proposal,null);
+  let st=(await coach.calibrationStatus())[0]!;assert.equal(st.state,'ok');assert.ok(Math.abs(st.gainDb!-26)<.01);assert.equal(st.thresholds!.compThrDb,st.thresholds!.compThrDb);
+  await assert.rejects(coach.bleedCheck(6,200).then(r=>{if(!r.thresholds)throw Error(r.message);}),/se taire/);
+  level=-38;const bleed=await coach.bleedCheck(6,200);assert.ok(bleed.thresholds);assert.ok(bleed.thresholds!.gateThrDb!>-38&&bleed.thresholds!.gateThrDb!<-30);
+  // The browser saving the group never erases measurements.
+  coach.saveProfile({version:1,inputs:[{channel:6,source:'kick',name:'Kick'}],completed:[]});st=(await coach.calibrationStatus())[0]!;assert.equal(st.state,'ok');assert.ok(st.bleedDb!<-37);
+  const plan=await coach.prepare(6);assert.match(plan.explanation,/calés sur ton signal/);const gateThr=previews.at(-1)!['/ch/06/gate/thr'];assert.equal(gateThr,st.thresholds!.gateThrDb);
+  // A gain changed elsewhere makes the measure stale: thresholds go back to defaults with a warning.
+  values.set('/headamp/06/gain',(32+12)/72);st=(await coach.calibrationStatus())[0]!;assert.equal(st.state,'stale');
+  assert.match((await coach.prepare(6)).explanation,/étape 3/);
+ }finally{clearInterval(pump);library.close();}
 });

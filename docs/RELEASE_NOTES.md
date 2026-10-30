@@ -17,6 +17,7 @@
 - Choisir un instrument propose sa configuration complète selon les bonnes pratiques live : coupe-bas, égaliseur 4 bandes, compresseur, gate, position stéréo, nom et couleur.
 - Batterie détaillée : kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2 ; guitare rythmique et guitare solo distinctes ; modèles de groupe prêts à l’emploi.
 - **Appliquer** par instrument ou **à tout le groupe** ; un réglage non confirmé par la console n’arrête plus les instruments suivants (cause du « seul le premier instrument est appliqué »).
+- **Gain guidé** : mesure de chaque instrument, gain proposé pour des crêtes vers −6 dB (par étapes, sans 48 V), mesure de la repisse ; seuils du compresseur et du gate calés sur le signal réel, avec alerte si un gain change ensuite.
 - Retours de chaque musicien : bus, rôle, instruments personnels, mix de départ pré-fader visualisé, puis création des QR codes en un clic.
 
 **Retours sur le téléphone de chaque musicien** (Jouer › Retours) :
@@ -61,6 +62,7 @@
 - Picking an instrument offers its complete live setting: high-pass, 4-band EQ, compressor, gate, stereo position, name and colour.
 - Detailed drum kit (kick, snare, tom 1–3, OH 1–2), separate rhythm and lead guitar, ready-made band templates.
 - Apply per instrument or to the whole band; one value the console does not confirm no longer stops the following instruments.
+- **Guided gain staging**: per-instrument measurement, proposed preamp gain for peaks near −6 dB (stepwise, never 48 V), bleed measurement; compressor and gate thresholds fitted to the real signal, flagged when a gain changes later.
 - Per-musician monitors: bus, role, own instruments, visual pre-fader starting mix, one-click QR links.
 
 **Monitors on each musician’s phone** (Jouer › Retours):

@@ -102,7 +102,7 @@ En bas à gauche, la carte de connexion indique si le contrôle est activé.
 
 ## 6. Faire la balance avec « Mon ingé son »
 
-**Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes : brancher, dire qui est branché où, faire jouer un musicien à la fois, écouter et corriger, préparer les retours, garder le bon réglage.
+**Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes : brancher, dire qui est branché où, régler le gain de chaque instrument, écouter et corriger, préparer les retours, garder le bon réglage.
 
 ### Configurer tout le groupe en une fois
 
@@ -127,9 +127,25 @@ Le bouton **Appliquer** d’une ligne configure cet instrument seul. **Appliquer
 
 ![Vérifier avant d’appliquer](images/tuto-coach-appliquer.png)
 
-Ce que l’assistant ne touche jamais : le gain d’entrée, le 48 V, les volumes, les mutes et le routage. Règle d’abord le gain de chaque micro (étape 3, crêtes vers −6 dB), car les seuils du compresseur et du gate sont des points de départ calculés pour ce niveau. Affine-les ensuite à l’écoute.
+Ce que l’assistant ne touche jamais : le gain d’entrée, le 48 V, les volumes, les mutes et le routage. Les seuils du compresseur et du gate sont d’abord des valeurs de départ ; l’étape 3 (ci-dessous) règle le gain et les recalcule sur ton vrai signal.
 
 Si la console ne confirme pas un réglage, l’assistant continue avec les autres instruments et indique ceux à relancer, au lieu de s’arrêter au premier.
+
+### Régler le gain, puis caler le compresseur et le gate
+
+Tout part du gain. Le compresseur et le gate travaillent sur le signal qui sort du préampli, et leurs seuils sont fixes. Si le gain monte de 6 dB après coup, le compresseur écrase 6 dB de plus et le gate laisse passer la repisse. L’étape **3. Régler le gain de chaque instrument** règle donc ça dans l’ordre, un instrument à la fois.
+
+1. **Régler le gain.** Le musicien joue seul son passage le plus fort pendant 5 secondes. L’assistant mesure la crête et propose le gain pour viser environ −6 dB. Tu vois l’avant / après, tu confirmes, puis tu remesures. Il monte au plus de 6 dB à la fois, ne touche jamais au 48 V et refuse de monter à l’aveugle si rien n’arrive (câble, entrée, 48 V d’un micro statique).
+2. **Placer le gate** (kick, snare, toms). L’instrument se tait pendant que les autres jouent fort : l’assistant mesure la repisse et place le gate juste au-dessus. Si la repisse est presque aussi forte que les coups doux, il te conseille de rapprocher ou réorienter le micro.
+3. **Appliquer la configuration calée.** Le seuil du compresseur est placé sous la crête mesurée (8 dB pour la voix, 6 dB pour les fûts et les guitares, 4 dB pour les cymbales), le gate selon la repisse.
+
+![Régler le gain d’un instrument](images/tuto-coach-gain.png)
+
+Le tableau en haut montre où en est chaque instrument : gain, crête, repisse, seuils et état (**À mesurer**, **Calé**, **Gain changé : à refaire**). Si quelqu’un touche un gain plus tard, l’instrument repasse en « à refaire » et la configuration complète revient aux seuils de départ, avec un avertissement. **Appliquer tout le groupe** utilise les seuils calés pour chaque instrument mesuré.
+
+![Suivi des gains du groupe](images/tuto-coach-gain-tableau.png)
+
+La mesure demande la vraie XR18 et les musiciens qui jouent au volume du concert. En simulation, rien n’est mesuré ni inventé.
 
 ### Écouter et corriger
 

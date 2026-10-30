@@ -6,7 +6,7 @@ L’accueil propose un parcours pour préparer le groupe sans connaître les nom
 
 1. **Brancher et connecter** : vérifier les câbles et la connexion, avec les sorties à faible volume pendant la préparation.
 2. **Dire qui est branché où** : partir d’un modèle (rock + TD-27, rock + batterie acoustique détaillée, acoustique/duo) ou ajouter la batterie détaillée (kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2), puis adapter entrées et noms aux vrais branchements. Choisir un instrument propose aussitôt sa configuration complète. L’application ne détecte pas les instruments et ne crée pas de lien stéréo.
-3. **Faire jouer un musicien à la fois** : observer environ cinq secondes de niveaux reçus. La simulation ne fabrique ni mesure ni diagnostic audio. Un niveau reçu ne permet pas de localiser l’étage qui sature.
+3. **Régler le gain de chaque instrument** : mesure de la crête (5 s), proposition de gain pour viser −6 dBFS (au plus +6 dB par étape, jamais de 48 V), nouvelle mesure ; pour kick, snare et toms, mesure de la repisse ; puis seuils du compresseur et du gate calculés sur ces mesures. La simulation ne fabrique aucune mesure.
 4. **Écouter et corriger** : choisir une gêne (« brouillon », « agressif », « notes coupées »…) ou la décrire avec ses mots. Le conseiller distingue observations OSC, description de l’utilisateur et hypothèses à écouter.
 5. **Préparer les retours** : un musicien par bus (Aux 1 à 6), avec rôle et instruments personnels ; mix de départ pré-fader selon le rôle, puis lien QR personnel pour affiner depuis le téléphone.
 6. **Garder le bon réglage** : sauvegarder une scène complète. Une nouvelle salle ou un changement de micros nécessite une nouvelle vérification.
@@ -15,7 +15,7 @@ Les coches du parcours indiquent les étapes confirmées par l’utilisateur, pa
 
 ## Configuration complète par instrument
 
-Chaque instrument reçoit nom, couleur, coupe-bas, égaliseur 4 bandes, compresseur (taux, attaque, relâchement, seuil de départ, genou doux, détection RMS), gate et position stéréo. Le seuil est un **point de départ** pour une entrée réglée avec des crêtes vers −6 dBFS ; à affiner à l’écoute pour obtenir la réduction visée.
+Chaque instrument reçoit nom, couleur, coupe-bas, égaliseur 4 bandes, compresseur (taux, attaque, relâchement, seuil de départ, genou doux, détection RMS), gate et position stéréo. Les seuils du tableau sont des **points de départ** ; dès que le gain d’un instrument est mesuré (étape 3), ils sont remplacés par des seuils calculés sur le signal réel.
 
 | Instrument | Coupe-bas | Compresseur (départ) | Gate (départ) | Pan |
 |---|---|---|---|---|
@@ -33,6 +33,21 @@ Chaque instrument reçoit nom, couleur, coupe-bas, égaliseur 4 bandes, compress
 | Clavier | 80 Hz | 2:1 dès −20 dB | — | 20 % D |
 
 Le placement de la batterie suit la perspective du batteur (charleston et tom aigu à gauche). Les gains d’entrée, le 48 V, les faders, mutes et routages ne sont jamais modifiés. **Appliquer** configure une ligne, **Appliquer à tout le groupe** configure tous les instruments ; si la console ne confirme pas une valeur, l’application la réessaie, poursuit avec les autres et liste celles à relancer.
+
+## Gain et seuils calés sur la mesure
+
+| Mesure | Règle |
+|---|---|
+| Crête entre −9 et −3 dBFS | gain correct, mesure enregistrée avec le gain du préampli |
+| Crête plus basse / plus haute | gain proposé vers −6 dBFS, au plus +6 dB ou −12 dB par étape, arrondi à 0,5 dB |
+| Crête ≥ −1 dBFS | saturation probable : −6 dB puis nouvelle mesure |
+| Crête < −55 dBFS | pas de signal : aucune hausse, vérifier câble, entrée, 48 V |
+| Préampli en butée / retour USB | aucune proposition, régler à la source |
+| Compresseur | crête − 8 dB (voix, chœurs, basse), − 6 dB (guitares, fûts, clavier), − 4 dB (cymbales) |
+| Gate avec repisse mesurée | repisse + 4 dB, sans dépasser crête − 12 dB (coups doux) ; sinon à mi-chemin, avec conseil de placement micro |
+| Gate sans repisse mesurée | crête − 24 dB (estimation signalée) |
+
+Une mesure n’est valable que pour le gain avec lequel elle a été faite : si le gain du préampli change (application, X-AIR Edit, table), l’instrument passe en « à refaire » et la configuration complète revient aux seuils de départ avec un avertissement. Les mesures sont conservées côté serveur ; une sauvegarde du groupe depuis le navigateur ne les efface pas.
 
 ## Retours par musicien
 

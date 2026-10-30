@@ -60,7 +60,7 @@ const handler: http.RequestListener = async (req, res) => {
   const user=access.user(req);
   if(path.startsWith('/api/')&&(!user||!permitted(user,req.method??'GET',path))){res.writeHead(user?403:401);res.end(JSON.stringify({error:user?'Droits insuffisants':'Connexion requise'}));return;}
   if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
-  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/ears','/api/coach/undo'].includes(path);
+  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/ears','/api/coach/gain','/api/coach/bleed','/api/coach/calibration','/api/coach/undo'].includes(path);
   if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
     const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply')||path.startsWith('/api/ears-share');
     if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
@@ -117,6 +117,9 @@ const handler: http.RequestListener = async (req, res) => {
     try{const d=await body(req);let result:unknown;
       if(path==='/api/coach/profile')result=coach.saveProfile(d.profile);
       else if(path==='/api/coach/prepare')result=await coach.prepare(d.channel===undefined?undefined:Number(d.channel));
+      else if(path==='/api/coach/gain')result=await coach.gainCheck(Number(d.channel));
+      else if(path==='/api/coach/bleed')result=await coach.bleedCheck(Number(d.channel));
+      else if(path==='/api/coach/calibration')result=await coach.calibrationStatus();
       else if(path==='/api/coach/ears')result=await coach.prepareEars(d.bus===undefined?undefined:Number(d.bus));
       else if(path==='/api/coach/ears/share'){
         // Personal QR link for every musician that has none yet on its bus.

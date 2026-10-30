@@ -102,7 +102,7 @@ The connection card at the bottom left shows whether control is enabled.
 
 ## 6. Soundcheck with “Mon ingé son”
 
-**Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps: plug in, say who is plugged in where, play one musician at a time, listen and fix, prepare monitors, keep the good setting.
+**Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps: plug in, say who is plugged in where, set each instrument's gain, listen and fix, prepare monitors, keep the good setting.
 
 ### Set up the whole band at once
 
@@ -127,7 +127,21 @@ A row's **Appliquer** button sets that instrument only. **Appliquer à tout le g
 
 ![Check before applying](images/tuto-coach-appliquer.png)
 
-The assistant never touches input gain, 48 V, faders, mutes or routing. Set each mic's gain first (step 3, peaks around −6 dB): compressor and gate thresholds are starting points for that level, to refine by ear. If the console does not confirm one value, the remaining instruments are still applied and the unconfirmed values are listed.
+The assistant never touches input gain, 48 V, faders, mutes or routing. Thresholds start from defaults; step 3 (below) sets the gain and recomputes them from your real signal. If the console does not confirm one value, the remaining instruments are still applied and the unconfirmed values are listed.
+
+### Set the gain, then fit compressor and gate
+
+Everything starts with gain: compressor and gate work on the preamp output with fixed thresholds, so raising the gain by 6 dB afterwards makes the compressor squash 6 dB more and lets bleed through the gate. Step **3** does it in order, one instrument at a time:
+
+1. **Set the gain**: the musician plays their loudest part alone for 5 seconds; the assistant measures the peak and proposes the gain for peaks around −6 dB. Preview, confirm, measure again. At most +6 dB per step, never 48 V, and no blind raise when nothing arrives.
+2. **Place the gate** (kick, snare, toms): the instrument stays silent while the others play loud; the bleed is measured and the gate set just above it.
+3. **Apply the fitted setup**: compressor threshold under the measured peak (8 dB for vocals, 6 dB for drums and guitars, 4 dB for cymbals), gate from the bleed.
+
+![Setting an instrument's gain](images/tuto-coach-gain.png)
+
+The table shows each instrument's gain, peak, bleed, thresholds and state (to measure / fitted / gain changed: redo). If a gain changes later, the instrument goes back to "redo" and the full setup falls back to starting thresholds with a warning. Measuring needs the real XR18 and musicians playing at show level; nothing is measured or invented in simulation.
+
+![Band gain overview](images/tuto-coach-gain-tableau.png)
 
 ### Listen and fix
 

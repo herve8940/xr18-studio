@@ -1,4 +1,4 @@
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import {Check,Drum,Headphones,Plus,QrCode,Trash2,Users,Wand2} from 'lucide-react';
 
 export type Input={channel:number;source:string;name:string};
@@ -91,5 +91,59 @@ export function EarsStep({data,profile,setProfile,admin,busy,canApply,onSuggest,
    <button disabled={!admin||busy||!musicians.length} onClick={()=>onShare(profile)}><QrCode size={16}/> Créer les QR codes des musiciens</button>
   </div>
   <p className="coach-note">Le bus est nommé, retiré de la façade et démarré à −10 dB par sécurité. Les retours d’effets (réverbe) ne sont pas modifiés. Les cymbales sont coupées dans le retour du batteur car il les entend déjà fort. Garde le volume du boîtier bas au premier essai.</p>
+ </div>;
+}
+
+type Thresholds={compThrDb:number|null;gateThrDb:number|null;note:string};
+type Cal={channel:number;name:string;source:string;gainDb:number|null;peakDb:number|null;bleedDb:number|null;valid:boolean;needsBleed:boolean;state:'todo'|'ok'|'stale';thresholds:Thresholds|null};
+type Report={available:boolean;title:string;message:string;maximumDb?:number};
+type Decision={state:string;title:string;message:string;deltaDb:number};
+type GainResult={report:Report;decision:Decision|null;proposal:unknown|null;thresholds?:Thresholds};
+type BleedResult={report:Report;thresholds:Thresholds|null;message?:string};
+const db=(v:number|null|undefined)=>v===null||v===undefined?'—':(v>0?'+':'')+(Math.round(v*2)/2).toLocaleString('fr-BE')+' dB';
+const STATE_LABEL={todo:'À mesurer',ok:'Calé',stale:'Gain changé : à refaire'};
+/** Peak position on a -60..0 dBFS scale, with the -9..-3 target zone. */
+function PeakBar({peak}:{peak:number}){
+ const pos=(v:number)=>Math.max(0,Math.min(100,(v+60)/60*100));
+ return <div className="peakbar" aria-label={'Crête '+db(peak)}><span className="zone" style={{left:pos(-9)+'%',width:(pos(-3)-pos(-9))+'%'}}/><i style={{width:pos(peak)+'%'}} className={peak>=-1?'clip':peak>=-9&&peak<=-3?'good':'off'}/><small style={{left:pos(-6)+'%'}}>−6</small></div>;
+}
+export function GainStep({profile,channel,setChannel,admin,busy,canApply,real,refresh,api,run,onPlan,onApplyChannel,onApplyAll}:{
+ profile:Profile;channel:number;setChannel:(c:number)=>void;admin:boolean;busy:boolean;canApply:boolean;real:boolean;refresh:number;
+ api:(path:string,data?:unknown)=>Promise<any>;run:(fn:()=>Promise<void>)=>void;onPlan:(plan:any)=>void;onApplyChannel:(p:Profile,ch:number)=>void;onApplyAll:(p:Profile)=>void}){
+ const [status,setStatus]=useState<Cal[]>([]),[gain,setGain]=useState<GainResult|null>(null),[bleed,setBleed]=useState<BleedResult|null>(null),[measuring,setMeasuring]=useState<''|'gain'|'bleed'>('');
+ useEffect(()=>{let live=true;api('/api/coach/calibration',{}).then(s=>{if(live)setStatus(s);}).catch(()=>{});return()=>{live=false;};},[refresh,channel,profile.inputs.length,gain,bleed]);
+ useEffect(()=>{setGain(null);setBleed(null);},[channel]);
+ const current=status.find(s=>s.channel===channel),input=profile.inputs.find(i=>i.channel===channel);
+ const done=status.filter(s=>s.state==='ok').length,index=profile.inputs.findIndex(i=>i.channel===channel),next=profile.inputs[index+1];
+ const measure=(kind:'gain'|'bleed')=>run(async()=>{setMeasuring(kind);try{if(kind==='gain'){const r=await api('/api/coach/gain',{channel}) as GainResult;setGain(r);setBleed(null);if(r.proposal)onPlan(r.proposal);}else setBleed(await api('/api/coach/bleed',{channel}));}finally{setMeasuring('');}});
+ const th=bleed?.thresholds??current?.thresholds??null;
+ return <div className="coach-section gain-step">
+  {!real&&<p className="coach-message warn">La mesure a besoin de la vraie XR18 et des musiciens qui jouent. En simulation, aucun niveau n’est inventé : connecte la console pour régler les gains.</p>}
+  <h3>Où en est chaque instrument <small>{done} / {profile.inputs.length} calés</small></h3>
+  <div className="gain-table" role="table">
+   <div role="row" className="head"><span>Instrument</span><span>Gain</span><span>Crête</span><span>Repisse</span><span>Compresseur</span><span>Gate</span><span>État</span></div>
+   {profile.inputs.map(i=>{const s=status.find(s=>s.channel===i.channel);return <button role="row" key={i.channel} className={(i.channel===channel?'active ':'')+(s?.state??'todo')} onClick={()=>setChannel(i.channel)}>
+    <span><b>{i.name}</b> <small>entrée {i.channel}</small></span><span>{db(s?.gainDb)}</span><span>{s?.valid?db(s.peakDb):'—'}</span><span>{s?.valid&&s.needsBleed?db(s.bleedDb):s?.needsBleed?'—':'inutile'}</span>
+    <span>{s?.thresholds?.compThrDb!=null?db(s.thresholds.compThrDb):'—'}</span><span>{s?.thresholds?.gateThrDb!=null?db(s.thresholds.gateThrDb):s?.needsBleed?'—':'off'}</span><span className="pill">{STATE_LABEL[s?.state??'todo']}</span></button>;})}
+  </div>
+  {input&&<div className="gain-card">
+   <h3>{input.name} <small>entrée {channel}{current?.gainDb!=null?` · gain actuel ${db(current.gainDb)}`:''}</small></h3>
+   {current?.state==='stale'&&<p className="coach-message warn">Le gain a changé depuis la dernière mesure : les seuils ne correspondent plus au signal. Remesure.</p>}
+   <ol className="gain-steps">
+    <li className={current?.state==='ok'?'done':''}><div><b>Régler le gain</b><p>Fais jouer <b>{input.name}</b> seul, au volume du passage le plus fort du concert, pendant 5 secondes. Je vise des crêtes vers −6 dB.</p></div>
+     <button className="primary" disabled={!admin||busy||!real} onClick={()=>measure('gain')}>{measuring==='gain'?'Mesure… joue maintenant !':gain?.proposal?'Remesurer':'Mesurer (5 s)'}</button>
+     {gain&&<div className={'gain-result '+(gain.decision?.state??'none')}>{gain.report.available&&gain.report.maximumDb!==undefined&&<PeakBar peak={gain.report.maximumDb}/>}<b>{gain.decision?.title??gain.report.title}</b><p>{gain.decision?.message??gain.report.message}</p>{gain.proposal!=null&&<button disabled={!admin||busy||!canApply} onClick={()=>onPlan(gain.proposal)}>Revoir et appliquer ce gain</button>}{gain.proposal!=null&&<small>Après l’avoir appliqué, remesure pour vérifier.</small>}</div>}
+    </li>
+    {current?.needsBleed&&<li className={current.bleedDb!=null&&current.valid?'done':''}><div><b>Placer le gate</b><p><b>{input.name}</b> se tait, les autres jouent fort pendant 5 secondes : je mesure la repisse (le son des autres captés par ce micro) et je place le gate juste au-dessus.</p></div>
+     <button disabled={!admin||busy||!real||current.state!=='ok'} onClick={()=>measure('bleed')}>{measuring==='bleed'?'Mesure… les autres jouent !':'Mesurer la repisse (5 s)'}</button>
+     {bleed&&<div className="gain-result"><b>{bleed.thresholds?'Repisse mesurée : '+db(bleed.report.maximumDb):bleed.report.title}</b><p>{bleed.message??(bleed.thresholds?bleed.thresholds.note:bleed.report.message)}</p></div>}
+    </li>}
+    <li className={current?.state==='ok'?'':'locked'}><div><b>Appliquer la configuration calée</b><p>{th?<>Compresseur à partir de <b>{db(th.compThrDb)}</b>{th.gateThrDb!==null&&<>, gate à <b>{db(th.gateThrDb)}</b></>}. {th.note}</>:'Les seuils seront calculés sur ta mesure dès que le gain sera bien réglé.'}</p></div>
+     <button className="primary" disabled={!admin||busy||!canApply||current?.state!=='ok'} onClick={()=>onApplyChannel(profile,channel)}><Wand2 size={15}/> Appliquer à {input.name}</button>
+    </li>
+   </ol>
+   <div className="coach-actions">{next&&<button onClick={()=>setChannel(next.channel)}>Instrument suivant : {next.name} →</button>}<button disabled={!admin||busy||!canApply||!profile.inputs.length} onClick={()=>onApplyAll(profile)}><Wand2 size={15}/> Appliquer tout le groupe ({done} calé{done>1?'s':''})</button></div>
+  </div>}
+  <p className="coach-note">Pourquoi cet ordre : le compresseur et le gate travaillent sur le signal qui sort du préampli, avec des seuils fixes. Si le gain monte de 6 dB après coup, le compresseur écrase 6 dB de plus et le gate laisse passer la repisse. Si tu changes un gain plus tard, je te le signale ici (« à refaire »). Je ne touche jamais au 48 V et je ne monte pas de plus de 6 dB à la fois.</p>
  </div>;
 }
