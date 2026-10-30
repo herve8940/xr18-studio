@@ -67,6 +67,8 @@ En simulation, aucune commande ne part vers une console et les vumètres ne boug
 
 ![Page de connexion](images/tuto-connect.png)
 
+**Sur Mac**, au premier essai, macOS demande d’autoriser XR18 Studio à accéder aux appareils du réseau local : clique **Autoriser**. Sans cette autorisation, la table est injoignable.
+
 La connexion est mémorisée pour le prochain lancement. Si la détection échoue, ouvre **Connexion manuelle** et tape l’adresse IP de la table : `192.168.1.1` si l’ordinateur est sur le Wi-Fi propre de la XR18, sinon l’adresse donnée par ton routeur.
 
 **Synchronisation après connexion.** Le même écran propose le sens de synchronisation :
@@ -243,6 +245,7 @@ Avant chaque rappel, la table est sauvegardée automatiquement.
 | Problème | Solution |
 |---|---|
 | « XR18 déconnectée » | Vérifier l’alimentation et le câble réseau, et que l’ordinateur est sur le même réseau. Essayer la connexion manuelle avec l’IP de la table. |
+| « Réseau injoignable » ou `EHOSTUNREACH` (Mac) | macOS bloque l’accès au réseau local : **Réglages Système › Confidentialité et sécurité › Réseau local**, active **XR18 Studio**, puis quitte et relance l’application. Si la table a changé d’adresse, clique **Détecter et connecter ma XR18**. |
 | La détection ne trouve rien | Le pare-feu bloque peut-être XR18 Studio : l’autoriser pour les réseaux privés. Les réseaux invités et les VLAN bloquent la détection. |
 | Les faders ne bougent pas la table | Le contrôle n’est pas activé (carte en bas à gauche « Lecture seule ») : **Réglages › Activer le contrôle**. |
 | Le QR code n’ouvre rien | Le téléphone doit être sur le **même Wi-Fi** que l’ordinateur (pas en 4G/5G). Vérifier que le partage est démarré. |

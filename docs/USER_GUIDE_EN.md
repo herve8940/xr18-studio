@@ -67,6 +67,8 @@ In simulation, nothing is sent to a mixer and meters do not move. It is ideal fo
 
 ![Connection page](images/tuto-connect.png)
 
+**On a Mac**, the first attempt makes macOS ask whether XR18 Studio may find devices on the local network: click **Allow**. Without it, the mixer is unreachable.
+
 The connection is remembered for next time. If detection fails, open **Connexion manuelle** (manual connection) and type the mixer’s IP: `192.168.1.1` on the XR18’s own Wi-Fi, otherwise the address given by your router.
 
 **Synchronising after connecting.** The same page offers a direction:
@@ -241,6 +243,7 @@ The mixer is backed up automatically before every recall.
 | Problem | Fix |
 |---|---|
 | “XR18 déconnectée” | Check power and network cable, and that the computer is on the same network. Try manual connection with the mixer’s IP. |
+| “Réseau injoignable” or `EHOSTUNREACH` (Mac) | macOS is blocking local network access: **System Settings › Privacy & Security › Local Network**, enable **XR18 Studio**, then quit and relaunch. If the mixer’s address changed, click **Détecter et connecter ma XR18**. |
 | Detection finds nothing | The firewall may block XR18 Studio: allow it on private networks. Guest networks and VLANs block discovery. |
 | Faders do not move the mixer | Control is off (bottom-left card says “Lecture seule”): **Réglages › Activer le contrôle**. |
 | QR code opens nothing | The phone must be on the **same Wi-Fi** as the computer (not mobile data), and sharing must be started. |

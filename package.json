@@ -71,7 +71,14 @@
         "dmg"
       ],
       "category": "public.app-category.music",
-      "artifactName": "XR18-Studio-macOS-${version}-${arch}.${ext}"
+      "artifactName": "XR18-Studio-macOS-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "XR18 Studio communique avec ta table Behringer XR18 sur le réseau local (OSC/UDP) et partage les retours avec les téléphones des musiciens.",
+        "NSBonjourServices": [
+          "_osc._udp",
+          "_http._tcp"
+        ]
+      }
     },
     "linux": {
       "target": [

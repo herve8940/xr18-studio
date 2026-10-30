@@ -72,3 +72,9 @@ test('physical XR18V2 firmware 1.23 identity captures are accepted',()=>{
 test('X18 and MR18 share the XR18 OSC map, as in X-AIR Edit 1.8.1',()=>{
  for(const model of ['X18','X18V2','MR18','MR18V2','xr18'])assert.equal(parseIdentity(encodeOsc('/info',['V0.04','Rack',model,'1.23']),'10.0.0.2',10024)?.model,'XR18');
 });
+test('unreachable network gets a plain explanation with the macOS Local Network fix',async()=>{
+ const {unreachableMessage}=await import('../src/connection.js');
+ const m=unreachableMessage('192.168.68.94',10024,['send EHOSTUNREACH 192.168.68.94:10024']);
+ assert.match(m,/Réseau local/);assert.match(m,/Détecter et connecter/);assert.match(m,/EHOSTUNREACH/);
+ assert.match(unreachableMessage('10.0.0.2',10024,[]),/ne répond pas/);
+});

@@ -19,7 +19,7 @@ export function ConnectionPanel({status}:{status:Status}){
   setDevices([]);setMessage('Recherche de ta XR18 sur le réseau local…');
   const result=await request('/api/discovery');setDevices(result.devices);
   if(result.devices.length===1)await connect(result.devices[0]);
-  else setMessage(result.devices.length?'Plusieurs XR18 détectées : choisis ta console.':'Aucune XR18 trouvée. Vérifie que le PC et la console sont sur le même réseau et que le pare-feu autorise XR18 Studio.');
+  else setMessage(result.devices.length?'Plusieurs XR18 détectées : choisis ta console.':'Aucune XR18 trouvée. Vérifie que la table est allumée et sur le même réseau que l’ordinateur. Sur Mac : Réglages Système › Confidentialité et sécurité › Réseau local › active XR18 Studio, puis relance l’application. Sur Windows : autorise XR18 Studio dans le pare-feu (réseaux privés).');
  });
  return <section className="studio-panel pad studio-control"><h2>Connexion à ma XR18</h2>
   <p>{status.mode==='simulation'?'Mode simulation':`${status.connected?'Connectée':'Connexion perdue / en attente'} · ${status.host??''} · ${status.writesEnabled?'Contrôle activé':'Lecture seule'}`}</p>
