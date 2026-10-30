@@ -1,6 +1,6 @@
 # XR18 Studio 1.3
 
-[🇫🇷 Guide utilisateur illustré](docs/USER_GUIDE_FR.md) · [🇬🇧 Illustrated user guide](docs/USER_GUIDE_EN.md) · [Notes de version / Release notes](docs/RELEASE_NOTES.md) · [Télécharger / Download](https://github.com/herve8940/xr18-studio-/releases/latest)
+[🇫🇷 Tutoriel illustré](docs/USER_GUIDE_FR.md) · [🇬🇧 Illustrated tutorial](docs/USER_GUIDE_EN.md) · [Notes de version / Release notes](docs/RELEASE_NOTES.md) · [Télécharger / Download](https://github.com/herve8940/xr18-studio-/releases/latest)
 
 **FR** — Assistant de mixage pour Behringer XR18 (ainsi que X18 et MR18) : console graphique dans l’esprit de X-AIR Edit, parcours guidé, retours, effets et scènes. Installateurs autonomes Windows, Mac Intel / Apple Silicon et Linux. Interface en français ; guides bilingues. La validation sur une console physique reste nécessaire avant un concert.
 
@@ -11,10 +11,15 @@
 ## Nouveautés 1.3 / What’s new in 1.3
 
 - **Nouvelle interface sombre et moderne** : trois espaces (Jouer, Préparer, Réglages), console en mode **Simple** (gros faders au doigt, façade ou retour d’un musicien) ou **Expert**, adaptée à l’ordinateur, la tablette et le téléphone.
+- **Retours sur le téléphone de chaque musicien** : un QR code personnel par musicien, sans application. Chacun règle uniquement son retour (niveau de chaque instrument, volume, mute, réglages enregistrés), plafonné à 0 dB.
 - **Console graphique façon X-AIR Edit** (mode Expert) : onglets Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres, avec la banque de faders en bas et la barre de mix à droite.
 - **Explications intégrées** : chaque vue explique en langage simple ce que fait chaque option. Voir le [guide de la console](docs/GUIDE_CONSOLE.md).
 - **Faders par mix** (« sends on fader ») pour faire le retour de chaque musicien.
 - **Corrections issues de la comparaison avec X-AIR Edit 1.8.1** : les écritures ne sont plus refusées à tort, l’affichage dB est exact, les 40 vumètres sont lus, X18 et MR18 sont reconnues. Détails : [XAIR_EDIT_PARITY](docs/XAIR_EDIT_PARITY.md).
+
+| Console (mode Simple) | Retours par QR code | Page du musicien |
+|---|---|---|
+| ![](docs/images/tuto-simple.png) | ![](docs/images/tuto-share.png) | ![](docs/images/tuto-phone.png) |
 
 | Égaliseur | Gate | Entrée |
 |---|---|---|

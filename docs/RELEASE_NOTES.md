@@ -12,6 +12,14 @@
 - Console en mode **Simple** (gros faders et Mute/Solo, façade ou retour d’un musicien) ou **Expert** ; le choix est mémorisé.
 - Affichage adapté à l’ordinateur, à la tablette (barre d’icônes) et au téléphone (navigation en bas, boutons plus gros).
 
+**Retours sur le téléphone de chaque musicien** (Jouer › Retours) :
+
+- Un QR code personnel par musicien, à scanner avec l’appareil photo : la page « Mon retour » s’ouvre dans le navigateur, sans application.
+- Chaque lien ne donne accès qu’à **son** retour : niveau de chaque instrument, volume général, mute et réglages enregistrés (« Concert », « Répète »…), rappelés en douceur.
+- Sécurité auditive : plafond à 0 dB et montée par petits pas ; baisser est toujours libre. Glisser est nécessaire, toucher seul ne change rien.
+- Nouveau lien en un clic si un téléphone est perdu (l’ancien QR cesse aussitôt de fonctionner), retrait d’un musicien, feuille de QR codes imprimable.
+- Le partage est arrêté par défaut et ne publie sur le réseau local que cette page : la console complète reste accessible uniquement sur l’ordinateur.
+
 **Console graphique façon X-AIR Edit** (Jouer › Console, mode Expert) :
 
 - **Mêmes vues que X-AIR Edit** : Mixer (vue d’ensemble), Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite (Main LR / bus / FX, DCA, Clr Solo, groupes de mute, auto-mix).
@@ -29,7 +37,7 @@
 - **Connexion** : toute réponse OSC valide la liaison.
 - **Divers** : IP par défaut 192.168.1.1 (point d’accès XR18), lecture du catalogue plus rapide.
 
-**Validation** : 61 tests, dont 6 avec un faux mixeur UDP qui arrondit les valeurs comme la console. Paquets Windows, macOS Intel / Apple Silicon et Linux compilés en CI. Les 11 vues ont été testées dans le navigateur contre une XR18 émulée, sans erreur JavaScript. **Non vérifié sur une XR18 physique** : le solo `/-stat/solosw/01-16` et la cadence des vumètres. Paquets non signés / non notariés.
+**Validation** : 65 tests, dont 4 sur le partage des retours (droits limités au bus, plafond, révocation des liens) et 6 avec un faux mixeur UDP qui arrondit les valeurs comme la console. Paquets Windows, macOS Intel / Apple Silicon et Linux compilés en CI. Les 11 vues ont été testées dans le navigateur contre une XR18 émulée, sans erreur JavaScript. **Non vérifié sur une XR18 physique** : le solo `/-stat/solosw/01-16` et la cadence des vumètres. Paquets non signés / non notariés.
 
 ## English
 
@@ -40,6 +48,14 @@
 - Top bar with console status, **Tout couper** (mute all) and **Scènes** (scenes).
 - Console in **Simple** mode (large faders and Mute/Solo, front of house or a musician’s monitor) or **Expert** mode; the choice is remembered.
 - Layout adapted to computer, tablet (icon bar) and phone (bottom navigation, larger buttons).
+
+**Monitors on each musician’s phone** (Jouer › Retours):
+
+- One personal QR code per musician, scanned with the phone camera: the “Mon retour” page opens in the browser, no app needed.
+- Each link only reaches **that** monitor: level of each instrument, overall volume, mute and saved mixes, recalled smoothly.
+- Hearing safety: 0 dB ceiling and small raise steps; lowering is always free. Sliding is required, touching alone changes nothing.
+- One-click new link if a phone is lost (the old QR stops working at once), musician removal, printable QR sheet.
+- Sharing is off by default and only publishes this page on the local network: the full console stays on the computer only.
 
 **X-AIR Edit–style graphical console** (Jouer › Console, Expert mode):
 
@@ -58,7 +74,7 @@
 - **Connection**: any OSC reply confirms the link.
 - **Other**: default IP 192.168.1.1 (XR18 access point), faster catalogue reads.
 
-**Validation**: 61 tests, 6 of them against a fake UDP mixer that rounds values like the console. Windows, Intel / Apple Silicon macOS and Linux packages built in CI. All 11 views were tested in the browser against an emulated XR18, with no JavaScript errors. **Not verified on a physical XR18**: solo `/-stat/solosw/01-16` and meter rate. Packages remain unsigned / non-notarized.
+**Validation**: 65 tests, including 4 on monitor sharing (bus-only access, ceiling, link revocation) and 6 against a fake UDP mixer that rounds values like the console. Windows, Intel / Apple Silicon macOS and Linux packages built in CI. All 11 views were tested in the browser against an emulated XR18, with no JavaScript errors. **Not verified on a physical XR18**: solo `/-stat/solosw/01-16` and meter rate. Packages remain unsigned / non-notarized.
 
 ---
 

@@ -1,161 +1,266 @@
-# XR18 Studio 1.3 — Guide utilisateur
+# XR18 Studio 1.3 — Tutoriel pas à pas
 
-[English](USER_GUIDE_EN.md) · [Téléchargements](https://github.com/herve8940/xr18-studio-/releases/latest) · [Accueil](../README.md)
+[English](USER_GUIDE_EN.md) · [Guide de la console (chaque option)](GUIDE_CONSOLE.md) · [Téléchargements](https://github.com/herve8940/xr18-studio-/releases/latest) · [Accueil](../README.md)
 
-## Installer et ouvrir
+XR18 Studio pilote une table Behringer **XR18** (ainsi que X18 et MR18) depuis un ordinateur, une tablette, et le téléphone de chaque musicien pour son retour. Ce tutoriel suit l’ordre d’une vraie journée : installer, connecter, faire la balance, mixer, donner les retours aux musiciens, préparer le concert.
 
-Aucun Node.js, terminal ou serveur à installer : le moteur et l’interface sont inclus.
+> Les captures ont été faites avec une table émulée : les noms de canaux (Chant, Guitare 1…) sont des exemples. Chez toi, l’application affiche les noms et couleurs enregistrés dans ta XR18.
 
-| Ordinateur | Fichier à télécharger | Installation |
+**Sommaire**
+
+1. [Ce qu’il te faut](#1-ce-quil-te-faut)
+2. [Installer l’application](#2-installer-lapplication)
+3. [Premier lancement, sans table](#3-premier-lancement-sans-table)
+4. [Connecter la XR18](#4-connecter-la-xr18)
+5. [Se repérer : trois espaces](#5-se-repérer--trois-espaces)
+6. [Faire la balance avec « Mon ingé son »](#6-faire-la-balance-avec--mon-ingé-son-)
+7. [Mixer la façade en mode Simple](#7-mixer-la-façade-en-mode-simple)
+8. [Régler en détail en mode Expert](#8-régler-en-détail-en-mode-expert)
+9. [Les retours sur le téléphone de chaque musicien](#9-les-retours-sur-le-téléphone-de-chaque-musicien)
+10. [Préparer : setlists, répétitions, scènes](#10-préparer--setlists-répétitions-scènes)
+11. [Le jour du concert : check-list](#11-le-jour-du-concert--check-list)
+12. [Dépannage](#12-dépannage)
+13. [Sauvegarde, mises à jour et limites](#13-sauvegarde-mises-à-jour-et-limites)
+
+---
+
+## 1. Ce qu’il te faut
+
+- Une table **XR18**, X18 ou MR18 (version d’origine ou V2).
+- Un ordinateur **Windows**, **Mac** (Intel ou Apple Silicon) ou **Linux**.
+- **Un routeur Wi-Fi** pour le groupe ou la salle : l’ordinateur, la table (câble réseau conseillé) et les téléphones des musiciens doivent être sur ce même réseau. Le Wi-Fi intégré de la XR18 marche pour l’ordinateur seul, mais il est trop limité pour plusieurs téléphones.
+- Pour les retours sur téléphone : n’importe quel smartphone récent avec un appareil photo (pour scanner le QR code). Aucune application à installer.
+
+## 2. Installer l’application
+
+Télécharge le fichier qui correspond à ton ordinateur sur la [page des versions](https://github.com/herve8940/xr18-studio-/releases/latest). Rien d’autre à installer : le moteur et l’interface sont inclus.
+
+| Ordinateur | Fichier | Installation |
 |---|---|---|
-| Windows x64 | `XR18-Studio-Windows-1.3.0.exe` | Double-cliquer ; installation pour ton compte et raccourci automatique. |
-| Mac Intel | `XR18-Studio-macOS-1.3.0-x64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
-| Mac Apple Silicon | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Ouvrir et glisser XR18 Studio dans Applications. |
-| Ubuntu/Debian x64 | fichier `.deb` | Ouvrir avec l’installateur de logiciels de ta distribution. |
-| Autres Linux x64 | fichier `.AppImage` | Autoriser son exécution dans les propriétés du fichier, puis l’ouvrir. |
+| Windows | `XR18-Studio-Windows-1.3.0.exe` | Double-clic. L’installation se fait pour ton compte et crée un raccourci. |
+| Mac Intel | `XR18-Studio-macOS-1.3.0-x64.dmg` | Ouvre-le et glisse XR18 Studio dans Applications. |
+| Mac Apple Silicon (M1, M2, M3…) | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Idem. |
+| Ubuntu / Debian | fichier `.deb` | Ouvre-le avec l’installateur de logiciels. |
+| Autre Linux | fichier `.AppImage` | Autorise l’exécution dans ses propriétés, puis ouvre-le. |
 
-Ces paquets ne sont pas signés/notariés par un certificat commercial. Windows ou macOS peut demander une autorisation supplémentaire ou bloquer l’ouverture selon sa politique. Vérifier la provenance et les sommes SHA-256 publiées avec la version ; ne pas désactiver globalement les protections du système. Sur un Mac personnel, utiliser l’autorisation proposée dans Réglages Système > Confidentialité et sécurité si elle est disponible. Un ordinateur administré peut nécessiter l’intervention de son administrateur.
+Les paquets ne sont pas signés par un certificat commercial :
 
-Les compilations ciblent Windows x64, Mac Intel et Apple Silicon, Linux x64 récents. Les vieux iPad ne sont pas une cible garantie ; ils n’exécutent pas l’installateur de bureau. L’accès tablette exige le mode serveur HTTPS et des comptes, voir [multiappareils](FONCTIONS_0_2.md).
+- **Mac** : la première fois, fais **clic droit › Ouvrir**, puis confirme. Ou va dans Réglages Système › Confidentialité et sécurité › « Ouvrir quand même ».
+- **Windows** : si SmartScreen s’affiche, clique **Informations complémentaires › Exécuter quand même**.
 
-## 1. Découvrir sans console
+Ne désactive jamais toutes les protections du système. Un ordinateur d’entreprise ou d’école peut demander l’intervention de son administrateur.
 
-Au premier démarrage, l’application s’ouvre en simulation sur **Mon ingé son**. Tu peux découvrir le parcours sans modifier ta XR18. Les curseurs simulés ne constituent pas des mesures audio. Les noms de la capture sont des exemples.
+## 3. Premier lancement, sans table
 
-![Console graphique : 16 entrées, retours et Main LR](images/console.png)
+Au premier démarrage, l’application est en **simulation** : tu peux tout découvrir sans toucher à ta table. Le badge orange **Simulation** en haut à droite le rappelle.
 
-Chaque tranche représente une entrée ; la tranche de droite est la sortie affichée (Main LR par défaut). Le fader est gradué en dB comme sur la console, le bouton M coupe le canal, S l’écoute en solo et LR l’affecte au Main. Les onglets donnent accès aux contrôles détaillés, à l’EQ, aux traitements dynamiques, aux envois, aux effets, au routage et aux DCA. Voir [Console graphique (1.3)](#console-graphique-13).
+![Premier lancement en simulation](images/tuto-first-launch.png)
 
-## 2. Connecter la XR18
+En simulation, aucune commande ne part vers une console et les vumètres ne bougent pas. C’est parfait pour apprendre, préparer les setlists ou montrer l’application au groupe.
 
-1. Allumer la console et relier l’ordinateur au même réseau local.
-2. Ouvrir **Configuration**, puis **Détecter et connecter ma XR18** (également accessible dans le menu Connexion de l’application).
-3. Une console : connexion en lecture seule. Plusieurs : choisir la bonne console.
-4. Vérifier les noms des canaux et l’état de connexion. Pour agir sur la console, choisir **Activer le contrôle** et confirmer.
+## 4. Connecter la XR18
 
-Pas de redémarrage ni de fichier technique à modifier. La connexion est mémorisée. Si la détection échoue, vérifier le pare-feu et le réseau commun ; les réseaux invités/VLAN peuvent bloquer la découverte. Une adresse IP peut être saisie en secours : 192.168.1.1 quand l’ordinateur est connecté au Wi-Fi propre de la XR18. Les X18 et MR18 sont aussi reconnues. [Détails](CONNEXION_XR18.md).
+1. Allume la table et branche-la au routeur (ou connecte l’ordinateur au Wi-Fi de la XR18).
+2. Va dans **Réglages** (en bas du menu de gauche, ou la carte de connexion en bas à gauche).
+3. Clique **Détecter et connecter ma XR18**. Si une seule table est trouvée, la connexion est immédiate. S’il y en a plusieurs, choisis la bonne.
+4. La connexion commence en **lecture seule** : rien ne change sur la table. Quand tu es prêt à agir, clique **Activer le contrôle** et confirme.
 
-## 3. Préparer le groupe avec « Mon ingé son »
+![Page de connexion](images/tuto-connect.png)
 
-![Parcours Mon ingé son, en simulation](images/coach.png)
+La connexion est mémorisée pour le prochain lancement. Si la détection échoue, ouvre **Connexion manuelle** et tape l’adresse IP de la table : `192.168.1.1` si l’ordinateur est sur le Wi-Fi propre de la XR18, sinon l’adresse donnée par ton routeur.
 
-Suivre les six étapes : connecter, indiquer les instruments, faire jouer chaque musicien, corriger une gêne, préparer les retours, sauvegarder. Le modèle propose chant, deux guitares, basse et TD-27 gauche/droite : adapter les numéros à tes vrais branchements. Le logiciel ne reconnaît pas automatiquement l’instrument branché et ne crée pas automatiquement un lien stéréo.
+**Synchronisation après connexion.** Le même écran propose le sens de synchronisation :
 
-**Préparer une base douce** propose des noms, couleurs et traitements légers. Vérifier l’aperçu avant de confirmer. Le gain d’entrée, le 48 V, les faders et le routage ne sont pas modifiés par cette préparation. Les étapes cochées sont tes propres confirmations, pas une certification automatique.
+- **Table → PC** (conseillé) : récupère les réglages actuels de la table. Rien n’est envoyé.
+- **PC → Table** : renvoie vers la table une copie sauvegardée sur l’ordinateur. Un aperçu montre chaque différence avant l’envoi. Le 48 V est exclu par défaut et demande un accord séparé.
 
-## 4. Vérifier et améliorer le son
+Pendant ces opérations, ne touche pas la table depuis une autre application (X-AIR Edit, tablette…).
 
-Faire jouer une personne et choisir **Vérifier le signal** : environ cinq secondes de mesures OSC récentes sont nécessaires. Sans console réelle ou sans données fraîches, aucun niveau n’est inventé. Ce contrôle ne mesure ni le niveau dans les oreilles, ni le spectre, ni la qualité acoustique.
+## 5. Se repérer : trois espaces
 
-Choisir l’instrument puis un problème (« voix étouffée », « trop de graves »…), ou l’expliquer avec tes mots. Le conseiller local propose des vérifications et, lorsque cela convient, une petite correction à prévisualiser. Confirmer pour l’essayer ; utiliser **Annuler le dernier réglage guidé** pour préparer le retour au réglage sauvegardé. Écouter après chaque changement.
+L’application est rangée en **trois espaces**, dans le menu de gauche sur ordinateur, en icônes sur tablette, et en bas de l’écran sur téléphone.
 
-L’assistant reçoit les paramètres et niveaux OSC, **pas le son**. Les conseils de timbre sont des hypothèses basées sur ta description. En cas de larsen ou de niveau excessif, réduire immédiatement le niveau concerné et vérifier le placement des micros et enceintes ; ne pas attendre une analyse automatique.
-
-## 5. Retours, effets et scènes
-
-- **Retours in-ear** : choisir le bus du musicien et ajuster progressivement les envois. Commencer bas et vérifier le volume du récepteur. Une limite numérique n’est pas une garantie de protection auditive.
-- **Effets / Contrôles** : lire les paramètres, préparer les changements puis confirmer. Conserver une sauvegarde avant une modification importante.
-- **Scènes** : capturer une scène complète au format JSON Studio version 2 et la retrouver dans la bibliothèque serveur. Ne pas confondre avec les snapshots rapides de faders stockés dans le navigateur.
-- **Fichiers `.scn` existants** : import, archivage et export possibles ; un rappel contenant des paramètres FX textuels non interprétables est bloqué avant écriture. Pour convertir : charger le `.scn` dans X Air Edit sur la console, connecter Studio puis capturer une scène complète JSON v2. Le rappel universel de tous les `.scn` n’est pas garanti.
-
-## 6. IA facultative, ReaCue et musiciens
-
-Le conseiller local fonctionne sans abonnement ni clé API. Pour le dialogue OpenAI facultatif, ouvrir la configuration IA de l’application de bureau et renseigner ta clé API et un modèle compatible Responses et sorties structurées. La clé est chiffrée avec le coffre du système ; une plateforme sans coffre sécurisé peut refuser l’enregistrement. Ne jamais mettre la clé dans GitHub. L’utilisation API est facturée séparément de ChatGPT.
-
-L’envoi externe exige ton accord. Seuls la question, le type d’instrument et l’état de connexion sont envoyés, sans audio ni scènes. Les réponses IA sont consultatives et ne pilotent pas directement la console. [Détails](INGE_SON.md).
-
-Pour REAPER/ReaCue, installer l’action Lua et le pont fournis dans `integrations/`, puis suivre [SHOW_CONTROL](SHOW_CONTROL.md). Les musiciens utilisent les comptes et permissions de bus ; l’accès réseau exige HTTPS et des comptes configurés, voir [FONCTIONS_0_2](FONCTIONS_0_2.md). Le paquet de bureau démarre localement ; il n’expose pas automatiquement un serveur pour iPad.
-
-## Sauvegarde, mise à jour et assistance
-
-Exporter les scènes importantes et conserver une copie du dossier de données utilisateur avant une mise à jour. L’application de bureau conserve SQLite et la connexion dans son dossier utilisateur système ; les snapshots locaux dépendent du navigateur. Une mise à jour ne remplace pas une sauvegarde.
-
-Télécharger le nouvel installateur depuis les versions GitHub et fermer Studio avant de l’installer. Il n’y a pas de mise à jour automatique silencieuse. Pour signaler un problème, joindre le système, la version, le mode réel/simulation et les étapes de reproduction, sans clé API ni mot de passe.
-
-## Validation de la 1.0
-
-La publication automatique exige tests, compilation et fabrication des quatre paquets, ainsi qu’un démarrage des applications empaquetées. Les contrôles logiciels et l’émulateur OSC ne remplacent pas un essai avec une XR18 physique, les retours réels et REAPER. Aucune qualification concert ni compatibilité universelle avec les anciens appareils n’est revendiquée. Les notes de version indiquent les résultats disponibles.
-
-## Synchronisation dans les deux sens (1.1)
-
-Après connexion, Configuration affiche **Sens de synchronisation**, avec **Table → PC** sélectionné et le bouton **Synchroniser**. Ce panneau reste disponible à tout moment.
-
-- **Table → PC** : relire le catalogue connu de la console et conserver une nouvelle copie PC. À utiliser après des réglages dans X Air. Aucun réglage n’est envoyé.
-- **PC → Table** : activer le contrôle, sélectionner une copie PC ou une scène complète, puis cliquer sur Synchroniser pour afficher les différences. Confirmer l’envoi après vérification. Le 48 V est exclu par défaut ; son inclusion et son application demandent des accords distincts.
-
-La préparation en simulation est conservée avant la connexion. Les copies PC restent distinctes des valeurs reçues en direct. Une préparation non réglée contient des valeurs par défaut : ne pas l’envoyer sans vérifier. La table est sauvegardée avant envoi ; un changement depuis l’aperçu fait refuser l’application. Ne pas manipuler les autres applications pendant l’opération : il n’existe pas de verrouillage OSC entre clients. En cas d’échec, l’état peut être partiel et la sauvegarde reste dans les scènes. Une capture échoue si un paramètre du catalogue est indisponible.
-
-## Gains et réglages d’entrée (1.2)
-
-Dans Console > Mixage, cliquer sur **Entrée / Gain** du canal puis **Lire l’entrée**. Le logiciel identifie la prise analogique utilisée ; s’il s’agit d’un retour USB, il propose le trim USB. Ne pas confondre gain d’entrée (adaptation du signal reçu) et fader (niveau dans le mix). Un gain analogique agit aussi sur les autres canaux affectés à la même prise, les retours et les traitements.
-
-Saisir le gain en dB, prévisualiser, puis confirmer. Le panneau permet aussi de régler le coupe-bas et la polarité Ø. Le 48 V exige un accord supplémentaire ; vérifier le matériel branché avant de l’activer. Les raccourcis ouvrent l’EQ, les traitements et les envois. Les valeurs sont celles de la dernière lecture, à actualiser après changement dans une autre application. Le routage est relu avant application pour détecter un changement de source.
-
-## Se repérer dans l’application (1.3)
-
-![Console en mode Simple](images/app-simple.png)
-
-L’application est rangée en **trois espaces**, à gauche sur ordinateur et en bas sur téléphone :
-
-| Espace | Pages | Quand l’utiliser |
+| Espace | Pages | Quand |
 |---|---|---|
-| **Jouer** | Console, Retours, Mon ingé son | Pendant la balance, la répétition et le concert. |
-| **Préparer** | Setlists, Répétitions, Scènes | Avant : répertoire, objectifs, sauvegardes de réglages. |
-| **Réglages** | Connexion & système | Trouver la XR18, activer le contrôle, comptes. |
+| **Jouer** | Console, Retours, Mon ingé son | Balance, répétition, concert |
+| **Préparer** | Setlists, Répétitions, Scènes | Avant : répertoire, objectifs, sauvegardes |
+| **Réglages** | Connexion & système | Trouver la table, activer le contrôle, comptes |
 
 En haut de chaque page :
 
-- l’état de la console : **XR18 réelle**, **Simulation** ou **Déconnectée** ;
-- **Tout couper**, pour couper les 16 entrées en urgence ;
-- **Scènes**, pour sauvegarder ou rappeler des réglages.
+- l’état de la table : **XR18 réelle** (vert), **Simulation** (orange) ou **Déconnectée** (rouge) ;
+- **Tout couper** (rouge) : coupe les 16 entrées d’un coup, en cas de larsen ou d’urgence ;
+- **Scènes** : sauvegarder ou rappeler des réglages.
 
-### Console : mode Simple ou Expert
+En bas à gauche, la carte de connexion indique si le contrôle est activé.
 
-Le bouton **Simple / Expert** en haut de la page Console change le niveau de détail. Le choix est mémorisé.
-
-- **Simple** : de grosses tranches, faciles à toucher au doigt. Pour chaque source : le volume, le vumètre, Mute et Solo. En haut, choisis **Façade** ou le retour d’un musicien (« Retour Chant »…) : les faders règlent alors ce mix. Les entrées sans nom sont masquées ; une case permet de les afficher. Toucher le nom d’une source ouvre directement son égaliseur en mode Expert.
-- **Expert** : toute la console façon X-AIR Edit, décrite ci-dessous.
-
-L’affichage s’adapte à l’écran. Sur tablette, le menu devient une barre d’icônes. Sur téléphone, les trois espaces passent en bas de l’écran et les boutons sont plus gros.
-
-| Tablette | Téléphone |
+| Sur tablette | Sur téléphone |
 |---|---|
-| ![Tablette](images/app-tablet.png) | ![Téléphone](images/app-phone.png) |
+| ![Tablette](images/app-tablet.png) | ![Téléphone](images/tuto-app-phone.png) |
 
-## Console graphique (1.3)
+## 6. Faire la balance avec « Mon ingé son »
 
-Ouvrir **Jouer › Console** et choisir le mode **Expert**. L’écran reprend l’organisation de X-AIR Edit. Il se met à jour en direct depuis la XR18 : noms, couleurs et réglages sont relus automatiquement à la connexion.
+**Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes :
 
-![Console graphique](images/console.png)
+1. Brancher et connecter.
+2. Dire qui est branché où.
+3. Faire jouer un musicien à la fois.
+4. Écouter et corriger un problème.
+5. Préparer les retours.
+6. Garder le bon réglage.
+
+![Mon ingé son](images/tuto-coach.png)
+
+À l’étape 4, choisis l’instrument puis ce qui te gêne (« la voix est étouffée », « ça siffle »…), ou décris-le avec tes mots. L’assistant propose une petite correction, que tu prévisualises, essaies et peux annuler d’un clic avec **Annuler le dernier réglage guidé**.
+
+L’assistant reçoit les réglages et les niveaux de la table, **pas le son** : ses conseils partent de ta description. En cas de larsen, baisse tout de suite le volume concerné (ou **Tout couper**) avant de chercher la cause.
+
+Le dialogue avec une IA (OpenAI) est facultatif ; le conseiller local fonctionne sans abonnement. Voir [Mon ingé son](INGE_SON.md).
+
+## 7. Mixer la façade en mode Simple
+
+**Jouer › Console**, bouton **Simple** en haut. C’est le mode du concert : de grosses tranches faciles à toucher, une par source.
+
+![Console en mode Simple](images/tuto-simple.png)
+
+Pour chaque source, de haut en bas :
+
+- **Le nom et sa couleur** (ceux de ta table) : touche-le pour ouvrir le réglage détaillé de cette source.
+- **Le niveau en dB** : 0 dB = niveau nominal, −∞ = coupé.
+- **Le fader et son vumètre** : glisse pour régler. Le vumètre doit rester dans le vert et le jaune ; le rouge en haut signale une saturation.
+- **Mute** (devient rouge « Coupé ») et **Solo** (écoute au casque, sans rien changer pour le public).
+
+La tranche à droite est le **volume général**.
+
+**Régler le retour d’un musicien.** En haut, choisis son retour (par exemple « Retour Gtr ») au lieu de **Façade** : les faders règlent alors ce que ce musicien entend, et le public n’est pas concerné. Les niveaux apparaissent en cyan pour te le rappeler.
+
+![Mode Simple sur un retour](images/tuto-simple-retour.png)
+
+Les entrées sans nom sont masquées pour alléger l’écran ; la case **Afficher aussi les entrées sans nom** les fait réapparaître.
+
+**Gestes utiles partout dans l’application** :
+
+- **glisser** pour régler, **Maj** enfoncée pour un réglage fin ;
+- **molette** pour de petits pas ;
+- **double-clic** pour revenir à 0 dB.
+
+Chaque geste part tout de suite vers la table, puis l’application relit la valeur vraiment retenue.
+
+## 8. Régler en détail en mode Expert
+
+Bouton **Expert** en haut de la console : toute la table, organisée comme X-AIR Edit.
+
+![Console en mode Expert](images/tuto-expert.png)
 
 - **En haut, les onglets** : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage, Vumètres.
-- **Au milieu, la vue du canal sélectionné**, avec son vumètre à gauche et celui de la sortie à droite.
-- **En bas, la banque de faders** : nom, Solo, niveau en dB, fader avec vumètre, Mute.
-- **À droite, la barre de réglages** : mix affiché sur les faders (Main LR, un retour ou un effet), DCA, Clr Solo, groupes de mute, auto-mix.
+- **Au milieu, la vue de la tranche sélectionnée** (clique sur un nom en bas pour en changer).
+- **En bas, la banque de faders**.
+- **À droite, la barre de mix** : façade, retours ou effets sur les faders, DCA, Clr Solo, groupes de mute, auto-mix.
 
-Le bouton **? Explications** affiche à côté de chaque vue, en langage simple, ce que fait chaque option. Le **[Guide de la console](GUIDE_CONSOLE.md)** reprend toutes ces explications, vue par vue, avec des captures et la liste des 61 effets.
+Le bouton **? Explications** affiche à côté de chaque vue, en langage simple, à quoi sert chaque réglage. Le [Guide de la console](GUIDE_CONSOLE.md) reprend toutes ces explications avec des captures et la liste des 61 effets.
 
-| Vue | Ce qu’on y règle |
+![Égaliseur en mode Expert](images/tuto-expert-eq.png)
+
+**Quelques réglages courants** :
+
+- **Le gain d’un micro** (onglet **Entrée**) : fais jouer fort, monte le **Mic Gain** jusqu’à ce que le vumètre atteigne −12 à −6 dB. Le gain agit sur la prise physique, donc sur tous les canaux qui l’utilisent.
+- **Le 48 V** (micros statiques) : bouton **48V Phantom** dans Entrée, toujours avec confirmation. Ne l’active pas sur un micro à ruban.
+- **Le coupe-bas** (Entrée ou EQ) : 80–100 Hz sur les voix et les guitares, pour enlever les bruits de scène.
+- **L’égaliseur** : glisse un point de la courbe, la molette change sa largeur. Corrige d’abord ce qui gêne avant d’ajouter.
+- **Le compresseur et la gate** : commence par un préréglage (Kick, Snare, Bass, Vocal…), puis ajuste le seuil à l’oreille.
+
+**Toujours protégé** : le 48 V, le routage et le changement d’effet demandent une confirmation, avec aperçu et sauvegarde automatique. Changer la prise d’entrée ou coupler deux canaux pose aussi la question.
+
+Les onglets **Préréglages par instrument**, **Bibliothèque d’effets** et **Tous les paramètres** restent disponibles au-dessus de la console Expert.
+
+## 9. Les retours sur le téléphone de chaque musicien
+
+Chaque musicien règle **son propre retour** depuis son téléphone, sans application, en scannant **son** QR code.
+
+### Côté ordinateur : créer les QR codes
+
+1. Va dans **Jouer › Retours**.
+2. Clique **Démarrer le partage**. Au premier démarrage, le système peut demander d’autoriser XR18 Studio dans le pare-feu : accepte pour les réseaux privés.
+3. Tape le prénom du musicien, choisis **son retour** (bus 1 à 6), puis **Ajouter**. Recommence pour chaque musicien.
+4. Chaque musicien scanne son QR code avec l’appareil photo de son téléphone. **Imprimer les QR** sort une feuille avec tous les codes, à scotcher près des retours.
+
+![Page Retours avec les QR codes](images/tuto-share.png)
+
+Chaque carte indique si le téléphone du musicien est connecté. Si un téléphone est perdu, ou si un musicien quitte le groupe, clique **Nouveau lien** : l’ancien QR code cesse aussitôt de fonctionner. **Retirer** supprime l’accès.
+
+### Côté musicien : la page « Mon retour »
+
+| Mon retour | Mes réglages enregistrés |
 |---|---|
-| ![Mixer](images/xair-mixer.png) | **Mixer** : vue d’ensemble de toutes les tranches (gain, 48 V, envois, gate, EQ, comp, pan). Un clic sur une vignette ouvre le réglage. |
-| ![Entrée](images/xair-input.png) | **Entrée** : source A/D ou USB, prise utilisée, gain, trim, 48 V, polarité, couplage stéréo, coupe-bas, insert. |
-| ![Gate](images/xair-gate.png) | **Gate** : porte de bruit avec presets, seuil, plage, enveloppe et filtre de déclenchement. |
-| ![EQ](images/xair-eq.png) | **EQ** : courbe interactive, 4 bandes (6 sur bus et façade), coupe-bas, RESET. |
-| ![Comp](images/xair-comp.png) | **Comp** : compresseur avec presets, courbe, ratio, knee, attaque, relâchement, mix. |
-| ![Envois](images/xair-sends.png) | **Envois** : 6 retours et 4 effets, avec le point de prélèvement. |
-| ![Main](images/xair-main.png) | **Main** : façade, panoramique, DCA, groupes de mute, auto-mix. |
-| ![Effets](images/xair-fx.png) | **Effets** : les 4 processeurs, leur type expliqué, le retour, les canaux qui y envoient. |
-| ![Routage](images/xair-routing.png) | **Routage** : sorties Aux, USB et P16, modifiées avec aperçu et confirmation. |
-| ![Vumètres](images/xair-meter.png) | **Vumètres** : tous les niveaux de la console. |
+| ![Page Mon retour sur téléphone](images/tuto-phone.png) | ![Réglages enregistrés](images/tuto-phone-profiles.png) |
 
-**Pour régler le retour d’un musicien**, choisis son bus dans la barre de droite : les faders du bas deviennent ses envois (« sends on fader »).
+- **Volume de mon retour** : le volume général de son retour, et **Couper** pour le couper d’un geste.
+- **Ce que j’entends** : une barre par instrument. Glisse vers la droite pour l’entendre plus fort. La fine barre en dessous montre le niveau joué en ce moment. Les sources pas encore envoyées sont masquées ; **Tout afficher** les montre.
+- **Mes réglages enregistrés** : donne un nom (« Concert », « Répète acoustique ») et **Enregistrer**. **Rappeler** retrouve ce mix en douceur, en une seconde environ.
+- Poser le doigt ne change rien : seul le **glissement** modifie le niveau, pour éviter les accidents en jouant.
 
-![Faders en mode envoi vers un retour](images/xair-sends-on-fader.png)
+**Ce que le musicien ne peut pas faire** : toucher la façade, les retours des autres, le gain, le 48 V, les effets ou le routage. Son lien ne donne accès qu’à son retour.
 
-**Gestes** : glisser pour régler (Maj pour un réglage fin), molette pour de petits pas, double-clic pour la valeur par défaut. Chaque geste part tout de suite vers la XR18, puis la valeur retenue est relue.
+**Sécurité auditive** : depuis un téléphone, aucun niveau ne dépasse 0 dB, et chaque geste ne peut monter que d’un petit pas (baisser est toujours libre). Commence bas, puis monte ce qui manque. Vérifie aussi le volume de l’émetteur ou de l’ampli des retours.
 
-**Ce qui reste protégé** : le 48 V, le routage et le changement d’effet demandent une confirmation, avec aperçu et sauvegarde. Changer la prise d’entrée ou coupler deux canaux demande aussi un accord. Un compte musicien ne règle que les envois de ses propres bus.
+**Bon à savoir** :
 
-Les onglets **Préréglages par instrument**, **Bibliothèque d’effets** et **Tous les paramètres** restent disponibles à côté de la console.
+- La page reste en **lecture seule** tant que le contrôle n’est pas activé dans Réglages.
+- Le partage s’arrête quand on ferme l’application : il faut le redémarrer à chaque lancement. Les QR codes restent valables tant que l’ordinateur garde la même adresse sur le réseau (même routeur) ; sur un autre réseau, réimprime-les. Pour une adresse fixe, réserve-la pour l’ordinateur dans les réglages du routeur.
+- La connexion n’est pas chiffrée : utilise le Wi-Fi privé du groupe, protégé par mot de passe, jamais un réseau public.
+- Ajouter la page à l’écran d’accueil du téléphone (menu du navigateur › « Sur l’écran d’accueil ») permet de la rouvrir comme une application.
 
-Le bouton Solo utilise les commandes de X-AIR Edit, mais il n’a pas encore été vérifié sur une XR18 physique. Écouter ses retours avec précaution après une mise à jour.
+## 10. Préparer : setlists, répétitions, scènes
+
+**Setlists** : ajoute les morceaux au répertoire (titre, artiste, tempo), puis **+ Setlist** pour construire l’ordre de passage. Donne un nom à la setlist et **Sauvegarder** pour la garder.
+
+![Setlists](images/tuto-setlists.png)
+
+**Répétitions** : note les objectifs de la prochaine répétition (morceaux à travailler, réglages à revoir) et enregistre-la avec sa date.
+
+**Scènes** : une scène est une photo de tous les réglages de la table (canaux, traitements, envois, effets…).
+
+![Scènes](images/tuto-scenes.png)
+
+- **Sauvegarder la scène complète** : à faire après chaque balance réussie.
+- **Sauvegarder pour ReaCue (sans 48 V)** : version utilisable par l’automatisation REAPER, voir [ReaCue](SHOW_CONTROL.md).
+- **Importer** un fichier `.scn` de X-AIR Edit est possible pour l’archiver. Pour le rappeler, charge-le dans X-AIR Edit, connecte XR18 Studio, puis fais une capture de scène complète.
+
+Avant chaque rappel, la table est sauvegardée automatiquement.
+
+## 11. Le jour du concert : check-list
+
+1. Brancher le routeur, la table (câble réseau) et l’ordinateur. Volumes des enceintes et des retours **au minimum**.
+2. Lancer XR18 Studio, vérifier le badge **XR18 réelle**, puis **Réglages › Activer le contrôle**.
+3. **Scènes** : rappeler la scène du groupe (ou **Table → PC** si la table est déjà réglée).
+4. **Jouer › Retours › Démarrer le partage**. Les musiciens ouvrent leur QR code et vérifient que leur page affiche « En direct ».
+5. Balance : un musicien à la fois (**Mon ingé son**, étape 3), puis tout le groupe.
+6. Pendant le concert : mode **Simple** sur la façade. **Tout couper** reste en haut en cas de problème.
+7. Après le concert : **Scènes › Sauvegarder la scène complète** si des réglages ont changé.
+
+## 12. Dépannage
+
+| Problème | Solution |
+|---|---|
+| « XR18 déconnectée » | Vérifier l’alimentation et le câble réseau, et que l’ordinateur est sur le même réseau. Essayer la connexion manuelle avec l’IP de la table. |
+| La détection ne trouve rien | Le pare-feu bloque peut-être XR18 Studio : l’autoriser pour les réseaux privés. Les réseaux invités et les VLAN bloquent la détection. |
+| Les faders ne bougent pas la table | Le contrôle n’est pas activé (carte en bas à gauche « Lecture seule ») : **Réglages › Activer le contrôle**. |
+| Le QR code n’ouvre rien | Le téléphone doit être sur le **même Wi-Fi** que l’ordinateur (pas en 4G/5G). Vérifier que le partage est démarré. |
+| La page du musicien affiche « Lien expiré » | Le lien a été régénéré ou retiré : scanner le nouveau QR code. |
+| La page du musicien affiche « Reconnexion… » | L’ordinateur s’est mis en veille, l’application est fermée ou le Wi-Fi a coupé. La page se reconnecte toute seule. |
+| Le musicien ne peut pas monter plus fort | Le plafond de 0 dB est atteint : monter le volume de son émetteur ou de son ampli, ou baisser les autres sources. |
+| « Une opération est en cours » | Une sauvegarde, un rappel de scène ou une synchronisation est en cours sur l’ordinateur : attendre quelques secondes. |
+| Le son change tout seul | Une autre application (X-AIR Edit, tablette) ou ReaCue pilote aussi la table. |
+
+Pour signaler un problème : **Réglages › Télécharger le journal de diagnostic**, puis joindre ce fichier avec ton système, la version et les étapes pour reproduire. Le journal ne contient ni clé API ni mot de passe.
+
+## 13. Sauvegarde, mises à jour et limites
+
+- **Sauvegarde** : exporte les scènes importantes et garde une copie du dossier de données de l’application avant une mise à jour.
+- **Mise à jour** : télécharge le nouvel installateur depuis les [versions GitHub](https://github.com/herve8940/xr18-studio-/releases/latest), ferme XR18 Studio, puis installe. Il n’y a pas de mise à jour automatique.
+- **Limites** :
+  - l’application reçoit des réglages et des niveaux, **pas le son** ;
+  - le solo et la cadence des vumètres restent à valider sur une table physique ;
+  - les essais logiciels et l’émulateur ne remplacent pas une vraie balance avant un concert ;
+  - la sécurité auditive ne remplace pas un réglage prudent des retours.
+- **Accès multi-appareils avancé** : pour ouvrir la console complète depuis une tablette, il faut le mode serveur HTTPS avec comptes, voir [Fonctions avancées](FONCTIONS_0_2.md). Pour les retours, les QR codes suffisent.
