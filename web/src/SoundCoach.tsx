@@ -1,5 +1,5 @@
 import {useEffect,useRef,useState} from 'react';
-import {Check,ChevronRight,Headphones,MessageCircle,Music2,SlidersHorizontal,Sparkles,Undo2} from 'lucide-react';
+import {Check,ChevronRight,Headphones,MessageCircle,Music2,SlidersHorizontal,Sparkles,Undo2,X,BookOpen} from 'lucide-react';
 import './sound-coach.css';
 import {EarsStep,GainStep,InputsStep,type CoachData} from './CoachSetup';
 declare global {interface Window {xr18DesktopAI?:{configure(input:{apiKey:string;model:string}|null):Promise<{configured:boolean;error?:string}>}}}
@@ -19,6 +19,21 @@ const friendly=(a:string)=>{
  return `${where}${send&&ch?'Retour bus '+Number(send)+' · ':''}${band?'EQ bande '+band+' · ':''}${!band&&dyn?'Compresseur · ':''}${!band&&gate&&leaf!=='on'?'Gate · ':''}${labels[leaf]??leaf}`;
 };
 const format=(v:string|number)=>typeof v==='number'?String(Math.round(v*100)/100):v;
+const WORDS:[string,string][]=[
+ ['Gain','Le réglage d’entrée du micro (préampli). C’est le premier bouton : tout le reste en dépend.'],
+ ['Niveau max','Le moment le plus fort mesuré. On vise −6 dB pour garder de la marge avant la saturation.'],
+ ['Coupe-bas','Retire les graves inutiles : grondements, vibrations de la scène, souffle.'],
+ ['Égaliseur (EQ)','Monte ou baisse certaines zones du son : grave, médium, aigu.'],
+ ['Compresseur','Rapproche les passages forts et faibles pour un son plus régulier.'],
+ ['Gate','Coupe le micro quand son instrument ne joue pas, pour ne pas entendre les autres fûts dedans.'],
+ ['Repisse','Le son des autres instruments capté par un micro.'],
+ ['Pan','Place le son plus à gauche ou plus à droite.'],
+ ['Façade','Le son pour le public, dans les enceintes principales.'],
+ ['Retour / bus','Le mix envoyé dans les oreilles d’un musicien, par une sortie Aux de la XR18.'],
+ ['Pré-fader','Le retour ne bouge pas quand tu changes un volume de la façade.'],
+ ['48 V','Alimentation des micros statiques. Le coach n’y touche jamais.']
+];
+function Glossary(){return <details className="coach-glossary"><summary><BookOpen size={15}/> Les mots du son, expliqués simplement</summary><dl>{WORDS.map(([w,d])=><div key={w}><dt>{w}</dt><dd>{d}</dd></div>)}</dl></details>;}
 export function SoundCoach({status,online,onConnect,onMonitors,onExpert}:{status:Status;online:boolean;onConnect:()=>void;onMonitors:()=>void;onExpert:()=>void}){
  const [catalog,setCatalog]=useState<Catalog|null>(null),[profile,setProfile]=useState<Profile>({version:1,inputs:[],completed:[]}),[step,setStep]=useState('connect'),[channel,setChannel]=useState(1),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(''),[plan,setPlan]=useState<Plan|null>(null),[report,setReport]=useState<Report|null>(null),[question,setQuestion]=useState(''),[replies,setReplies]=useState<{question:string;reply:Reply}[]>([]),[external,setExternal]=useState(false),[consent,setConsent]=useState(false),[sceneName,setSceneName]=useState('Balance du groupe'),[apiKey,setApiKey]=useState(''),[model,setModel]=useState(''),[applied,setApplied]=useState(0);
  useEffect(()=>{let active=true;void api('/api/coach').then(data=>{if(active){setCatalog(data);setProfile(data.profile);setChannel(data.profile.inputs[0]?.channel??1);}}).catch(e=>setError(e.message));return()=>{active=false;};},[]);
@@ -43,10 +58,11 @@ export function SoundCoach({status,online,onConnect,onMonitors,onExpert}:{status
  return <div className="coach">
   <header className="coach-hero"><div className="coach-avatar"><Headphones size={31}/></div><div><span className="coach-eyebrow">TON GROUPE · TON SON · À TON RYTHME</span><h1>Ton ingé son embarqué</h1><p>Décris ce que tu entends. Je t’aide à préparer, comprendre et essayer un réglage à la fois.</p></div><span className={'coach-status '+(status.mode==='real'&&status.connected?'live':'')}>{status.mode==='simulation'?'Entraînement sans console':status.connected?'XR18 connectée':'XR18 à connecter'}</span></header>
   <div className="coach-capability"><Sparkles size={18}/><p><b>{external?'Dialogue IA connecté sélectionné':'Conseiller local prêt à t’aider'}</b><br/>Je lis les paramètres et les niveaux reçus. Je ne reçois pas le son de la console : les conseils de timbre partent de ta description.</p><button onClick={onExpert}><SlidersHorizontal size={15}/> Mode avancé</button></div>
+  <Glossary/>
   <div className="coach-layout"><nav className="coach-journey" aria-label="Étapes de la balance">{catalog.steps.map(s=><button key={s.id} className={step===s.id?'active':''} onClick={()=>selectStep(s.id)}><span className={profile.completed.includes(s.id)?'checked':''}>{profile.completed.includes(s.id)?<Check size={15}/>:s.title[0]}</span><div>{s.title.slice(3)}</div><ChevronRight size={14}/></button>)}<p>{profile.completed.length} / {catalog.steps.length} étapes cochées par toi</p></nav>
    <section className="coach-panel"><div className="coach-panel-title"><span>FAIRE SIMPLE, PUIS ÉCOUTER</span><h2>{currentStep.title}</h2><p>{currentStep.text}</p></div>
    {step==='connect'&&<div className="coach-section"><div className="coach-checklist"><p><Check size={17}/> Vérifie les prises utilisées et garde les sorties à faible volume.</p><p><Check size={17}/> Connecte le PC et la console au même réseau.</p><p><Check size={17}/> Commence en lecture ; active le contrôle quand tu veux appliquer un réglage.</p></div><div className="coach-actions"><button className="primary" onClick={onConnect}>Connecter ma XR18</button><button onClick={()=>selectStep('inputs')}>Préparer mon groupe <ChevronRight size={15}/></button></div>{status.mode==='simulation'&&<p className="coach-note">Tu peux découvrir le parcours en simulation. Aucun niveau ni résultat d’écoute n’est inventé.</p>}</div>}
-   {step==='inputs'&&<InputsStep data={catalog} profile={profile} setProfile={setProfile} admin={admin} busy={busy} canApply={!!canApply} onApplyChannel={(p,ch)=>void applyInputs(p,ch)} onApplyAll={p=>void applyInputs(p)} onSave={p=>void run(async()=>{await save(p);setMessage('Groupe enregistré. Aucun réglage audio modifié.');})} notify={setMessage}/>}
+   {step==='inputs'&&<InputsStep data={catalog} profile={profile} setProfile={setProfile} admin={admin} busy={busy} canApply={!!canApply} onApplyChannel={(p,ch)=>void applyInputs(p,ch)} onApplyAll={p=>void applyInputs(p)} onSave={p=>void run(async()=>{await save(p);setMessage('Groupe enregistré. Aucun réglage audio modifié.');})} notify={setMessage} onNext={()=>selectStep('levels')}/>}
    {step==='levels'&&<GainStep profile={profile} channel={channel} setChannel={c=>{setChannel(c);setReport(null);}} admin={admin} busy={busy} canApply={!!canApply} real={status.mode==='real'&&status.connected} refresh={applied} api={api} run={fn=>void run(async()=>{await save();await fn();})} onPlan={p=>setPlan(p as Plan)} onApplyChannel={(p,ch)=>void applyInputs(p,ch)} onApplyAll={p=>void applyInputs(p)}/>}
    {step==='tone'&&<div className="coach-section"><label className="coach-channel">Je m’occupe de<select value={channel} onChange={e=>{setChannel(Number(e.target.value));setReport(null);}}>{profile.inputs.map(i=><option key={i.channel} value={i.channel}>{i.name} · entrée {i.channel}</option>)}</select></label>
     {
@@ -64,5 +80,12 @@ export function SoundCoach({status,online,onConnect,onMonitors,onExpert}:{status
 }
 function PlanDialog({plan,busy,canApply,mode,onClose,onApply}:{plan:Plan;busy:boolean;canApply:boolean;mode:string;onClose:()=>void;onApply:()=>void}){
  const dialog=useRef<HTMLDialogElement>(null);useEffect(()=>{dialog.current?.showModal();return()=>dialog.current?.close();},[]);
- return <dialog ref={dialog} className="coach-dialog" onCancel={e=>{e.preventDefault();if(!busy)onClose();}} aria-labelledby="coach-plan-title"><span className="coach-eyebrow">ON VÉRIFIE AVANT DE TOUCHER AU SON</span><h2 id="coach-plan-title">{plan.title}</h2><p>{plan.explanation}</p>{plan.inputs.length>0&&<p><b>Concernés : </b>{plan.inputs.join(', ')}</p>}<details><summary>Voir les {plan.changes.length} modifications avant / après</summary><div className="coach-diff"><table><thead><tr><th>Réglage</th><th>Avant</th><th>Après</th></tr></thead><tbody>{plan.changes.map(c=><tr key={c.address}><td>{friendly(c.address)}</td><td>{format(c.before)}</td><td>{format(c.after)}</td></tr>)}</tbody></table></div></details><p className="coach-note">Une sauvegarde des paramètres précède l’application. Le son peut changer ; teste ensuite à l’écoute. Cette proposition expire après une minute.</p>{!canApply&&<p role="status">Connecte la console et active son contrôle dans Configuration pour appliquer ce réglage.</p>}<div className="coach-actions"><button autoFocus disabled={busy} onClick={onClose}>Garder mon réglage actuel</button><button className="primary" disabled={busy||!canApply} onClick={onApply}>{busy?'Application…':mode==='simulation'?'Essayer en simulation':'Appliquer sur ma XR18'}</button></div></dialog>;
+ const close=()=>{if(!busy)onClose();};
+ // Close with the X, the Cancel button, Escape, or a click outside the window.
+ return <dialog ref={dialog} className="coach-dialog" onCancel={e=>{e.preventDefault();close();}} onClick={e=>{if(e.target===dialog.current)close();}} aria-labelledby="coach-plan-title">
+  <button className="coach-dialog-close" aria-label="Fermer sans rien changer" title="Fermer sans rien changer" disabled={busy} onClick={close}><X size={18}/></button>
+  <div className="coach-dialog-body"><span className="coach-eyebrow">ON VÉRIFIE AVANT DE TOUCHER AU SON</span><h2 id="coach-plan-title">{plan.title}</h2><p>{plan.explanation}</p>{plan.inputs.length>0&&<p><b>Concernés : </b>{plan.inputs.join(', ')}</p>}<details><summary>Voir le détail : {plan.changes.length} réglage{plan.changes.length>1?'s':''} avant / après</summary><div className="coach-diff"><table><thead><tr><th>Réglage</th><th>Avant</th><th>Après</th></tr></thead><tbody>{plan.changes.map(c=><tr key={c.address}><td>{friendly(c.address)}</td><td>{format(c.before)}</td><td>{format(c.after)}</td></tr>)}</tbody></table></div></details><p className="coach-note">Une sauvegarde est faite juste avant : « Annuler le dernier réglage guidé » remet tout comme avant. Cette proposition reste valable une minute.</p>{!canApply&&<p role="status" className="coach-message warn">Pour appliquer, connecte la XR18 et active son contrôle dans Réglages.</p>}</div>
+  <div className="coach-actions coach-dialog-foot"><button autoFocus disabled={busy} onClick={close}>Annuler, ne rien changer</button><button className="primary" disabled={busy||!canApply} onClick={onApply}>{busy?'Application…':mode==='simulation'?'Essayer en simulation':'Appliquer sur ma XR18'}</button></div>
+ </dialog>;
 }
+

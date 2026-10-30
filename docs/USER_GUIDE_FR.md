@@ -104,6 +104,10 @@ En bas à gauche, la carte de connexion indique si le contrôle est activé.
 
 **Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes : brancher, dire qui est branché où, régler le gain de chaque instrument, écouter et corriger, préparer les retours, garder le bon réglage.
 
+Un doute sur un mot (gain, compresseur, gate, repisse, pré-fader…) ? Ouvre **Les mots du son, expliqués simplement** en haut de la page.
+
+Avant chaque changement, une fenêtre montre ce qui va être modifié. Pour la fermer sans rien changer : la croix en haut à droite, **Annuler, ne rien changer**, la touche Échap ou un clic à côté de la fenêtre.
+
 ### Configurer tout le groupe en une fois
 
 À l’étape **2. Dire qui est branché où**, pars d’un modèle : **Rock + batterie électronique**, **Rock + batterie acoustique détaillée** (12 entrées) ou **Acoustique / duo**. Le bouton **Ajouter la batterie détaillée** place kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2 sur les entrées libres. Les instruments sont rangés par famille : voix, guitares (rythmique, solo, acoustique), basse, batterie détaillée, batterie électronique, claviers.

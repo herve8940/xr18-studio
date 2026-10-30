@@ -104,6 +104,8 @@ The connection card at the bottom left shows whether control is enabled.
 
 **Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps: plug in, say who is plugged in where, set each instrument's gain, listen and fix, prepare monitors, keep the good setting.
 
+Unsure about a word (gain, compressor, gate, bleed, pre-fader…)? Open **Les mots du son** (sound words, explained simply) at the top of the page. Before any change, a window shows what will be modified; close it without changes with the X, **Annuler, ne rien changer**, Escape or a click outside.
+
 ### Set up the whole band at once
 
 In step **2**, start from a template: **Rock + electronic drums**, **Rock + detailed acoustic drums** (12 inputs) or **Acoustic / duo**. **Ajouter la batterie détaillée** adds kick, snare, tom 1, tom 2, tom 3, OH 1 and OH 2 on free inputs. Instruments are grouped by family: vocals, guitars (rhythm, lead, acoustic), bass, detailed drums, electronic drums, keys.

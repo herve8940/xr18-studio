@@ -51,3 +51,14 @@
 .peakbar i{position:absolute;left:0;top:2px;bottom:2px;border-radius:5px;background:#e7c66c}.peakbar i.good{background:#6fd0ad}.peakbar i.clip{background:#ee6b5c}
 .peakbar small{position:absolute;top:13px;transform:translateX(-50%);font-size:10px!important}
 @media(max-width:800px){.gain-steps>li{grid-template-columns:30px minmax(0,1fr)}.gain-steps>li>button{grid-column:2}.gain-result{grid-column:1/-1}}
+.coach-dialog{padding:0!important;display:flex;flex-direction:column}.coach-dialog:not([open]){display:none}
+.coach-dialog-body{padding:28px 28px 8px;overflow:auto;flex:1;min-height:0}
+.coach-dialog-foot{position:sticky;bottom:0;margin:0!important;padding:14px 28px 18px;background:#142630;border-top:1px solid #2f4a55}
+.coach-dialog .coach-dialog-close{position:absolute;top:12px;right:12px;z-index:2;width:40px;height:40px;min-height:0;padding:0;border-radius:50%;background:#1b3340;border-color:#3d5c69}
+.coach-dialog-body>.coach-eyebrow{display:block;padding-right:44px}.coach-dialog h2{padding-right:30px}
+@media(max-width:800px){.coach-dialog-body{padding:22px 18px 6px}.coach-dialog-foot{padding:12px 18px 16px}}
+.coach-dialog{overflow:hidden!important}
+.coach-glossary{margin:-4px 0 16px;border:1px solid #2d4552;border-radius:10px;background:#101e28;padding:10px 14px}
+.coach-glossary summary{cursor:pointer;color:#a9dccb;font-size:12.5px;font-weight:650;display:flex;align-items:center;gap:8px}
+.coach-glossary dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px 22px;margin:12px 0 4px}
+.coach-glossary dt{font-weight:700;color:#e4f2f8;font-size:12.5px}.coach-glossary dd{margin:2px 0 0;color:#a5bccb;font-size:12px;line-height:1.55}

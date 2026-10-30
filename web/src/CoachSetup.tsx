@@ -18,9 +18,9 @@ function InstrumentSelect({data,value,disabled,onChange}:{data:CoachData;value:s
  return <select disabled={disabled} value={value} onChange={e=>onChange(e.target.value)}>{groups.map(g=><optgroup key={g} label={g}>{data.sources.filter(s=>s.group===g).map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</optgroup>)}</select>;
 }
 
-export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyChannel,onApplyAll,onSave,notify}:{
+export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyChannel,onApplyAll,onSave,notify,onNext}:{
  data:CoachData;profile:Profile;setProfile:(p:Profile)=>void;admin:boolean;busy:boolean;canApply:boolean;
- onApplyChannel:(p:Profile,channel:number)=>void;onApplyAll:(p:Profile)=>void;onSave:(p:Profile)=>void;notify:(m:string)=>void}){
+ onApplyChannel:(p:Profile,channel:number)=>void;onApplyAll:(p:Profile)=>void;onSave:(p:Profile)=>void;notify:(m:string)=>void;onNext:()=>void}){
  const [open,setOpen]=useState<number|null>(null);
  const src=(id:string)=>data.sources.find(s=>s.id===id)!;
  const update=(next:Profile)=>setProfile({...next,musicians:next.musicians?.map(m=>({...m,channels:m.channels.filter(c=>next.inputs.some(i=>i.channel===c))}))});
@@ -57,6 +57,7 @@ export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyC
    <button disabled={!admin||busy||profile.inputs.length>=16} onClick={()=>{const ch=freeChannel(profile.inputs);if(ch)update({...profile,inputs:[...profile.inputs,{channel:ch,source:'lead-rock',name:'Micro '+ch}].sort((a,b)=>a.channel-b.channel)});}}><Plus size={15}/> Ajouter un instrument</button>
    <button disabled={!admin||busy} onClick={()=>onSave(profile)}>Enregistrer mon groupe</button>
    <button className="primary" disabled={!admin||busy||!canApply||!profile.inputs.length} onClick={()=>onApplyAll(profile)}><Wand2 size={16}/> Appliquer à tout le groupe ({profile.inputs.length} instruments)</button>
+   <button disabled={!profile.inputs.length} onClick={()=>{onSave(profile);onNext();}}>Étape suivante : régler les gains →</button>
   </div>
   <p className="coach-note">Avant chaque application, tu vois la liste « avant / après » et une sauvegarde est faite : « Annuler le dernier réglage guidé » remet tout comme avant. Je ne touche ni au gain d’entrée, ni au 48 V, ni aux volumes, ni aux mutes. Règle d’abord le gain (étape 3) : les seuils du compresseur et du gate supposent des crêtes vers −6 dB.</p>
  </div>;
@@ -121,7 +122,7 @@ export function GainStep({profile,channel,setChannel,admin,busy,canApply,real,re
   {!real&&<p className="coach-message warn">La mesure a besoin de la vraie XR18 et des musiciens qui jouent. En simulation, aucun niveau n’est inventé : connecte la console pour régler les gains.</p>}
   <h3>Où en est chaque instrument <small>{done} / {profile.inputs.length} calés</small></h3>
   <div className="gain-table" role="table">
-   <div role="row" className="head"><span>Instrument</span><span>Gain</span><span>Crête</span><span>Repisse</span><span>Compresseur</span><span>Gate</span><span>État</span></div>
+   <div role="row" className="head"><span>Instrument</span><span>Gain</span><span>Niveau max</span><span>Repisse</span><span>Compresseur</span><span>Gate</span><span>État</span></div>
    {profile.inputs.map(i=>{const s=status.find(s=>s.channel===i.channel);return <button role="row" key={i.channel} className={(i.channel===channel?'active ':'')+(s?.state??'todo')} onClick={()=>setChannel(i.channel)}>
     <span><b>{i.name}</b> <small>entrée {i.channel}</small></span><span>{db(s?.gainDb)}</span><span>{s?.valid?db(s.peakDb):'—'}</span><span>{s?.valid&&s.needsBleed?db(s.bleedDb):s?.needsBleed?'—':'inutile'}</span>
     <span>{s?.thresholds?.compThrDb!=null?db(s.thresholds.compThrDb):'—'}</span><span>{s?.thresholds?.gateThrDb!=null?db(s.thresholds.gateThrDb):s?.needsBleed?'—':'off'}</span><span className="pill">{STATE_LABEL[s?.state??'todo']}</span></button>;})}
