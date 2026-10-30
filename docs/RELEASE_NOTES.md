@@ -1,4 +1,4 @@
-# XR18 Studio 2.0.1 — Testée sur une vraie XR18 / Tested on a real XR18
+# XR18 Studio 2.0.2 — Testée sur une vraie XR18 / Tested on a real XR18
 
 ![XR18 Studio](https://github.com/herve8940/xr18-studio/raw/main/docs/images/hero.png)
 
@@ -10,16 +10,17 @@
 
 | Ordinateur | Fichier |
 |---|---|
-| Windows | `XR18-Studio-Windows-2.0.1.exe` |
-| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.1-arm64.dmg` |
-| Mac Intel | `XR18-Studio-macOS-2.0.1-x64.dmg` |
-| Ubuntu / Debian | `XR18-Studio-Linux-2.0.1-amd64.deb` |
-| Autre Linux | `XR18-Studio-Linux-2.0.1-x86_64.AppImage` |
+| Windows | `XR18-Studio-Windows-2.0.2.exe` |
+| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.2-arm64.dmg` |
+| Mac Intel | `XR18-Studio-macOS-2.0.2-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.2-amd64.deb` |
+| Autre Linux | `XR18-Studio-Linux-2.0.2-x86_64.AppImage` |
 
 Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau local** (*Réglages Système › Confidentialité et sécurité*). Windows : si SmartScreen s’affiche, **Informations complémentaires › Exécuter quand même**. `SHA256SUMS.txt` permet de vérifier les fichiers.
 
 ### Corrigé (trouvé en testant sur une XR18 physique)
 
+- **2.0.2 — Synchronisation Table → PC et sauvegarde de scène** : elles s’arrêtaient sur « Valeur OSC hors plage : /ch/16/config/insrc ». Une valeur que l’appli ne connaît pas est maintenant ignorée et signalée, au lieu de tout bloquer ; le rappel de scène laisse ce réglage tel quel.
 - **Synchronisation Table → PC, sauvegarde de scène, étape 6 du coach et rappel** : ils échouaient avec « Pas de réponse XR18 : /config/solo/dimplf ». Le nom du réglage était faux. Si la console ne répond pas pour quelques réglages, la lecture continue et les liste au lieu d’échouer.
 - **Capture en .scn** : elle échouait avec « Nœud XR18 absent ». La réponse de la vraie console est maintenant comprise.
 - **Coach, « Appliquer »** : des réglages corrects étaient annoncés « non confirmés » (coupe-bas, Q, relâchement). La console arrondit ces valeurs au cran inférieur ; la relecture l’accepte désormais.
@@ -36,7 +37,7 @@ Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau l
 - **Tous les paramètres** : les valeurs sont lues tout de suite, sans afficher « Non lu ». L’étiquette « Démonstration » n’apparaît plus avec une vraie console.
 - **Scène vierge** : le bouton affiche « Lecture de la console… » pendant la préparation.
 
-**Validation** : 75 tests automatiques, parcours testés dans le navigateur contre une XR18 émulée, et corrections vérifiées à partir des erreurs relevées sur une XR18 physique.
+**Validation** : 76 tests automatiques, parcours testés dans le navigateur contre une XR18 émulée, et corrections vérifiées à partir des erreurs relevées sur une XR18 physique.
 
 ## English
 
@@ -44,16 +45,17 @@ Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau l
 
 | Computer | File |
 |---|---|
-| Windows | `XR18-Studio-Windows-2.0.1.exe` |
-| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.1-arm64.dmg` |
-| Intel Mac | `XR18-Studio-macOS-2.0.1-x64.dmg` |
-| Ubuntu / Debian | `XR18-Studio-Linux-2.0.1-amd64.deb` |
-| Other Linux | `XR18-Studio-Linux-2.0.1-x86_64.AppImage` |
+| Windows | `XR18-Studio-Windows-2.0.2.exe` |
+| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.2-arm64.dmg` |
+| Intel Mac | `XR18-Studio-macOS-2.0.2-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.2-amd64.deb` |
+| Other Linux | `XR18-Studio-Linux-2.0.2-x86_64.AppImage` |
 
 Mac: the first time, **right-click › Open**, then allow **Local Network** (*System Settings › Privacy & Security*). Windows: if SmartScreen appears, **More info › Run anyway**. Use `SHA256SUMS.txt` to check the files.
 
 ### Fixed (found by testing on a physical XR18)
 
+- **2.0.2 — Table → PC sync and scene save** stopped on “Valeur OSC hors plage : /ch/16/config/insrc”. A value the app does not know is now skipped and reported instead of blocking everything; scene recall leaves that setting as it is.
 - **Table → PC sync, scene save, coach step 6 and recall** failed with “Pas de réponse XR18 : /config/solo/dimplf”. The setting name was wrong. If the console does not answer a few settings, reading carries on and lists them instead of failing.
 - **.scn capture** failed with “Nœud XR18 absent”. The real console’s reply is now understood.
 - **Coach “Apply”** reported correct values as “not confirmed” (high-pass, Q, release). The console rounds these down one step; read-back now accepts it.
@@ -70,7 +72,7 @@ Mac: the first time, **right-click › Open**, then allow **Local Network** (*Sy
 - **Tous les paramètres**: values are read straight away instead of showing “Non lu”. The “Démonstration” label no longer appears with a real console.
 - **Blank scene**: the button shows “Lecture de la console…” while it prepares.
 
-**Validation**: 75 automated tests, journeys tested in the browser against an emulated XR18, and fixes checked against the errors seen on a physical XR18.
+**Validation**: 76 automated tests, journeys tested in the browser against an emulated XR18, and fixes checked against the errors seen on a physical XR18.
 
 ---
 

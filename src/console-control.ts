@@ -1,3 +1,4 @@
+import {diagnostic} from './diagnostics.js';
 import {randomUUID,createHash} from 'node:crypto';
 import {PARAMETERS,descriptor,validateWire,toWire,fromWire,defaultWire,type Value} from './parameters.js';
 import type {XR18} from './xr18.js';
@@ -20,7 +21,10 @@ export class ConsoleControl {
   // A value the console does not answer is asked once more, then listed as missing: one silent
   // address (firmware difference, lost UDP packet) must not make the whole capture fail.
   const missing:string[]=[];
-  const read=async(a:string)=>{try{values[a]=await this.xr.readParameter(a);}catch(e){if(identity!==this.identity()||!/Pas de réponse/.test((e as Error).message))throw e;try{values[a]=await this.xr.readParameter(a);}catch(e2){if(!/Pas de réponse/.test((e2 as Error).message))throw e2;missing.push(a);}}};
+  // A value outside the range we know (another firmware or an option we do not list) is skipped the same
+  // way: the scene simply leaves that setting alone on recall.
+  const skippable=(e:unknown)=>/Pas de réponse|hors plage/.test((e as Error).message);
+  const read=async(a:string)=>{try{values[a]=await this.xr.readParameter(a);}catch(e){if(identity!==this.identity()||!skippable(e))throw e;if(/hors plage/.test((e as Error).message)){missing.push(a);diagnostic('capture.out_of_range',{address:a,error:(e as Error).message});return;}try{values[a]=await this.xr.readParameter(a);}catch(e2){if(!skippable(e2))throw e2;missing.push(a);}}};
   for(let i=0;i<addresses.length;i+=8){if(identity!==this.identity())throw Error('Connexion modifiée');await Promise.all(addresses.slice(i,i+8).map(read));await new Promise(r=>setTimeout(r,5));}
   if(missing.length>addresses.length*.05)throw Error(`La console n’a pas répondu pour ${missing.length} réglages : vérifie la connexion (câble ou Wi-Fi) puis recommence.`);
   const fx=[];for(let slot=1;slot<=4;slot++)fx.push(await this.xr.readFx(slot));

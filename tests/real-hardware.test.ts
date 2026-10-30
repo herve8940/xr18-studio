@@ -29,3 +29,12 @@ test('a full capture survives a few addresses the console never answers',async()
   assert.equal(Object.keys(scene.values).length,Object.keys(PARAMETERS).length-silent.size);
  }finally{xr.close();library.close();}
 });
+test('a value outside the known range is skipped and listed, not fatal (ch 16 input source)',async()=>{
+ const xr=new XR18({mode:'simulation',host:'127.0.0.1',port:10024,enableWrites:false}),library=new LibraryStore(':memory:');
+ const original=xr.readParameter.bind(xr);
+ (xr as unknown as {readParameter:(a:string)=>Promise<unknown>}).readParameter=async(a:string)=>{if(a==='/ch/16/config/insrc')throw Error('Valeur OSC hors plage : /ch/16/config/insrc (reçu 18)');return original(a);};
+ try{
+  const scene=await new ConsoleControl(xr,library).capture();
+  assert.deepEqual(scene.missing,['/ch/16/config/insrc']);assert.equal(scene.values['/ch/16/config/insrc'],undefined);
+ }finally{xr.close();library.close();}
+});

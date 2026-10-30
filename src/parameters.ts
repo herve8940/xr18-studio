@@ -41,7 +41,7 @@ export function validateWire(address:string,value:unknown):Value {
  const p=descriptor(address);
  if(p.type==='s'){if(typeof value!=='string'||Buffer.byteLength(value,'utf8')>12||/[\x00-\x1f\x7f]/.test(value))throw Error('Nom : 12 octets maximum, sans caractères de contrôle');return value;}
  const max=p.type==='f'?1:p.max!,min=p.type==='f'?0:p.min!;
- if(typeof value!=='number'||!Number.isFinite(value)||value<min||value>max||(p.type==='i'&&!Number.isInteger(value)))throw Error('Valeur OSC hors plage : '+address);
+ if(typeof value!=='number'||!Number.isFinite(value)||value<min||value>max||(p.type==='i'&&!Number.isInteger(value)))throw Error(`Valeur OSC hors plage : ${address} (reçu ${typeof value==='string'?JSON.stringify(value):String(value)})`);
  return value;
 }
 export function toWire(address:string,input:unknown):Value {
