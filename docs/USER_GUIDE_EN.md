@@ -91,9 +91,40 @@ In Console > Mixage, select **Entrée / Gain**, then **Lire l’entrée**. Studi
 
 Enter gain in dB, preview and confirm. The panel also exposes high-pass filtering and polarity inversion. Phantom power requires an additional confirmation; check connected equipment first. Shortcuts open EQ, dynamics and sends. Values reflect the last explicit read; refresh after changes in another application. Source routing is re-read before applying to detect changed assignments.
 
+## Finding your way around (1.3)
+
+![Console in Simple mode](images/app-simple.png)
+
+The app is organised into **three spaces**, on the left on a computer and at the bottom on a phone:
+
+| Space | Pages | When to use it |
+|---|---|---|
+| **Jouer** (Play) | Console, Retours (monitors), Mon ingé son (coach) | During soundcheck, rehearsal and the show. |
+| **Préparer** (Prepare) | Setlists, Répétitions (rehearsals), Scènes (scenes) | Before: repertoire, goals, saved settings. |
+| **Réglages** (Settings) | Connexion & système | Find the XR18, enable control, accounts. |
+
+At the top of every page:
+
+- the console status: **XR18 réelle** (real XR18), **Simulation** or **Déconnectée** (disconnected);
+- **Tout couper**, to mute all 16 inputs in an emergency;
+- **Scènes**, to save or recall settings.
+
+### Console: Simple or Expert mode
+
+The **Simple / Expert** switch at the top of the Console page changes the level of detail. The choice is remembered.
+
+- **Simple**: large, touch-friendly strips. For each source: volume, meter, Mute and Solo. At the top, choose **Façade** (front of house) or a musician’s monitor (“Retour Chant”…): the faders then control that mix. Unnamed inputs are hidden; a checkbox shows them. Tapping a source name opens its EQ directly in Expert mode.
+- **Expert**: the full X-AIR Edit–style console, described below.
+
+The layout adapts to the screen. On a tablet, the menu becomes an icon bar. On a phone, the three spaces move to the bottom of the screen and buttons get larger.
+
+| Tablet | Phone |
+|---|---|
+| ![Tablet](images/app-tablet.png) | ![Phone](images/app-phone.png) |
+
 ## Graphical console (1.3)
 
-Open **Console** in the left menu, then the **Console** tab. The screen follows X-AIR Edit’s layout and updates live from the XR18: names, colours and settings are read back automatically on connection.
+Open **Jouer › Console** and choose **Expert** mode. The screen follows X-AIR Edit’s layout and updates live from the XR18: names, colours and settings are read back automatically on connection.
 
 ![Graphical console](images/console.png)
 

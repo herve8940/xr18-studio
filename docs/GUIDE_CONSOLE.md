@@ -2,7 +2,7 @@
 
 [Guide utilisateur](USER_GUIDE_FR.md) · [Accueil](../README.md)
 
-Ce guide décrit chaque vue de la console (menu **Console**, onglet **Console**) et ce que fait chaque réglage, en langage de musicien. Les mêmes explications sont dans l’application : bouton **? Explications** à droite de chaque vue. Survoler un réglage affiche aussi une courte description.
+Ce guide décrit chaque vue de la console en mode **Expert** (Jouer › Console, bouton **Expert** en haut) et ce que fait chaque réglage, en langage de musicien. Les mêmes explications sont dans l’application : bouton **? Explications** à droite de chaque vue. Survoler un réglage affiche aussi une courte description.
 
 La console reprend l’organisation de X-AIR Edit : les onglets en haut, la vue du canal sélectionné au milieu, la banque de faders en bas et la barre de réglages à droite.
 

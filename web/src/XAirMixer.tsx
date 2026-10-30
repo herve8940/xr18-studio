@@ -30,9 +30,9 @@ function BankStrip({ strip, values, set, layer, selected, onSelect, canWrite, ma
   </div>;
 }
 
-export function XAirMixer({ canWrite, selectedChannel, onSelectChannel }: { canWrite: boolean; selectedChannel?: number; onSelectChannel?: (n: number) => void }) {
+export function XAirMixer({ canWrite, selectedChannel, onSelectChannel, initialTab = "mixer" }: { canWrite: boolean; selectedChannel?: number; onSelectChannel?: (n: number) => void; initialTab?: Tab }) {
   const { values, set, confirmed, online, message, clearMessage } = useLiveMixer();
-  const [tab, setTab] = useState<Tab>("mixer");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [layer, setLayer] = useState(0);
   const [bank, setBank] = useState<"inputs" | "outputs">("inputs");
   const [spill, setSpill] = useState<number | null>(null);

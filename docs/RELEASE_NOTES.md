@@ -1,10 +1,18 @@
-# XR18 Studio 1.3.0 — Console graphique / Graphical console
+# XR18 Studio 1.3.0 — Nouvelle interface et console graphique / New interface and graphical console
 
-![Console graphique](https://github.com/herve8940/xr18-studio-/raw/main/docs/images/console.png)
+![Console graphique](https://github.com/herve8940/xr18-studio-/raw/main/docs/images/app-simple.png)
 
 ## Français
 
-**Console graphique façon X-AIR Edit** (menu Console, onglet Console) :
+**Nouvelle interface** :
+
+- Thème sombre moderne, commun à toutes les pages.
+- Trois espaces : **Jouer** (Console, Retours, Mon ingé son), **Préparer** (Setlists, Répétitions, Scènes) et **Réglages**.
+- Barre du haut avec l’état de la console, **Tout couper** et **Scènes**.
+- Console en mode **Simple** (gros faders et Mute/Solo, façade ou retour d’un musicien) ou **Expert** ; le choix est mémorisé.
+- Affichage adapté à l’ordinateur, à la tablette (barre d’icônes) et au téléphone (navigation en bas, boutons plus gros).
+
+**Console graphique façon X-AIR Edit** (Jouer › Console, mode Expert) :
 
 - **Mêmes vues que X-AIR Edit** : Mixer (vue d’ensemble), Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite (Main LR / bus / FX, DCA, Clr Solo, groupes de mute, auto-mix).
 - **Explications intégrées** : chaque vue a un panneau « ? Explications » qui décrit chaque option en langage simple. Le [guide de la console](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) reprend tout, avec la description des 61 effets.
@@ -25,7 +33,15 @@
 
 ## English
 
-**X-AIR Edit–style graphical console** (Console menu, Console tab):
+**New interface**:
+
+- Modern dark theme across every page.
+- Three spaces: **Jouer** (Play: console, monitors, coach), **Préparer** (Prepare: setlists, rehearsals, scenes) and **Réglages** (Settings).
+- Top bar with console status, **Tout couper** (mute all) and **Scènes** (scenes).
+- Console in **Simple** mode (large faders and Mute/Solo, front of house or a musician’s monitor) or **Expert** mode; the choice is remembered.
+- Layout adapted to computer, tablet (icon bar) and phone (bottom navigation, larger buttons).
+
+**X-AIR Edit–style graphical console** (Jouer › Console, Expert mode):
 
 - **Same views as X-AIR Edit**: Mixer (overview), Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing and Meters. The fader bank is at the bottom and the mix bar on the right (Main LR / bus / FX, DCA, Clr Solo, mute groups, auto mix).
 - **Built-in explanations**: each view has a “? Explications” panel describing every option in plain language (French). The [console guide](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) collects them all, including all 61 effects.

@@ -6,11 +6,12 @@
 
 **EN** — Mixing assistant for Behringer XR18 (and X18 / MR18): X-AIR Edit–style graphical console, guided workflow, monitors, effects and scenes. Self-contained Windows, Intel / Apple Silicon Mac and Linux installers. French interface; bilingual guides. Physical console validation is still required before a show.
 
-![Console graphique : tranches, faders en dB, vumètres / Graphical console: strips, dB faders, meters](docs/images/console.png)
+![Console en mode Simple / Console in Simple mode](docs/images/app-simple.png)
 
 ## Nouveautés 1.3 / What’s new in 1.3
 
-- **Console graphique façon X-AIR Edit** : onglets Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres, avec la banque de faders en bas et la barre de mix à droite.
+- **Nouvelle interface sombre et moderne** : trois espaces (Jouer, Préparer, Réglages), console en mode **Simple** (gros faders au doigt, façade ou retour d’un musicien) ou **Expert**, adaptée à l’ordinateur, la tablette et le téléphone.
+- **Console graphique façon X-AIR Edit** (mode Expert) : onglets Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres, avec la banque de faders en bas et la barre de mix à droite.
 - **Explications intégrées** : chaque vue explique en langage simple ce que fait chaque option. Voir le [guide de la console](docs/GUIDE_CONSOLE.md).
 - **Faders par mix** (« sends on fader ») pour faire le retour de chaque musicien.
 - **Corrections issues de la comparaison avec X-AIR Edit 1.8.1** : les écritures ne sont plus refusées à tort, l’affichage dB est exact, les 40 vumètres sont lus, X18 et MR18 sont reconnues. Détails : [XAIR_EDIT_PARITY](docs/XAIR_EDIT_PARITY.md).

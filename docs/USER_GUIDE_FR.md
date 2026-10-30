@@ -91,9 +91,40 @@ Dans Console > Mixage, cliquer sur **Entrée / Gain** du canal puis **Lire l’e
 
 Saisir le gain en dB, prévisualiser, puis confirmer. Le panneau permet aussi de régler le coupe-bas et la polarité Ø. Le 48 V exige un accord supplémentaire ; vérifier le matériel branché avant de l’activer. Les raccourcis ouvrent l’EQ, les traitements et les envois. Les valeurs sont celles de la dernière lecture, à actualiser après changement dans une autre application. Le routage est relu avant application pour détecter un changement de source.
 
+## Se repérer dans l’application (1.3)
+
+![Console en mode Simple](images/app-simple.png)
+
+L’application est rangée en **trois espaces**, à gauche sur ordinateur et en bas sur téléphone :
+
+| Espace | Pages | Quand l’utiliser |
+|---|---|---|
+| **Jouer** | Console, Retours, Mon ingé son | Pendant la balance, la répétition et le concert. |
+| **Préparer** | Setlists, Répétitions, Scènes | Avant : répertoire, objectifs, sauvegardes de réglages. |
+| **Réglages** | Connexion & système | Trouver la XR18, activer le contrôle, comptes. |
+
+En haut de chaque page :
+
+- l’état de la console : **XR18 réelle**, **Simulation** ou **Déconnectée** ;
+- **Tout couper**, pour couper les 16 entrées en urgence ;
+- **Scènes**, pour sauvegarder ou rappeler des réglages.
+
+### Console : mode Simple ou Expert
+
+Le bouton **Simple / Expert** en haut de la page Console change le niveau de détail. Le choix est mémorisé.
+
+- **Simple** : de grosses tranches, faciles à toucher au doigt. Pour chaque source : le volume, le vumètre, Mute et Solo. En haut, choisis **Façade** ou le retour d’un musicien (« Retour Chant »…) : les faders règlent alors ce mix. Les entrées sans nom sont masquées ; une case permet de les afficher. Toucher le nom d’une source ouvre directement son égaliseur en mode Expert.
+- **Expert** : toute la console façon X-AIR Edit, décrite ci-dessous.
+
+L’affichage s’adapte à l’écran. Sur tablette, le menu devient une barre d’icônes. Sur téléphone, les trois espaces passent en bas de l’écran et les boutons sont plus gros.
+
+| Tablette | Téléphone |
+|---|---|
+| ![Tablette](images/app-tablet.png) | ![Téléphone](images/app-phone.png) |
+
 ## Console graphique (1.3)
 
-Ouvrir **Console** dans le menu de gauche, puis l’onglet **Console**. L’écran reprend l’organisation de X-AIR Edit. Il se met à jour en direct depuis la XR18 : noms, couleurs et réglages sont relus automatiquement à la connexion.
+Ouvrir **Jouer › Console** et choisir le mode **Expert**. L’écran reprend l’organisation de X-AIR Edit. Il se met à jour en direct depuis la XR18 : noms, couleurs et réglages sont relus automatiquement à la connexion.
 
 ![Console graphique](images/console.png)
 
