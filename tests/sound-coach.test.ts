@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {SoundCoach,GROUP_TEMPLATE,validateProfile,identifySymptom,levelReport} from '../src/sound-coach.js';
+import {SoundCoach,GROUP_TEMPLATE,TEMPLATES,DRUM_KIT,MONITOR_RECIPES,OWN_LEVEL,suggestMusicians,consoleName,validateProfile,identifySymptom,levelReport} from '../src/sound-coach.js';
 import {XR18} from '../src/xr18.js';
 import {ConsoleControl} from '../src/console-control.js';
 import {LibraryStore} from '../src/library-store.js';
@@ -13,14 +13,43 @@ test('beginner group validates wiring and persists progress without changing con
   for(const inputs of [[GROUP_TEMPLATE[0],GROUP_TEMPLATE[0]],[{channel:17,source:'lead-rock',name:'chant'}],[{channel:1,source:'unknown',name:'x'}],[{channel:1,source:'lead-rock',name:'a very long instrument'}]])assert.throws(()=>validateProfile({version:1,inputs,completed:[]}));
  }finally{xr.close();library.close();}
 });
-test('gentle group plan previews only named input treatments, never gain, phantom, levels, unmute or routing',async()=>{
+test('full group plan configures every instrument completely, never gain, phantom, levels, mutes or routing',async()=>{
  const {xr,library,coach}=setup();try{
   const initial=xr.parameterState();const plan=await coach.prepare();assert.equal(plan.inputs.length,6);assert.deepEqual(xr.parameterState(),initial);
-  assert.ok(plan.changes.length>100);for(const c of plan.changes){assert.match(c.address,/^\/ch\/0[1-6]\//);assert.doesNotMatch(c.address,/headamp|phantom|\/mix\/|routing/);}
-  await assert.rejects(coach.apply(plan.token,false),/Confirmation/);await coach.apply(plan.token,true);
-  assert.equal(await xr.readParameter('/ch/01/config/name'),'Chant');assert.equal(await xr.readParameter('/ch/01/gate/on'),0);assert.equal(await xr.readParameter('/ch/01/dyn/on'),0);assert.equal(xr.listChannels()[0]?.fader,.5);
-  for(let ch=1;ch<=6;ch++)for(let band=1;band<=4;band++){const a=`/ch/${String(ch).padStart(2,'0')}/eq/${band}/g`;assert.ok(Math.abs(Number(fromWire(a,await xr.readParameter(a))))<=2.001);}
+  for(const c of plan.changes){assert.match(c.address,/^\/ch\/0[1-6]\//);assert.doesNotMatch(c.address,/headamp|phantom|routing|fader|mix\/on|\/mix\/\d/);}
+  for(let ch=1;ch<=6;ch++)assert.ok(plan.changes.some(c=>c.address===`/ch/0${ch}/config/name`),'channel '+ch+' in plan');
+  await assert.rejects(coach.apply(plan.token,false),/Confirmation/);const r=await coach.apply(plan.token,true);assert.equal(r.ok,true);assert.deepEqual(r.failed,[]);
+  assert.equal(await xr.readParameter('/ch/01/config/name'),'Chant');assert.equal(await xr.readParameter('/ch/04/config/name'),'Basse');assert.equal(await xr.readParameter('/ch/06/config/name'),'TD27 R');
+  assert.equal(await xr.readParameter('/ch/01/dyn/on'),1);assert.equal(fromWire('/ch/01/dyn/thr',await xr.readParameter('/ch/01/dyn/thr')),-20);
+  assert.equal(await xr.readParameter('/ch/06/dyn/on'),0);assert.equal(fromWire('/ch/06/mix/pan',await xr.readParameter('/ch/06/mix/pan')),100);
+  assert.ok(Math.abs(Number(fromWire('/ch/01/eq/1/g',await xr.readParameter('/ch/01/eq/1/g')))+3)<.3);assert.equal(xr.listChannels()[0]?.fader,.5);
   const undo=await coach.undo();await coach.apply(undo.token,true);assert.equal(await xr.readParameter('/ch/01/config/name'),'');assert.equal(await xr.readParameter('/ch/01/gate/on'),1);
+ }finally{xr.close();library.close();}
+});
+test('detailed drum kit: kick, snare, three toms and two overheads get gate, compressor and stereo placement',async()=>{
+ const {xr,library,coach}=setup();try{
+  const inputs=TEMPLATES.find(t=>t.id==='rock-drums')!.inputs;assert.deepEqual(inputs.slice(5).map(i=>i.source),DRUM_KIT);
+  coach.saveProfile({version:1,inputs,completed:[]});const plan=await coach.prepare();assert.equal(plan.inputs.length,12);await coach.apply(plan.token,true);
+  const read=async(a:string)=>fromWire(a,await xr.readParameter(a));
+  for(const ch of [6,7,8,9,10])assert.equal(await xr.readParameter(`/ch/${String(ch).padStart(2,'0')}/gate/on`),1);
+  assert.deepEqual([await read('/ch/08/config/name'),await read('/ch/09/config/name'),await read('/ch/10/config/name'),await read('/ch/11/config/name'),await read('/ch/12/config/name')],['Tom 1','Tom 2','Tom 3','OH 1','OH 2']);
+  assert.ok(Number(await read('/ch/11/mix/pan'))<-50&&Number(await read('/ch/12/mix/pan'))>50);assert.ok(Number(await read('/ch/10/preamp/hpf'))<Number(await read('/ch/08/preamp/hpf')));
+  assert.equal(await read('/ch/03/config/name'),'Guit rythm');assert.equal(await read('/ch/04/config/name'),'Guit solo');
+  const single=await coach.prepare(7);assert.ok(single.changes.every(c=>c.address.startsWith('/ch/07/')));assert.match(single.title,/Snare/);
+ }finally{xr.close();library.close();}
+});
+test('monitor mixes: one bus per musician, pre-fader, own instrument in front, bus kept out of the PA',async()=>{
+ const {xr,library,coach}=setup();try{
+  const inputs=TEMPLATES.find(t=>t.id==='rock-drums')!.inputs,musicians=suggestMusicians(inputs);
+  assert.deepEqual(musicians.map(m=>m.role),['chant','guitare','guitare','basse','batterie']);assert.deepEqual(musicians.at(-1)!.channels,[6,7,8,9,10,11,12]);
+  coach.saveProfile({version:1,inputs,completed:[],musicians});assert.equal(coach.profile().musicians!.length,5);
+  const plan=await coach.prepareEars();await coach.apply(plan.token,true);const read=async(a:string)=>fromWire(a,await xr.readParameter(a));
+  assert.equal(await read('/bus/4/config/name'),'Basse');assert.equal(await xr.readParameter('/bus/4/mix/lr'),0);assert.equal(await read('/bus/4/mix/fader'),-10);
+  assert.equal(await read('/ch/05/mix/04/level'),OWN_LEVEL);assert.equal(await read('/ch/06/mix/04/level'),MONITOR_RECIPES.basse.kick);assert.equal(await xr.readParameter('/ch/01/mix/04/tap'),3);
+  assert.ok(Number(await read('/ch/11/mix/05/level'))<=-89);
+  const one=await coach.prepareEars(2);assert.ok(one.changes.every(c=>/\/(mix\/02|bus\/2)\//.test(c.address)));
+  assert.throws(()=>validateProfile({version:1,inputs,completed:[],musicians:[musicians[0],{...musicians[1],bus:1}]}),/bus/);
+  assert.equal(consoleName('Chœurs été'),'Choeurs ete');
  }finally{xr.close();library.close();}
 });
 test('symptom suggestions are contextual, reversible, bounded and never invent feedback frequency or gate threshold',async()=>{

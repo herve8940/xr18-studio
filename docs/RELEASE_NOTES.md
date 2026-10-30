@@ -12,6 +12,13 @@
 - Console en mode **Simple** (gros faders et Mute/Solo, façade ou retour d’un musicien) ou **Expert** ; le choix est mémorisé.
 - Affichage adapté à l’ordinateur, à la tablette (barre d’icônes) et au téléphone (navigation en bas, boutons plus gros).
 
+**Mon ingé son, version complète** :
+
+- Choisir un instrument propose sa configuration complète selon les bonnes pratiques live : coupe-bas, égaliseur 4 bandes, compresseur, gate, position stéréo, nom et couleur.
+- Batterie détaillée : kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2 ; guitare rythmique et guitare solo distinctes ; modèles de groupe prêts à l’emploi.
+- **Appliquer** par instrument ou **à tout le groupe** ; un réglage non confirmé par la console n’arrête plus les instruments suivants (cause du « seul le premier instrument est appliqué »).
+- Retours de chaque musicien : bus, rôle, instruments personnels, mix de départ pré-fader visualisé, puis création des QR codes en un clic.
+
 **Retours sur le téléphone de chaque musicien** (Jouer › Retours) :
 
 - Un QR code personnel par musicien, à scanner avec l’appareil photo : la page « Mon retour » s’ouvre dans le navigateur, sans application.
@@ -48,6 +55,13 @@
 - Top bar with console status, **Tout couper** (mute all) and **Scènes** (scenes).
 - Console in **Simple** mode (large faders and Mute/Solo, front of house or a musician’s monitor) or **Expert** mode; the choice is remembered.
 - Layout adapted to computer, tablet (icon bar) and phone (bottom navigation, larger buttons).
+
+**Complete “Mon ingé son”**:
+
+- Picking an instrument offers its complete live setting: high-pass, 4-band EQ, compressor, gate, stereo position, name and colour.
+- Detailed drum kit (kick, snare, tom 1–3, OH 1–2), separate rhythm and lead guitar, ready-made band templates.
+- Apply per instrument or to the whole band; one value the console does not confirm no longer stops the following instruments.
+- Per-musician monitors: bus, role, own instruments, visual pre-fader starting mix, one-click QR links.
 
 **Monitors on each musician’s phone** (Jouer › Retours):
 

@@ -74,10 +74,19 @@ export class XR18 extends EventEmitter {
     if(typeof observed==='number'&&typeof checked==='number'?Math.abs(observed-checked)>readbackTolerance(address):observed!==checked)throw Error('Lecture différente : '+address);
     return observed;
   }
-  async applyParameters(values:Record<string,Value>,allowPhantom=false){
+  async applyParameters(values:Record<string,Value>,allowPhantom=false,tolerant=false){
     for(const [a,v] of Object.entries(values)){validateWire(a,v);if(a.endsWith('/phantom')&&!allowPhantom)throw Error('Confirmation 48 V requise');}
     const generation=this.generation,operation=this.operationEpoch;
-    for(const [a,v] of Object.entries(values)){if(generation!==this.generation||operation!==this.operationEpoch)throw Error('Opération interrompue');await this.writeParameter(a,v,allowPhantom);}
+    const failed:string[]=[];
+    for(const [a,v] of Object.entries(values)){
+      if(generation!==this.generation||operation!==this.operationEpoch)throw Error('Opération interrompue');
+      if(!tolerant){await this.writeParameter(a,v,allowPhantom);continue;}
+      // Tolerant mode (guided set-up of many channels): one value the console reads back
+      // differently must not stop the remaining instruments. Retry once, then report it.
+      try{await this.writeParameter(a,v,allowPhantom);}
+      catch(e){if(/Lecture différente|Pas de réponse XR18/.test((e as Error).message)){try{await this.writeParameter(a,v,allowPhantom);}catch{failed.push(a);}}else throw e;}
+    }
+    return {failed};
   }
   private connected = false;
   private lastReplyAt: number | null = null;

@@ -102,20 +102,54 @@ En bas à gauche, la carte de connexion indique si le contrôle est activé.
 
 ## 6. Faire la balance avec « Mon ingé son »
 
-**Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes :
+**Jouer › Mon ingé son** est un assistant pour les groupes sans ingé son. Il te guide en six étapes : brancher, dire qui est branché où, faire jouer un musicien à la fois, écouter et corriger, préparer les retours, garder le bon réglage.
 
-1. Brancher et connecter.
-2. Dire qui est branché où.
-3. Faire jouer un musicien à la fois.
-4. Écouter et corriger un problème.
-5. Préparer les retours.
-6. Garder le bon réglage.
+### Configurer tout le groupe en une fois
 
-![Mon ingé son](images/tuto-coach.png)
+À l’étape **2. Dire qui est branché où**, pars d’un modèle : **Rock + batterie électronique**, **Rock + batterie acoustique détaillée** (12 entrées) ou **Acoustique / duo**. Le bouton **Ajouter la batterie détaillée** place kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2 sur les entrées libres. Les instruments sont rangés par famille : voix, guitares (rythmique, solo, acoustique), basse, batterie détaillée, batterie électronique, claviers.
 
-À l’étape 4, choisis l’instrument puis ce qui te gêne (« la voix est étouffée », « ça siffle »…), ou décris-le avec tes mots. L’assistant propose une petite correction, que tu prévisualises, essaies et peux annuler d’un clic avec **Annuler le dernier réglage guidé**.
+![Choisir un modèle de groupe](images/tuto-coach-groupe.png)
 
-L’assistant reçoit les réglages et les niveaux de la table, **pas le son** : ses conseils partent de ta description. En cas de larsen, baisse tout de suite le volume concerné (ou **Tout couper**) avant de chercher la cause.
+**Dès que tu choisis un instrument, l’assistant te propose sa configuration complète**, selon les bonnes pratiques du live :
+
+- **Coupe-bas** adapté (35 Hz pour le kick, 80 Hz pour le tom aigu, 100 Hz pour le chant…).
+- **Égaliseur 4 bandes** avec de vraies corrections, par exemple −4 dB de « carton » à 250 Hz sur le kick et +3 dB d’attaque à 3,5 kHz.
+- **Compresseur** réglé : taux, attaque, relâchement et seuil de départ.
+- **Gate** sur kick, snare et toms, pour couper la repisse des autres fûts.
+- **Position stéréo** : toms répartis, OH 1 à gauche et OH 2 à droite, guitares de part et d’autre.
+- **Nom** et **couleur** sur la console.
+
+Ouvre **Ce que je règle** sous chaque instrument pour lire, en clair, ce que fait chaque réglage.
+
+![Batterie détaillée et explication des réglages](images/tuto-coach-batterie.png)
+
+Le bouton **Appliquer** d’une ligne configure cet instrument seul. **Appliquer à tout le groupe** configure tous les instruments d’un coup. Avant d’envoyer quoi que ce soit, l’assistant montre la liste des instruments concernés et le détail « avant / après ». Une sauvegarde est faite à chaque fois, et **Annuler le dernier réglage guidé** remet tout comme avant.
+
+![Vérifier avant d’appliquer](images/tuto-coach-appliquer.png)
+
+Ce que l’assistant ne touche jamais : le gain d’entrée, le 48 V, les volumes, les mutes et le routage. Règle d’abord le gain de chaque micro (étape 3, crêtes vers −6 dB), car les seuils du compresseur et du gate sont des points de départ calculés pour ce niveau. Affine-les ensuite à l’écoute.
+
+Si la console ne confirme pas un réglage, l’assistant continue avec les autres instruments et indique ceux à relancer, au lieu de s’arrêter au premier.
+
+### Écouter et corriger
+
+À l’étape 4, choisis l’instrument puis ce qui te gêne (« la voix est étouffée », « ça siffle »…), ou décris-le avec tes mots. L’assistant propose une petite correction que tu prévisualises, essaies et peux annuler. Il reçoit les réglages et les niveaux de la table, **pas le son** : ses conseils partent de ta description. En cas de larsen, baisse tout de suite le volume concerné (ou **Tout couper**).
+
+### Les retours (ears) de chaque musicien
+
+À l’étape **5. Préparer les retours**, clique sur **Proposer les musiciens d’après mon groupe**. L’assistant crée un musicien par instrument principal : chant, chaque guitare, basse, toute la batterie, clavier. Chacun reçoit son bus (sorties Aux 1 à 6). Pour chaque musicien, tu peux changer le nom, le bus, le **rôle** (chanteur·se, guitariste, bassiste, batteur·se, claviériste) et **ses instruments**, qui seront mis devant dans son mix.
+
+![Retours de chaque musicien](images/tuto-coach-retours.png)
+
+Les barres montrent le mix de départ qui sera envoyé. Il est **pré-fader** : ce que tu changes en façade ne bouge pas les oreilles des musiciens. Exemples de départs :
+
+- **Bassiste** : basse et kick soudés.
+- **Chanteur·se** : sa voix devant, avec la section rythmique.
+- **Batteur·se** : basse et kick en avant ; les cymbales sont coupées, car il les entend déjà fort.
+
+Le bus est nommé, retiré de la façade et démarré à −10 dB par sécurité. **Appliquer** configure un musicien ; **Appliquer les retours de tous** les configure tous.
+
+Enfin, **Créer les QR codes des musiciens** crée le lien personnel de chacun et ouvre la page **Retours** : chaque musicien scanne son code et affine son mix sur son téléphone (voir la section 9).
 
 Le dialogue avec une IA (OpenAI) est facultatif ; le conseiller local fonctionne sans abonnement. Voir [Mon ingé son](INGE_SON.md).
 

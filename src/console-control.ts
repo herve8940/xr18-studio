@@ -22,7 +22,7 @@ export class ConsoleControl {
   return {version:2,scope:'console',values,fx};
  }
  async preview(input:unknown,wire=false){
-  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length<1||Object.keys(input).length>500)throw Error('1 à 500 paramètres requis');
+  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length<1||Object.keys(input).length>1000)throw Error('1 à 1000 paramètres requis');
   const values:Record<string,Value>={},before:Record<string,Value>={};
   for(const [a,v] of Object.entries(input))values[a]=wire?validateWire(a,v):toWire(a,v);
   const identity=this.identity();
@@ -31,14 +31,14 @@ export class ConsoleControl {
   this.previews.set(token,{values,before,identity,expires:Date.now()+60000});
   return {token,changes:Object.entries(values).map(([address,v])=>({address,before:fromWire(address,before[address]!),after:fromWire(address,v),sensitive:descriptor(address).sensitive})),phantom:Object.keys(values).some(a=>a.endsWith('/phantom'))};
  }
- async apply(token:unknown,allowPhantom=false){
+ async apply(token:unknown,allowPhantom=false,tolerant=false){
   const p=typeof token==='string'?this.previews.get(token):undefined;
   if(!p||p.expires<Date.now()||p.identity!==this.identity())throw Error('Prévisualisation expirée ou connexion modifiée');
   this.previews.delete(token as string);
   if(Object.keys(p.values).some(a=>a.endsWith('/phantom'))&&!allowPhantom)throw Error('Confirmation 48 V requise');
   for(const [a,v] of Object.entries(p.before)){const current=await this.xr.readParameter(a);if(typeof v==='number'&&typeof current==='number'?Math.abs(v-current)>.003:current!==v)throw Error('État modifié : prévisualiser à nouveau');}
   const backup=this.library.save('parameter-backup','Avant modification console',p.before);
-  try{await this.xr.applyParameters(p.values,allowPhantom);return {ok:true,backupId:backup.id,readbackCompared:this.xr.mode==='real'};}
+  try{const {failed}=await this.xr.applyParameters(p.values,allowPhantom,tolerant);return {ok:failed.length===0,backupId:backup.id,readbackCompared:this.xr.mode==='real',written:Object.keys(p.values).length-failed.length,failed};}
   catch(e){throw Error(`Modification potentiellement partielle ; sauvegarde ${backup.id} : ${(e as Error).message}`);}
  }
  async recall(input:unknown,allowPhantom=false){

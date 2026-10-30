@@ -35,7 +35,7 @@ Voir `FONCTIONS_0_2.md` pour l’utilisation et la validation.
 
 ## Mode guidé 0.3
 
-Accueil Mon ingé son, préparation de groupe persistante, parcours de balance en six étapes, test des niveaux OSC récents, conseils locaux selon symptômes, petites corrections prévisualisées, sauvegarde et annulation. Dialogue OpenAI facultatif, sans exécution de ses réponses ; configuration de bureau avec clé chiffrée via Electron safeStorage (refus du backend basic_text), ou variables serveur. Le conseiller ne reçoit pas d’audio. Guide : `INGE_SON.md`.
+Accueil Mon ingé son, préparation de groupe persistante, parcours de balance en six étapes, configuration complète par instrument (coupe-bas, EQ, compresseur, gate, pan) avec batterie détaillée et modèles de groupe, application tolérante multi-instruments, retours par musicien (bus, rôle, mix pré-fader, QR), test des niveaux OSC récents, conseils locaux selon symptômes, petites corrections prévisualisées, sauvegarde et annulation. Dialogue OpenAI facultatif, sans exécution de ses réponses ; configuration de bureau avec clé chiffrée via Electron safeStorage (refus du backend basic_text), ou variables serveur. Le conseiller ne reçoit pas d’audio. Guide : `INGE_SON.md`.
 
 ## Distribution 1.0
 

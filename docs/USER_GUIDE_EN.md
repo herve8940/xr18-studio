@@ -102,20 +102,48 @@ The connection card at the bottom left shows whether control is enabled.
 
 ## 6. Soundcheck with “Mon ingé son”
 
-**Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps:
+**Jouer › Mon ingé son** (“My sound engineer”) guides bands without an engineer in six steps: plug in, say who is plugged in where, play one musician at a time, listen and fix, prepare monitors, keep the good setting.
 
-1. Plug in and connect.
-2. Say who is plugged in where.
-3. Play one musician at a time.
-4. Listen and fix one problem.
-5. Prepare monitors.
-6. Keep the good setting.
+### Set up the whole band at once
 
-![Mon ingé son](images/tuto-coach.png)
+In step **2**, start from a template: **Rock + electronic drums**, **Rock + detailed acoustic drums** (12 inputs) or **Acoustic / duo**. **Ajouter la batterie détaillée** adds kick, snare, tom 1, tom 2, tom 3, OH 1 and OH 2 on free inputs. Instruments are grouped by family: vocals, guitars (rhythm, lead, acoustic), bass, detailed drums, electronic drums, keys.
 
-In step 4, choose the instrument and what bothers you (“the voice is muffled”, “it squeals”…), or describe it in your own words. The adviser suggests a small correction you preview, try and can undo with **Annuler le dernier réglage guidé** (undo last guided change).
+![Pick a band template](images/tuto-coach-groupe.png)
 
-The adviser receives mixer settings and levels, **not the audio**: its advice comes from your description. With feedback, lower the level at once (or **Tout couper**) before looking for the cause. The optional OpenAI dialogue is not required; the local adviser needs no subscription. See [Mon ingé son](INGE_SON.md).
+**As soon as you pick an instrument, the assistant offers its complete live setting**:
+
+- **High-pass filter** suited to the instrument.
+- **4-band EQ** with real moves, not just small nudges.
+- **Compressor**: ratio, attack, release and a starting threshold.
+- **Gate** on kick, snare and toms.
+- **Stereo position**: spread toms, OH 1 left and OH 2 right, guitars on either side.
+- **Name** and **colour** on the console.
+
+**Ce que je règle** explains each setting in plain words.
+
+![Detailed drum kit and explanations](images/tuto-coach-batterie.png)
+
+A row's **Appliquer** button sets that instrument only. **Appliquer à tout le groupe** sets every instrument at once. You always see which instruments are affected and the before/after list first; a backup is made, and **Annuler le dernier réglage guidé** restores everything.
+
+![Check before applying](images/tuto-coach-appliquer.png)
+
+The assistant never touches input gain, 48 V, faders, mutes or routing. Set each mic's gain first (step 3, peaks around −6 dB): compressor and gate thresholds are starting points for that level, to refine by ear. If the console does not confirm one value, the remaining instruments are still applied and the unconfirmed values are listed.
+
+### Listen and fix
+
+In step 4, choose the instrument and what bothers you, or describe it in your own words. The adviser suggests a small, reversible correction. It receives settings and levels, **not the audio**.
+
+### Each musician's monitor mix
+
+In step **5**, **Proposer les musiciens d’après mon groupe** creates one musician per main instrument (vocals, each guitar, bass, the whole kit, keys). Each gets a bus (Aux 1–6). For each musician you can edit the name, bus, **role** and **own instruments**, which go in front of the mix.
+
+![Monitor mix for each musician](images/tuto-coach-retours.png)
+
+The bars show the starting mix that will be sent. It is **pre-fader**, so front-of-house changes do not move the musicians' ears. The bassist gets bass and kick locked together. The singer gets the voice in front with the rhythm section. The drummer gets bass and kick, with cymbals off because they are already loud acoustically.
+
+The bus is named, kept out of the PA and started at −10 dB for safety. **Créer les QR codes des musiciens** creates each personal link and opens **Retours**, where each musician scans their code and fine-tunes from their phone (section 9).
+
+The optional OpenAI dialogue is not required. See [Mon ingé son](INGE_SON.md).
 
 ## 7. Front-of-house in Simple mode
 
