@@ -4,11 +4,13 @@
 
 **Ton ingé son de poche pour la Behringer XR18**
 
-Fais sonner ton groupe sans être ingé son : un assistant qui te guide pas à pas, une console claire et le retour de chaque musicien sur son téléphone.
+[![Dernière version](https://img.shields.io/github/v/release/herve8940/xr18-studio?label=version&color=3ee0e0)](https://github.com/herve8940/xr18-studio/releases/latest) [![Téléchargements](https://img.shields.io/github/downloads/herve8940/xr18-studio/total?color=2b7cf6)](https://github.com/herve8940/xr18-studio/releases) [![Licence MIT](https://img.shields.io/badge/licence-MIT-green)](LICENSE) [![Windows · macOS · Linux](https://img.shields.io/badge/Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-gratuit-555)](https://github.com/herve8940/xr18-studio/releases/latest)
+
+Application **gratuite** pour piloter une table de mixage **Behringer XR18, X18 ou MR18**, alternative à X-AIR Edit pensée pour les débutants : un assistant qui te guide pas à pas, une console claire où toutes les pistes tiennent à l’écran, et le retour in-ear de chaque musicien sur son téléphone.
 
 🇫🇷 Français · [🇬🇧 English](README.en.md)
 
-[**⬇️ Télécharger**](https://github.com/herve8940/xr18-studio-/releases/latest) · [**📘 Tuto « Mon ingé son »**](docs/TUTO_MON_INGE_SON.md) · [Guide complet](docs/USER_GUIDE_FR.md) · [Nouveautés](docs/RELEASE_NOTES.md)
+[**⬇️ Télécharger**](https://github.com/herve8940/xr18-studio/releases/latest) · [**🌐 Site**](https://herve8940.github.io/xr18-studio/) · [**📘 Tuto « Mon ingé son »**](docs/TUTO_MON_INGE_SON.md) · [Guide complet](docs/USER_GUIDE_FR.md) · [Nouveautés](docs/RELEASE_NOTES.md)
 
 <img src="docs/images/hero.png" alt="XR18 Studio : l’assistant Mon ingé son et la page retour d’un musicien sur son téléphone" width="900">
 
@@ -51,7 +53,9 @@ XR18 Studio se pose sur ta console comme X-AIR Edit, avec en plus :
 | **Entrée** | **Envois** | **Effets** |
 | ![Entrée](docs/images/xair-input.png) | ![Envois](docs/images/xair-sends.png) | ![Effets](docs/images/xair-fx.png) |
 
-Chaque vue explique en langage simple ce que fait chaque bouton : voir le [guide de la console](docs/GUIDE_CONSOLE.md).
+- **Toutes les pistes à l’écran**, sans faire défiler : les tranches s’adaptent à la taille de la fenêtre (vérifié de 1280×800 à 1920×1080), le menu se replie tout seul.
+- **Partir d’une scène vierge** en un clic : toute la console revient à neutre, volumes en bas, sans toucher au 48 V, aux gains ni au routage, avec retour en arrière.
+- **Chaque vue explique** en langage simple ce que fait chaque bouton : voir le [guide de la console](docs/GUIDE_CONSOLE.md).
 
 ## 📱 Les retours sur le téléphone
 
@@ -63,7 +67,7 @@ Chaque lien est **personnel** : le musicien ne voit que son propre retour. Le vo
 
 ## ⬇️ Installer
 
-Télécharge le fichier de ton ordinateur sur la [**page des versions**](https://github.com/herve8940/xr18-studio-/releases/latest). Tout est inclus, il n’y a rien d’autre à installer.
+Télécharge le fichier de ton ordinateur sur la [**page des versions**](https://github.com/herve8940/xr18-studio/releases/latest). Tout est inclus, il n’y a rien d’autre à installer.
 
 | Ordinateur | Fichier |
 |---|---|
@@ -130,5 +134,5 @@ Références : [alignement sur X-AIR Edit et protocole OSC](docs/XAIR_EDIT_PARIT
 ---
 
 <div align="center">
-Projet indépendant, non affilié à Behringer / Music Tribe. XR18, X18, MR18 et X-AIR sont des marques de leurs propriétaires.
+XR18 Studio est un logiciel libre sous <a href="LICENSE">licence MIT</a>, par Hervé Naessens.<br>Projet indépendant, non affilié à Behringer / Music Tribe. XR18, X18, MR18 et X-AIR sont des marques de leurs propriétaires.
 </div>

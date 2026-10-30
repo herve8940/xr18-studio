@@ -1,4 +1,4 @@
-# Mon ingé son — XR18 Studio 1.3
+# Mon ingé son — XR18 Studio 2.0
 
 > Ce document décrit le fonctionnement détaillé. Pour apprendre à t’en servir, suis le **[tuto illustré](TUTO_MON_INGE_SON.md)**.
 

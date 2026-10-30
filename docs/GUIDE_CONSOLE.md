@@ -1,6 +1,6 @@
 # Guide de la console XR18 Studio — chaque option expliquée simplement
 
-[Guide utilisateur](USER_GUIDE_FR.md) · [Accueil](../README.md)
+[Guide utilisateur](USER_GUIDE_FR.md) · [Accueil](https://github.com/herve8940/xr18-studio)
 
 Ce guide décrit chaque vue de la console en mode **Expert** (Jouer › Console, bouton **Expert** en haut) et ce que fait chaque réglage, en langage de musicien. Les mêmes explications sont dans l’application : bouton **? Explications** à droite de chaque vue. Survoler un réglage affiche aussi une courte description.
 

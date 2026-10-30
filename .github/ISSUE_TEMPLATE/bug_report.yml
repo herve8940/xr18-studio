@@ -1,0 +1,30 @@
+name: 🐞 Signaler un problème / Report a bug
+description: Quelque chose ne marche pas comme prévu / Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Que se passe-t-il ? / What happens?
+      description: Ce que tu as fait, ce que tu attendais, ce qui s’est passé. Une capture d’écran aide beaucoup. / What you did, what you expected, what happened. A screenshot helps a lot.
+    validations: {required: true}
+  - type: input
+    id: version
+    attributes: {label: Version de XR18 Studio / XR18 Studio version, placeholder: "2.0.0"}
+    validations: {required: true}
+  - type: dropdown
+    id: os
+    attributes:
+      label: Ordinateur / Computer
+      options: [Mac Apple Silicon, Mac Intel, Windows, Linux, Téléphone / Phone]
+    validations: {required: true}
+  - type: dropdown
+    id: mixer
+    attributes:
+      label: Console / Mixer
+      options: [XR18, X18, MR18, Simulation]
+  - type: textarea
+    id: log
+    attributes:
+      label: Journal de diagnostic / Diagnostic log
+      description: Réglages › « Télécharger le journal de diagnostic », puis joins le fichier. / Settings › download the diagnostic log and attach it.

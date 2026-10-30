@@ -64,20 +64,21 @@ export function XAirMixer({ canWrite, selectedChannel, onSelectChannel, initialT
     </nav>
     {message && <div className="xm-error" role="status">{message}<button type="button" onClick={clearMessage} aria-label="Fermer">×</button></div>}
 
-    <div className={helpOpen ? "xm-top with-help" : "xm-top"}>
+    <div className={`xm-body tab-${tab}${helpOpen ? " help-open" : ""}`}>
+    <div className="xm-top">
       {!fullWidth && <div className="xm-top-side">
         <button type="button" className={`xm-sel-name${stripInverted(num(values, `${strip.prefix}/config/color`)) ? "" : " inverted"}`} style={{ "--strip": stripColor(num(values, `${strip.prefix}/config/color`)) } as React.CSSProperties}>{stripName(strip, values)}</button>
         <ScaledMeter indexes={strip.meters} label={strip.short} />
       </div>}
       <div className={tab === "mixer" ? "xm-view flush" : "xm-view"} ref={tab === "mixer" ? overviewRef : undefined} onScroll={tab === "mixer" ? () => syncScroll(overviewRef.current, bankRef.current) : undefined}>{view}</div>
       {!fullWidth && <div className="xm-top-side"><ScaledMeter indexes={masterStrip.meters} label={masterStrip.short} /></div>}
-      <HelpPanel page={HELP[tab]!} open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} />
     </div>
+    <HelpPanel page={HELP[tab]!} open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)} />
 
-    <div className="xm-bottom">
       <div className="xm-bank" ref={bankRef} onScroll={() => syncScroll(bankRef.current, overviewRef.current)}>
         {bankStrips.map(s => <BankStrip key={s.id} strip={s} values={values} set={set} layer={bank === "inputs" ? layer : 0} selected={s.id === strip.id} onSelect={() => select(s)} canWrite={writable} />)}
       </div>
+      <div className="xm-controls">
       <aside className="xm-side">
         <div className="xm-side-group">
           <h6>Faders du bas</h6>
@@ -105,6 +106,7 @@ export function XAirMixer({ canWrite, selectedChannel, onSelectChannel, initialT
         <details className="xm-side-help"><summary>? Les faders</summary><dl>{STRIP_HELP.map(([l, t]) => <div key={l}><dt>{l}</dt><dd>{t}</dd></div>)}</dl></details>
       </aside>
       <div className="xm-master"><BankStrip master strip={masterStrip} values={values} set={set} layer={0} selected={masterStrip.id === strip.id} onSelect={() => select(masterStrip)} canWrite={writable} /></div>
+      </div>
     </div>
     {layer > 0 && bank === "inputs" && <p className="xm-layer-note">Les faders du bas règlent le mix de <b>{stripName(layerMaster(layer), values)}</b> (« sends on fader »). Le fader de droite est le volume général de ce retour.</p>}
   </section>;

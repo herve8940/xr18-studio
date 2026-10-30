@@ -1,117 +1,107 @@
-# XR18 Studio 1.3.0 — Nouvelle interface et console graphique / New interface and graphical console
+# XR18 Studio 2.0.0 — Ton ingé son de poche / Your pocket sound engineer
 
-![Console graphique](https://github.com/herve8940/xr18-studio-/raw/main/docs/images/app-simple.png)
+![XR18 Studio](https://github.com/herve8940/xr18-studio/raw/main/docs/images/hero.png)
+
+🇫🇷 [Tuto illustré « Mon ingé son »](https://github.com/herve8940/xr18-studio/blob/main/docs/TUTO_MON_INGE_SON.md) · 🇬🇧 [Illustrated tutorial](https://github.com/herve8940/xr18-studio/blob/main/docs/TUTO_MON_INGE_SON_EN.md)
 
 ## Français
 
-**Nouvelle interface** :
+### Quel fichier télécharger ?
 
-- Thème sombre moderne, commun à toutes les pages.
-- Trois espaces : **Jouer** (Console, Retours, Mon ingé son), **Préparer** (Setlists, Répétitions, Scènes) et **Réglages**.
-- Barre du haut avec l’état de la console, **Tout couper** et **Scènes**.
-- Console en mode **Simple** (gros faders et Mute/Solo, façade ou retour d’un musicien) ou **Expert** ; le choix est mémorisé.
-- Affichage adapté à l’ordinateur, à la tablette (barre d’icônes) et au téléphone (navigation en bas, boutons plus gros).
+| Ordinateur | Fichier |
+|---|---|
+| Windows | `XR18-Studio-Windows-2.0.0.exe` |
+| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.0-arm64.dmg` |
+| Mac Intel | `XR18-Studio-macOS-2.0.0-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.0-amd64.deb` |
+| Autre Linux | `XR18-Studio-Linux-2.0.0-x86_64.AppImage` |
 
-**Mon ingé son, version complète** :
+Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau local** (*Réglages Système › Confidentialité et sécurité*). Windows : si SmartScreen s’affiche, **Informations complémentaires › Exécuter quand même**. Les paquets ne sont pas signés par un certificat commercial ; `SHA256SUMS.txt` permet de vérifier les fichiers.
 
-- Choisir un instrument propose sa configuration complète selon les bonnes pratiques live : coupe-bas, égaliseur 4 bandes, compresseur, gate, position stéréo, nom et couleur.
-- Batterie détaillée : kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2 ; guitare rythmique et guitare solo distinctes ; modèles de groupe prêts à l’emploi.
-- **Appliquer** par instrument ou **à tout le groupe** ; un réglage non confirmé par la console n’arrête plus les instruments suivants (cause du « seul le premier instrument est appliqué »).
-- **Gain guidé** : mesure de chaque instrument, gain proposé pour des crêtes vers −6 dB (par étapes, sans 48 V), mesure de la repisse ; seuils du compresseur et du gate calés sur le signal réel, avec alerte si un gain change ensuite.
-- Retours de chaque musicien : bus, rôle, instruments personnels, mix de départ pré-fader visualisé, puis création des QR codes en un clic.
+### Nouveautés
 
-**Retours sur le téléphone de chaque musicien** (Jouer › Retours) :
+**Toute la console d’un coup d’œil**
 
-- Un QR code personnel par musicien, à scanner avec l’appareil photo : la page « Mon retour » s’ouvre dans le navigateur, sans application.
-- Chaque lien ne donne accès qu’à **son** retour : niveau de chaque instrument, volume général, mute et réglages enregistrés (« Concert », « Répète »…), rappelés en douceur.
-- Sécurité auditive : plafond à 0 dB et montée par petits pas ; baisser est toujours libre. Glisser est nécessaire, toucher seul ne change rien.
-- Nouveau lien en un clic si un téléphone est perdu (l’ancien QR cesse aussitôt de fonctionner), retrait d’un musicien, feuille de QR codes imprimable.
-- Le partage est arrêté par défaut et ne publie sur le réseau local que cette page : la console complète reste accessible uniquement sur l’ordinateur.
+- Les modes **Simple** et **Expert** tiennent dans la fenêtre : toutes les pistes sont visibles en même temps, sans faire défiler. C’est vérifié de 1280×800 à 1920×1080.
+- Les tranches s’adaptent à la largeur : noms sur deux lignes, valeurs et boutons compacts quand la place manque.
+- En mode Expert, la vue d’ensemble et la banque de faders restent alignées. Les explications et la barre de mix sont dans une colonne à droite.
+- Le menu se replie tout seul sur la page Console. Le bouton **Réduire le menu** le replie ou le rouvre partout.
 
-**Console graphique façon X-AIR Edit** (Jouer › Console, mode Expert) :
+**Partir d’une scène vierge**
 
-- **Mêmes vues que X-AIR Edit** : Mixer (vue d’ensemble), Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite (Main LR / bus / FX, DCA, Clr Solo, groupes de mute, auto-mix).
-- **Explications intégrées** : chaque vue a un panneau « ? Explications » qui décrit chaque option en langage simple. Le [guide de la console](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) reprend tout, avec la description des 61 effets.
-- **Réglages graphiques** : barres verticales, courbes de gate et de compresseur, enveloppes, filtre de déclenchement, EQ interactif, presets gate et compresseur (Kick, Snare, Acoustic/Bass, Vocal), envois avec point de prélèvement, groupes DCA et mute, panoramique.
-- **Contrôle direct** par WebSocket : chaque geste est envoyé immédiatement puis relu. Le 48 V, le routage et le type d’effet gardent l’aperçu avec confirmation et sauvegarde. Un musicien ne règle que les envois de ses bus.
-- **Synchronisation complète** de l’état de la console à la connexion (Table → PC), comme X-AIR Edit.
+- Un bouton remet toute la console à neutre : noms, couleurs, traitements, égaliseurs à plat, pan au centre, envois fermés, volumes en bas.
+- Le **48 V**, les **gains**, le **routage** et les **effets** ne sont jamais touchés.
+- Une fenêtre montre d’abord ce qui va changer, une sauvegarde est faite, et **Revenir à avant** annule en un clic.
+- Le bouton est disponible dans le mode Expert et dans Mon ingé son (étape 2).
 
-**Corrections** (comparaison avec le binaire X-AIR Edit 1.8.1 ; les 689 nœuds OSC du catalogue y sont tous présents) :
+**Mon ingé son, version complète**
 
-- **Écritures refusées à tort** : la console arrondit ses valeurs (coupe-bas et pan sur 101 pas, envois sur 161, gain par 0,5 dB) et la relecture tolérait seulement 0,003. Ces écritures et les rampes des retours in-ear échouaient avec « Lecture différente ». La tolérance suit maintenant la résolution de chaque paramètre, y compris pour la synchronisation PC → Table et les scènes natives.
-- **Affichage du fader** : « 50 % / −6 dB relatif » était faux. 0,5 vaut −10 dB et 0 dB est à 0,75.
-- **Vumètres** : les 40 valeurs de `/meters/1` sont lues (entrées, aux, retours FX, bus, envois FX, Main), et plus seulement les 16 entrées.
-- **Détection** : X18, MR18 et leurs V2 sont acceptées, comme dans X-AIR Edit.
-- **Connexion** : toute réponse OSC valide la liaison.
-- **Divers** : IP par défaut 192.168.1.1 (point d’accès XR18), lecture du catalogue plus rapide.
+- **Configuration complète par instrument**, selon les bonnes pratiques live : coupe-bas, égaliseur 4 bandes, compresseur, gate, position stéréo, nom et couleur. Choisir un instrument la propose aussitôt.
+- **Batterie détaillée** : kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2. Guitare rythmique et guitare solo sont séparées.
+- **Modèles de groupe** prêts à l’emploi.
+- **Appliquer** par instrument ou **à tout le groupe**. Corrigé : si la console ne confirmait pas un seul réglage, les instruments suivants n’étaient pas appliqués.
+- **Gain guidé** : mesure de chaque instrument et gain proposé pour viser −6 dB, par étapes de +6 dB maximum, sans jamais toucher au 48 V. La repisse est mesurée, et le compresseur et le gate sont calés sur ton vrai signal. L’appli te prévient si un gain change ensuite.
+- **Retours de chaque musicien** : bus, rôle, instruments personnels, et un mix de départ pré-fader affiché en barres. Les QR codes se créent en un clic.
+- **Pour débutants** : un lexique « Les mots du son ». La fenêtre de vérification se ferme par la croix, Échap ou un clic à côté, et elle ne liste que les réglages qui changent.
 
-**Validation** : 65 tests, dont 4 sur le partage des retours (droits limités au bus, plafond, révocation des liens) et 6 avec un faux mixeur UDP qui arrondit les valeurs comme la console. Paquets Windows, macOS Intel / Apple Silicon et Linux compilés en CI. Les 11 vues ont été testées dans le navigateur contre une XR18 émulée, sans erreur JavaScript. **Non vérifié sur une XR18 physique** : le solo `/-stat/solosw/01-16` et la cadence des vumètres. Paquets non signés / non notariés.
+**Déjà dans les versions précédentes**
+
+- Les retours sur le téléphone de chaque musicien, par QR code personnel :
+  - chacun ne règle que **son** retour ;
+  - le volume est plafonné à 0 dB ;
+  - un lien perdu se remplace en un clic.
+- La console graphique façon X-AIR Edit, avec 11 vues, des explications en langage simple et le contrôle direct avec relecture.
+- La détection automatique de la console, comme X-AIR Edit (XR18, X18, MR18).
+
+**Validation** : 72 tests automatiques. Les parcours complets (6 étapes du coach, scène vierge, retours, téléphone) ont été testés dans le navigateur contre une XR18 émulée, sans erreur. Les paquets des 4 plateformes sont compilés et lancés en CI. **À vérifier sur ta XR18 physique avant un concert.**
 
 ## English
 
-**New interface**:
+### Which file?
 
-- Modern dark theme across every page.
-- Three spaces: **Jouer** (Play: console, monitors, coach), **Préparer** (Prepare: setlists, rehearsals, scenes) and **Réglages** (Settings).
-- Top bar with console status, **Tout couper** (mute all) and **Scènes** (scenes).
-- Console in **Simple** mode (large faders and Mute/Solo, front of house or a musician’s monitor) or **Expert** mode; the choice is remembered.
-- Layout adapted to computer, tablet (icon bar) and phone (bottom navigation, larger buttons).
+| Computer | File |
+|---|---|
+| Windows | `XR18-Studio-Windows-2.0.0.exe` |
+| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.0-arm64.dmg` |
+| Intel Mac | `XR18-Studio-macOS-2.0.0-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.0-amd64.deb` |
+| Other Linux | `XR18-Studio-Linux-2.0.0-x86_64.AppImage` |
 
-**Complete “Mon ingé son”**:
+Mac: the first time, **right-click › Open**, then allow **Local Network** (*System Settings › Privacy & Security*). Windows: if SmartScreen appears, **More info › Run anyway**. The packages are not signed with a commercial certificate; use `SHA256SUMS.txt` to check the files.
 
-- Picking an instrument offers its complete live setting: high-pass, 4-band EQ, compressor, gate, stereo position, name and colour.
-- Detailed drum kit (kick, snare, tom 1–3, OH 1–2), separate rhythm and lead guitar, ready-made band templates.
-- Apply per instrument or to the whole band; one value the console does not confirm no longer stops the following instruments.
-- **Guided gain staging**: per-instrument measurement, proposed preamp gain for peaks near −6 dB (stepwise, never 48 V), bleed measurement; compressor and gate thresholds fitted to the real signal, flagged when a gain changes later.
-- Per-musician monitors: bus, role, own instruments, visual pre-fader starting mix, one-click QR links.
+### What’s new
 
-**Monitors on each musician’s phone** (Jouer › Retours):
+**The whole mixer at a glance**
 
-- One personal QR code per musician, scanned with the phone camera: the “Mon retour” page opens in the browser, no app needed.
-- Each link only reaches **that** monitor: level of each instrument, overall volume, mute and saved mixes, recalled smoothly.
-- Hearing safety: 0 dB ceiling and small raise steps; lowering is always free. Sliding is required, touching alone changes nothing.
-- One-click new link if a phone is lost (the old QR stops working at once), musician removal, printable QR sheet.
-- Sharing is off by default and only publishes this page on the local network: the full console stays on the computer only.
+- **Simple** and **Expert** modes fit the window: every track is visible at once, with no scrolling. Checked from 1280×800 to 1920×1080.
+- Strips adapt to the width, with two-line names and compact values and buttons when space is short.
+- In Expert mode, the overview and the fader bank stay aligned. Explanations and the mix bar sit in a column on the right.
+- The menu folds automatically on the Console page. **Réduire le menu** folds or opens it anywhere.
 
-**X-AIR Edit–style graphical console** (Jouer › Console, Expert mode):
+**Start from a blank scene**
 
-- **Same views as X-AIR Edit**: Mixer (overview), Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing and Meters. The fader bank is at the bottom and the mix bar on the right (Main LR / bus / FX, DCA, Clr Solo, mute groups, auto mix).
-- **Built-in explanations**: each view has a “? Explications” panel describing every option in plain language (French). The [console guide](https://github.com/herve8940/xr18-studio-/blob/main/docs/GUIDE_CONSOLE.md) collects them all, including all 61 effects.
-- **Graphical controls**: vertical bars, gate and compressor curves, envelopes, side-chain filter, interactive EQ, gate and compressor presets, sends with tap points, DCA and mute groups, panorama.
-- **Direct control** over WebSocket: each move is sent at once, then read back. Phantom power, routing and effect type keep preview, confirmation and backup. Musicians can only adjust their own bus sends.
-- **Full console state pull** on connect (Mixer → PC), like X-AIR Edit.
+- One button resets the whole mixer to neutral: names, colours, processing, flat EQs, centred pan, closed sends, levels down.
+- **48 V**, **gains**, **routing** and **effects** are never touched.
+- A window first shows what will change, a backup is made, and **Revenir à avant** undoes it in one click.
+- The button is available in Expert mode and in Mon ingé son (step 2).
 
-**Fixes** (compared with the X-AIR Edit 1.8.1 binary; all 689 catalogue OSC nodes exist there):
+**Complete “Mon ingé son”**
 
-- **Valid writes rejected**: the console rounds its values (low cut and pan to 101 steps, sends to 161, gain to 0.5 dB) while readback allowed only 0.003. These writes and monitor ramps failed with “Lecture différente”. Tolerance now follows each parameter’s resolution, including PC → Mixer sync and native scenes.
-- **Fader display**: “50 % / −6 dB relative” was wrong. 0.5 is −10 dB and 0 dB is 0.75.
-- **Meters**: all 40 `/meters/1` values are read (inputs, aux, FX returns, buses, FX sends, main), not only the 16 inputs.
-- **Discovery**: X18, MR18 and their V2 versions are accepted, like X-AIR Edit.
-- **Connection**: any OSC reply confirms the link.
-- **Other**: default IP 192.168.1.1 (XR18 access point), faster catalogue reads.
+- **Complete per-instrument setup** following live best practice: high-pass, 4-band EQ, compressor, gate, stereo position, name and colour. Picking an instrument offers it straight away.
+- **Detailed drum kit**: kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2. Rhythm and lead guitar are separate.
+- **Band templates**, ready to use.
+- Apply **per instrument** or **to the whole band**. Fixed: if the console did not confirm a single value, the following instruments were not applied.
+- **Guided gain staging**: each instrument is measured and the gain proposed to reach −6 dB, in steps of at most +6 dB, never touching 48 V. Bleed is measured, and compressor and gate are fitted to your real signal. The app warns you if a gain changes later.
+- **Each musician’s monitor mix**: bus, role, own instruments, and a pre-fader starting mix shown as bars. QR codes are created in one click.
+- **For beginners**: a “sound words” glossary. The check window closes with the X, Escape or a click outside, and lists only the settings that change.
 
-**Validation**: 65 tests, including 4 on monitor sharing (bus-only access, ceiling, link revocation) and 6 against a fake UDP mixer that rounds values like the console. Windows, Intel / Apple Silicon macOS and Linux packages built in CI. All 11 views were tested in the browser against an emulated XR18, with no JavaScript errors. **Not verified on a physical XR18**: solo `/-stat/solosw/01-16` and meter rate. Packages remain unsigned / non-notarized.
+**Already in previous versions**
 
----
+- Monitors on each musician’s phone, through a personal QR code:
+  - each musician adjusts only **their own** mix;
+  - volume is capped at 0 dB;
+  - a lost link is replaced in one click.
+- The X-AIR Edit–style graphical console, with 11 views, plain-language explanations, and direct control with read-back.
+- Automatic console discovery, like X-AIR Edit (XR18, X18, MR18).
 
-## XR18 Studio 1.2.0 — Entrées / Input controls
-
-### Français
-
-Vue mixeur : bouton **Entrée / Gain** sur chaque tranche et panneau réel remplaçant l’ancienne courbe EQ illustrative. Cliquer sur **Lire l’entrée** pour relire la source analogique/USB et les paramètres. Affichage et édition du gain du préampli physique réellement affecté au canal ; trim à la place du gain si retour USB. Valeurs en dB et plages fournies par le catalogue serveur, sans conversion inventée côté interface.
-
-Le panneau expose également alimentation 48 V (entrée analogique), inversion de polarité Ø, activation et fréquence du coupe-bas, et raccourcis Égaliseur, Gate/Compresseur, Envois/Retours. Les valeurs absentes restent non lues. Les réglages affichés sont ceux de la dernière lecture ; relire pour les actualiser après utilisation d’une autre application.
-
-Toute écriture passe par l’aperçu existant, une sauvegarde et la comparaison des réponses. Le routage est relu avant application ; si la source a changé, recommencer. Le 48 V exige une confirmation supplémentaire. Le gain et le 48 V appartiennent à la prise physique : d’autres canaux utilisant cette prise sont affectés aussi. Le gain peut changer le niveau du mix et des retours ainsi que la réaction des traitements ; travailler progressivement, sorties à faible niveau.
-
-Validation : compilation backend/frontend, 55 tests existants et vérifications des paquets en CI. Navigateur en simulation : source identifiée, aperçu du gain sans écriture, application avec sauvegarde, deux confirmations pour le 48 V, aucune erreur JavaScript. Essai matériel des nouvelles commandes encore nécessaire. Ce changement n’ajoute pas un Solo/PFL sur les tranches. Paquets non signés/notariés.
-
-### English
-
-Mixer strips now include **Entrée / Gain** and a real input control panel replaces the previous illustrative EQ chart. **Lire l’entrée** reads analog/USB source selection and parameters. It shows the actual mapped analog preamp gain or USB return trim, using dB values and ranges from the server catalog.
-
-Also available: analog phantom power, polarity inversion, high-pass enable/frequency, and shortcuts to EQ, Gate/Compressor and Sends/Monitors. Missing values remain unread. Displayed values reflect the last explicit read; refresh after editing in another app.
-
-Writes use existing preview, backup and readback checks. Source routing is read again before applying; a changed source requires restarting. Phantom power requires an additional confirmation. Gain and phantom affect the physical input, including other channels mapped to it. Gain can alter main/monitor levels and processing response; adjust gradually with low output levels.
-
-Validation: backend/frontend builds, 55 existing tests and CI package checks. Browser simulation covers source identification, preview without writes, gain application with backup, separate phantom confirmation and no JavaScript errors. Physical testing of these new controls remains required. This change does not add strip Solo/PFL. Packages remain unsigned/non-notarized.
+**Validation**: 72 automated tests. The full journeys (the coach’s 6 steps, blank scene, monitors, phone) were tested in the browser against an emulated XR18, with no errors. Packages for all 4 platforms are built and launched in CI. **Check on your physical XR18 before a show.**

@@ -1,0 +1,22 @@
+# GitHub Pages site for XR18 Studio (Settings › Pages › Deploy from branch: main, folder /docs).
+title: XR18 Studio
+description: Free app for the Behringer XR18, X18 and MR18 mixer — guided sound engineer for beginners, X-AIR Edit style console, in-ear mixes on each musician's phone.
+url: https://herve8940.github.io
+baseurl: /xr18-studio
+lang: fr
+author: Hervé Naessens
+image: /images/social-preview.png
+theme: jekyll-theme-primer
+plugins:
+  - jekyll-sitemap
+  - jekyll-seo-tag
+  - jekyll-relative-links
+  - jekyll-optional-front-matter
+  - jekyll-titles-from-headings
+relative_links:
+  enabled: true
+  collections: false
+exclude:
+  - CAHIER_DES_CHARGES.md
+  - DEMARRAGE.md
+  - RELEASE_1_0.md

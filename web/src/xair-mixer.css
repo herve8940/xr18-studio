@@ -13,7 +13,7 @@
 .xm-error{display:flex;justify-content:space-between;gap:10px;background:#1f2a1f;border:1px solid #2f5f2f;color:#d9f99d;border-radius:6px;padding:7px 12px;font-size:12px}
 .xm-error button{background:none;border:0;color:inherit;font-size:16px}
 /* top area */
-.xm-top{display:flex;gap:8px;min-width:0;min-height:300px}
+.xm-top{display:flex;gap:8px;min-width:0}
 .xm-top-side{flex:0 0 96px;background:var(--panel);border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:6px;align-items:center}
 .xm-sel-name{--strip:#555;width:100%;border:2px solid var(--strip);background:transparent;color:var(--strip);font-weight:800;padding:12px 4px;border-radius:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .xm-sel-name.inverted{background:var(--strip);color:#111}
@@ -236,5 +236,49 @@
 .xm-side-help dl{margin:6px 0 0;font-size:11.5px;display:grid;gap:5px}.xm-side-help dt{font-weight:800}.xm-side-help dd{margin:0;color:#bbb}
 .xm-master{display:flex}
 .xm-layer-note{margin:0;font-size:12px;color:var(--cyan);background:#0f2222;border:1px solid #1d4040;border-radius:4px;padding:6px 10px}
-@media (max-width:1100px){.xm-top{flex-wrap:wrap}.xm-help.open{flex-basis:100%}.xm-side{flex-basis:150px}}
+
 @media (max-width:700px){.xm-strip-fader{height:220px}.xm-top-side{display:none}}
+
+/* ---------- Tout tient à l’écran ----------
+   La vue et la banque de faders partagent la même colonne (colonnes alignées sans défilement),
+   l’aide et les commandes (mix, DCA, master) occupent une colonne fixe à droite. */
+.xm{display:flex;flex-direction:column;min-height:0}
+.xm-body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 280px;grid-template-rows:minmax(150px,44fr) minmax(250px,56fr);gap:8px}
+.xm-body:not(.tab-mixer):not(.tab-meter){grid-template-rows:minmax(260px,66fr) minmax(214px,34fr)}
+.xm-view{scrollbar-width:thin;scrollbar-color:#3a5a5a transparent}
+.xm-top{grid-column:1;grid-row:1;min-height:0}
+.xm-view{min-height:0}
+.xm-help{grid-column:2;grid-row:1;min-height:0;max-height:none}
+.xm-help.open{flex-basis:auto}
+.xm-help-body{flex:1;min-height:0}
+.xm-bank{grid-column:1;grid-row:2;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(38px,1fr);gap:3px;min-height:0;overflow-x:auto;overflow-y:hidden;padding-bottom:4px}
+.xm-controls{grid-column:2;grid-row:2;display:flex;gap:6px;min-height:0}
+.xm-side{flex:1 1 auto;min-width:0;overflow:auto}
+.xm-master{flex:0 0 80px;min-height:0}
+.xm-master>.xm-strip{width:100%}
+.xm-strip{container:xstrip/inline-size;min-width:0;min-height:0}
+.xm-strip-fader{flex:1;min-height:90px;height:auto;padding:14px 0}
+.xm-overview{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(38px,1fr);gap:3px;height:100%;min-height:0}
+.xm-ov-col{min-width:0;min-height:0;container:xcol/inline-size}
+@container xcol (max-width:58px){.xm .xm-ov-gain{padding:1px 2px}.xm-ov-gain span{display:block;font-size:10.5px;line-height:13px;letter-spacing:-.4px}.xm-ov-gain i{height:6px;bottom:3px;left:2px}}
+.xm-ov-col .xm-thumb{flex:1 1 34px;height:auto;min-height:24px;max-height:72px}
+@container xstrip (max-width:64px){
+  .xm .xm-scribble{font-size:10px;line-height:1.1;padding:3px 1px;min-height:30px;max-height:30px;white-space:normal;overflow-wrap:normal;hyphens:auto;-webkit-hyphens:auto;text-overflow:clip;letter-spacing:-.2px}
+  .xm-strip-db{font-size:11px;padding:2px 0}
+  .xm-fader-scale{display:none}
+  .xm-fader-track,.xm-fader-cap{width:24px}.xm-fader-cap{height:32px}
+  .xm .xm-strip .xm-toggle{font-size:10px;padding:4px 0}
+  .xm-strip-num{font-size:11px}
+}
+@media (max-width:1300px){.xm-body{grid-template-columns:minmax(0,1fr) 230px}.xm-master{flex-basis:72px}}
+@media (max-width:760px){
+  .xm-body{display:flex;flex-direction:column}
+  .xm-top{min-height:300px}
+  .xm-bank,.xm-overview{grid-auto-columns:70px}
+  .xm-strip-fader{height:220px;flex:none}
+  .xm-controls{flex-wrap:wrap}
+}
+.xm-eq-panel>.xm-band{flex:1 1 128px;min-width:0}
+.xm-strip-fader{min-height:56px;padding:12px 0}
+.xm-strip{gap:4px}
+.xm .xm-master .xm-scribble{min-height:30px;padding:5px 2px;font-size:12px}.xm-master .xm-strip-db{font-size:13px;padding:2px 0}.xm-master .xm-strip-num{font-size:12px}

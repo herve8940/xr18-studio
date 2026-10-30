@@ -1,7 +1,39 @@
 {
   "name": "xr18-studio",
+  "version": "2.0.0",
+  "description": "Free app for the Behringer XR18 / X18 / MR18 mixer: guided sound engineer for beginners, X-AIR Edit style graphical console, in-ear monitors on each musician's phone.",
+  "keywords": [
+    "behringer",
+    "xr18",
+    "x18",
+    "mr18",
+    "x-air",
+    "xair",
+    "x-air-edit",
+    "midas",
+    "mixer",
+    "digital-mixer",
+    "osc",
+    "live-sound",
+    "sound-engineer",
+    "in-ear-monitor",
+    "monitor-mix",
+    "electron",
+    "react"
+  ],
+  "homepage": "https://herve8940.github.io/xr18-studio/",
+  "bugs": {
+    "url": "https://github.com/herve8940/xr18-studio/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herve8940/xr18-studio.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Hervé Naessens"
+  },
   "private": true,
-  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -95,10 +127,5 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
-  },
-  "homepage": "https://github.com/herve8940/xr18-studio-",
-  "description": "Guided mixing assistant and desktop controller for Behringer XR18",
-  "author": {
-    "name": "Hervé Naessens"
   }
 }

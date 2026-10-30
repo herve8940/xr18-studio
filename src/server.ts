@@ -11,6 +11,7 @@ import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import {discoverXR18} from "./discovery.js";
 import {EarsShare} from "./ears.js";
+import {blankSceneValues,BLANK_SCENE_TEXT} from "./blank-scene.js";
 import {ConnectionManager,loadConnection} from "./connection.js";
 import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
@@ -152,8 +153,15 @@ const handler: http.RequestListener = async (req, res) => {
   if(path==='/api/console/preview'&&req.method==='POST'){
     try{const d=await body(req);res.end(JSON.stringify(await show.console.preview(d.values)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
+  if(path==='/api/console/blank'&&req.method==='POST'){
+    try{res.end(JSON.stringify({...await show.console.preview(blankSceneValues(),true),...BLANK_SCENE_TEXT,inputs:[]}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/restore'&&req.method==='POST'){
+    // Preview going back to the values saved just before an apply (undo).
+    try{const d=await body(req);const saved=library.get(String(d.backupId));if(saved.kind!=='parameter-backup')throw Error('Sauvegarde incompatible');res.end(JSON.stringify({...await show.console.preview(saved.data,true),title:'Revenir à avant',explanation:'Les réglages modifiés reprennent les valeurs sauvegardées juste avant le changement.',inputs:[]}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
   if(path==='/api/console/apply'&&req.method==='POST'){
-    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true,d.tolerant===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/console/mute-all'&&req.method==='POST'){
     try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');const values:Record<string,Value>={};for(let i=1;i<=16;i++)values[`/ch/${String(i).padStart(2,'0')}/mix/on`]=0;const p=await show.console.preview(values,true);res.end(JSON.stringify(await show.console.apply(p.token)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;

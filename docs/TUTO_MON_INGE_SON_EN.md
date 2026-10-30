@@ -1,6 +1,6 @@
 # “Mon ingé son” tutorial: make your band sound good, step by step
 
-[🇫🇷 Version française](TUTO_MON_INGE_SON.md) · [Full guide](USER_GUIDE_EN.md) · [Back to the project](../README.en.md)
+[🇫🇷 Version française](TUTO_MON_INGE_SON.md) · [Full guide](USER_GUIDE_EN.md) · [Back to the project](https://github.com/herve8940/xr18-studio/blob/main/README.en.md)
 
 This tutorial is for you if **you are not a sound engineer** and want a good band sound on your Behringer XR18 without the jargon. You follow 6 steps in order. On every screenshot, the **orange numbers** match the list below it.
 
@@ -63,8 +63,9 @@ The app's interface is in French, so button names are shown in French, *with the
 
 ![Pick a template](images/tuto-inge/04-modele.png)
 
-1. **Pick the template closest to your band.** Here: rock with a detailed acoustic kit (vocals, backing vocals, 2 guitars, bass, kick, snare, 3 toms, 2 overheads).
-2. **Ajouter la batterie détaillée** *(add the detailed drum kit)* adds kick, snare, tom 1, tom 2, tom 3, OH 1 and OH 2 on free inputs.
+1. **Partir d’une scène vierge** *(start from a blank scene)*, optional: if the console still holds another band’s or an old show’s settings, everything goes back to neutral with levels down. 48 V, gains and routing are left alone.
+2. **Pick the template closest to your band.** Here: rock with a detailed acoustic kit (vocals, backing vocals, 2 guitars, bass, kick, snare, 3 toms, 2 overheads).
+3. **Ajouter la batterie détaillée** *(add the detailed drum kit)* adds kick, snare, tom 1, tom 2, tom 3, OH 1 and OH 2 on free inputs.
 
 Nothing is sent to the console yet: you are only preparing the list.
 

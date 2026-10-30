@@ -1,6 +1,6 @@
-# XR18 Studio 1.3 — Tutoriel pas à pas
+# XR18 Studio 2.0 — Tutoriel pas à pas
 
-[English](USER_GUIDE_EN.md) · [Guide de la console (chaque option)](GUIDE_CONSOLE.md) · [Téléchargements](https://github.com/herve8940/xr18-studio-/releases/latest) · [Accueil](../README.md)
+[English](USER_GUIDE_EN.md) · [Guide de la console (chaque option)](GUIDE_CONSOLE.md) · [Téléchargements](https://github.com/herve8940/xr18-studio/releases/latest) · [Accueil](https://github.com/herve8940/xr18-studio)
 
 XR18 Studio pilote une table Behringer **XR18** (ainsi que X18 et MR18) depuis un ordinateur, une tablette, et le téléphone de chaque musicien pour son retour. Ce tutoriel suit l’ordre d’une vraie journée : installer, connecter, faire la balance, mixer, donner les retours aux musiciens, préparer le concert.
 
@@ -33,13 +33,13 @@ XR18 Studio pilote une table Behringer **XR18** (ainsi que X18 et MR18) depuis u
 
 ## 2. Installer l’application
 
-Télécharge le fichier qui correspond à ton ordinateur sur la [page des versions](https://github.com/herve8940/xr18-studio-/releases/latest). Rien d’autre à installer : le moteur et l’interface sont inclus.
+Télécharge le fichier qui correspond à ton ordinateur sur la [page des versions](https://github.com/herve8940/xr18-studio/releases/latest). Rien d’autre à installer : le moteur et l’interface sont inclus.
 
 | Ordinateur | Fichier | Installation |
 |---|---|---|
-| Windows | `XR18-Studio-Windows-1.3.0.exe` | Double-clic. L’installation se fait pour ton compte et crée un raccourci. |
-| Mac Intel | `XR18-Studio-macOS-1.3.0-x64.dmg` | Ouvre-le et glisse XR18 Studio dans Applications. |
-| Mac Apple Silicon (M1, M2, M3…) | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Idem. |
+| Windows | `XR18-Studio-Windows-2.0.0.exe` | Double-clic. L’installation se fait pour ton compte et crée un raccourci. |
+| Mac Intel | `XR18-Studio-macOS-2.0.0-x64.dmg` | Ouvre-le et glisse XR18 Studio dans Applications. |
+| Mac Apple Silicon (M1, M2, M3…) | `XR18-Studio-macOS-2.0.0-arm64.dmg` | Idem. |
 | Ubuntu / Debian | fichier `.deb` | Ouvre-le avec l’installateur de logiciels. |
 | Autre Linux | fichier `.AppImage` | Autorise l’exécution dans ses propriétés, puis ouvre-le. |
 
@@ -94,7 +94,7 @@ En haut de chaque page :
 - **Tout couper** (rouge) : coupe les 16 entrées d’un coup, en cas de larsen ou d’urgence ;
 - **Scènes** : sauvegarder ou rappeler des réglages.
 
-En bas à gauche, la carte de connexion indique si le contrôle est activé.
+En bas à gauche, la carte de connexion indique si le contrôle est activé. Juste au-dessus, **Réduire le menu** le replie en icônes pour gagner de la place. Sur la page Console, le menu se replie tout seul pour que toutes les pistes tiennent à l’écran ; le même bouton le rouvre.
 
 | Sur tablette | Sur téléphone |
 |---|---|
@@ -177,7 +177,7 @@ Le dialogue avec une IA (OpenAI) est facultatif ; le conseiller local fonctionne
 
 ## 7. Mixer la façade en mode Simple
 
-**Jouer › Console**, bouton **Simple** en haut. C’est le mode du concert : de grosses tranches faciles à toucher, une par source.
+**Jouer › Console**, bouton **Simple** en haut. C’est le mode du concert : une tranche par source, **toutes visibles en même temps**. Les tranches s’adaptent à la taille de la fenêtre : rien à faire défiler sur un ordinateur portable ou un grand écran.
 
 ![Console en mode Simple](images/tuto-simple.png)
 
@@ -206,14 +206,14 @@ Chaque geste part tout de suite vers la table, puis l’application relit la val
 
 ## 8. Régler en détail en mode Expert
 
-Bouton **Expert** en haut de la console : toute la table, organisée comme X-AIR Edit.
+Bouton **Expert** en haut de la console : toute la table, organisée comme X-AIR Edit. Tout tient dans la fenêtre : les 16 entrées, l’entrée Aux et les 4 retours d’effets sont côte à côte, alignés avec leur résumé au-dessus.
 
 ![Console en mode Expert](images/tuto-expert.png)
 
 - **En haut, les onglets** : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage, Vumètres.
-- **Au milieu, la vue de la tranche sélectionnée** (clique sur un nom en bas pour en changer).
+- **Au milieu, la vue de la tranche sélectionnée** (clique sur un nom en bas pour en changer). Si une vue détaillée est plus haute que la place disponible, elle défile dans son cadre : la page, elle, ne bouge pas.
 - **En bas, la banque de faders**.
-- **À droite, la barre de mix** : façade, retours ou effets sur les faders, DCA, Clr Solo, groupes de mute, auto-mix.
+- **À droite, les explications et la barre de mix** : façade, retours ou effets sur les faders, DCA, Clr Solo, groupes de mute, auto-mix, et le volume général.
 
 Le bouton **? Explications** affiche à côté de chaque vue, en langage simple, à quoi sert chaque réglage. Le [Guide de la console](GUIDE_CONSOLE.md) reprend toutes ces explications avec des captures et la liste des 61 effets.
 
@@ -230,6 +230,8 @@ Le bouton **? Explications** affiche à côté de chaque vue, en langage simple,
 **Toujours protégé** : le 48 V, le routage et le changement d’effet demandent une confirmation, avec aperçu et sauvegarde automatique. Changer la prise d’entrée ou coupler deux canaux pose aussi la question.
 
 Les onglets **Préréglages par instrument**, **Bibliothèque d’effets** et **Tous les paramètres** restent disponibles au-dessus de la console Expert.
+
+**Partir d’une scène vierge.** Le bouton à droite de ces onglets remet toute la console à neutre, comme une table neuve : noms et couleurs effacés, coupe-bas, compresseurs, gates et inserts coupés, égaliseurs à plat, pan au centre, envois fermés, et **tous les volumes en bas** (rien ne sort fort). Le **48 V**, les **gains** des préamplis, le **routage** et les **effets** ne sont pas touchés. Comme partout, une fenêtre montre d’abord ce qui va changer. Ensuite, **Revenir à avant** annule en un clic. Le même bouton existe dans Mon ingé son, à l’étape 2.
 
 ## 9. Les retours sur le téléphone de chaque musicien
 
@@ -316,7 +318,7 @@ Pour signaler un problème : **Réglages › Télécharger le journal de diagnos
 ## 13. Sauvegarde, mises à jour et limites
 
 - **Sauvegarde** : exporte les scènes importantes et garde une copie du dossier de données de l’application avant une mise à jour.
-- **Mise à jour** : télécharge le nouvel installateur depuis les [versions GitHub](https://github.com/herve8940/xr18-studio-/releases/latest), ferme XR18 Studio, puis installe. Il n’y a pas de mise à jour automatique.
+- **Mise à jour** : télécharge le nouvel installateur depuis les [versions GitHub](https://github.com/herve8940/xr18-studio/releases/latest), ferme XR18 Studio, puis installe. Il n’y a pas de mise à jour automatique.
 - **Limites** :
   - l’application reçoit des réglages et des niveaux, **pas le son** ;
   - le solo et la cadence des vumètres restent à valider sur une table physique ;

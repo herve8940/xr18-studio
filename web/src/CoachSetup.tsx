@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react';
-import {Check,Drum,Headphones,Plus,QrCode,Trash2,Users,Wand2} from 'lucide-react';
+import {Eraser,Check,Drum,Headphones,Plus,QrCode,Trash2,Users,Wand2} from 'lucide-react';
 
 export type Input={channel:number;source:string;name:string};
 export type Role='chant'|'guitare'|'basse'|'batterie'|'clavier';
@@ -18,9 +18,9 @@ function InstrumentSelect({data,value,disabled,onChange}:{data:CoachData;value:s
  return <select disabled={disabled} value={value} onChange={e=>onChange(e.target.value)}>{groups.map(g=><optgroup key={g} label={g}>{data.sources.filter(s=>s.group===g).map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</optgroup>)}</select>;
 }
 
-export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyChannel,onApplyAll,onSave,notify,onNext}:{
+export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyChannel,onApplyAll,onSave,notify,onNext,onBlank}:{
  data:CoachData;profile:Profile;setProfile:(p:Profile)=>void;admin:boolean;busy:boolean;canApply:boolean;
- onApplyChannel:(p:Profile,channel:number)=>void;onApplyAll:(p:Profile)=>void;onSave:(p:Profile)=>void;notify:(m:string)=>void;onNext:()=>void}){
+ onApplyChannel:(p:Profile,channel:number)=>void;onApplyAll:(p:Profile)=>void;onSave:(p:Profile)=>void;notify:(m:string)=>void;onNext:()=>void;onBlank:()=>void}){
  const [open,setOpen]=useState<number|null>(null);
  const src=(id:string)=>data.sources.find(s=>s.id===id)!;
  const update=(next:Profile)=>setProfile({...next,musicians:next.musicians?.map(m=>({...m,channels:m.channels.filter(c=>next.inputs.some(i=>i.channel===c))}))});
@@ -39,6 +39,7 @@ export function InputsStep({data,profile,setProfile,admin,busy,canApply,onApplyC
   update({...profile,inputs:inputs.sort((a,b)=>a.channel-b.channel)});notify('Batterie détaillée ajoutée : kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2. Vérifie les numéros d’entrée puis applique.');
  };
  return <div className="coach-section">
+  <div className="coach-blank"><Eraser size={18}/><p><b>La console garde les réglages d’un autre groupe ou d’un ancien concert ?</b> Repars d’une scène vierge : tout revient à neutre, volumes en bas. Le 48 V, les gains et le routage ne bougent pas.</p><button disabled={!admin||busy||!canApply} onClick={onBlank}>Partir d’une scène vierge</button></div>
   <h3>1. Pars d’un modèle</h3>
   <div className="coach-templates">{data.templates.map(t=><button key={t.id} disabled={!admin||busy} onClick={()=>{update({...profile,inputs:structuredClone(t.inputs)});notify(`Modèle « ${t.label} » chargé. Rien n’est encore envoyé à la console.`);}}><b>{t.label}</b><small>{t.description}</small></button>)}
    <button className="drums" disabled={!admin||busy} onClick={addDrums}><b><Drum size={16}/> Ajouter la batterie détaillée</b><small>Kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2 sur les entrées libres.</small></button></div>

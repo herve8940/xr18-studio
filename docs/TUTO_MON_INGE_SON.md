@@ -1,6 +1,6 @@
 # Tuto « Mon ingé son » : faire sonner ton groupe, pas à pas
 
-[🇬🇧 English version](TUTO_MON_INGE_SON_EN.md) · [Guide complet](USER_GUIDE_FR.md) · [Retour au projet](../README.md)
+[🇬🇧 English version](TUTO_MON_INGE_SON_EN.md) · [Guide complet](USER_GUIDE_FR.md) · [Retour au projet](https://github.com/herve8940/xr18-studio)
 
 Ce tuto est fait pour toi si **tu n’es pas ingé son** et que tu veux un bon son de groupe avec ta Behringer XR18, sans connaître le jargon. Tu suis 6 étapes dans l’ordre. Sur chaque capture, les **numéros orange** renvoient à la liste juste en dessous.
 
@@ -61,8 +61,9 @@ Ce tuto est fait pour toi si **tu n’es pas ingé son** et que tu veux un bon s
 
 ![Choisir un modèle](images/tuto-inge/04-modele.png)
 
-1. **Choisis le modèle le plus proche de ton groupe.** Ici : rock avec batterie acoustique détaillée (chant, chœurs, 2 guitares, basse, kick, snare, 3 toms, 2 overheads).
-2. **Ajouter la batterie détaillée** ajoute d’un coup kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2 sur les prises libres.
+1. **Partir d’une scène vierge** (facultatif) : si la console garde les réglages d’un autre groupe ou d’un ancien concert, tout revient à neutre, volumes en bas. Le 48 V, les gains et le routage ne bougent pas.
+2. **Choisis le modèle le plus proche de ton groupe.** Ici : rock avec batterie acoustique détaillée (chant, chœurs, 2 guitares, basse, kick, snare, 3 toms, 2 overheads).
+3. **Ajouter la batterie détaillée** ajoute d’un coup kick, snare, tom 1, tom 2, tom 3, OH 1 et OH 2 sur les prises libres.
 
 Rien n’est encore envoyé à la console : tu prépares juste la liste.
 

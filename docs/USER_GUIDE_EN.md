@@ -1,6 +1,6 @@
-# XR18 Studio 1.3 — Step-by-step tutorial
+# XR18 Studio 2.0 — Step-by-step tutorial
 
-[Français](USER_GUIDE_FR.md) · [Console guide (every option, French)](GUIDE_CONSOLE.md) · [Downloads](https://github.com/herve8940/xr18-studio-/releases/latest) · [Home](../README.md)
+[Français](USER_GUIDE_FR.md) · [Console guide (every option, French)](GUIDE_CONSOLE.md) · [Downloads](https://github.com/herve8940/xr18-studio/releases/latest) · [Home](https://github.com/herve8940/xr18-studio)
 
 XR18 Studio controls a Behringer **XR18** (also X18 and MR18) from a computer, a tablet, and each musician’s phone for their own monitor mix. This tutorial follows a real day: install, connect, soundcheck, mix, give musicians their monitors, prepare the show. The interface is in French; this guide translates the labels.
 
@@ -33,13 +33,13 @@ XR18 Studio controls a Behringer **XR18** (also X18 and MR18) from a computer, a
 
 ## 2. Install
 
-Download the file for your computer from the [releases page](https://github.com/herve8940/xr18-studio-/releases/latest). Nothing else is needed: the engine and interface are included.
+Download the file for your computer from the [releases page](https://github.com/herve8940/xr18-studio/releases/latest). Nothing else is needed: the engine and interface are included.
 
 | Computer | File | Install |
 |---|---|---|
-| Windows | `XR18-Studio-Windows-1.3.0.exe` | Double-click. Installs for your account and creates a shortcut. |
-| Intel Mac | `XR18-Studio-macOS-1.3.0-x64.dmg` | Open it and drag XR18 Studio to Applications. |
-| Apple Silicon Mac (M1, M2, M3…) | `XR18-Studio-macOS-1.3.0-arm64.dmg` | Same. |
+| Windows | `XR18-Studio-Windows-2.0.0.exe` | Double-click. Installs for your account and creates a shortcut. |
+| Intel Mac | `XR18-Studio-macOS-2.0.0-x64.dmg` | Open it and drag XR18 Studio to Applications. |
+| Apple Silicon Mac (M1, M2, M3…) | `XR18-Studio-macOS-2.0.0-arm64.dmg` | Same. |
 | Ubuntu / Debian | `.deb` file | Open it in the software installer. |
 | Other Linux | `.AppImage` file | Allow execution in its properties, then open it. |
 
@@ -94,7 +94,7 @@ At the top of every page:
 - **Tout couper** (red): mutes all 16 inputs at once, for feedback or emergencies;
 - **Scènes**: save or recall settings.
 
-The connection card at the bottom left shows whether control is enabled.
+The connection card at the bottom left shows whether control is enabled. Just above it, **Réduire le menu** (collapse menu) folds the menu into icons to save space. On the Console page the menu folds automatically so every track fits on screen; the same button opens it again.
 
 | Tablet | Phone |
 |---|---|
@@ -165,7 +165,7 @@ The optional OpenAI dialogue is not required. See [Mon ingé son](INGE_SON.md).
 
 ## 7. Front-of-house in Simple mode
 
-**Jouer › Console**, **Simple** switch at the top. This is the show mode: large touch-friendly strips, one per source.
+**Jouer › Console**, **Simple** switch at the top. This is the show mode: one strip per source, **all visible at once**. Strips adapt to the window size, so there is nothing to scroll on a laptop or a large screen.
 
 ![Console in Simple mode](images/tuto-simple.png)
 
@@ -194,14 +194,14 @@ Every move goes to the mixer immediately, then the stored value is read back.
 
 ## 8. Detailed settings in Expert mode
 
-The **Expert** switch shows the whole mixer, organised like X-AIR Edit.
+The **Expert** switch shows the whole mixer, organised like X-AIR Edit. Everything fits in the window: the 16 inputs, the Aux input and the 4 effect returns sit side by side, aligned with their overview above.
 
 ![Console in Expert mode](images/tuto-expert.png)
 
 - **Tabs at the top**: Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage, Vumètres.
-- **In the middle, the selected strip** (click a name in the bank to change).
+- **In the middle, the selected strip** (click a name in the bank to change). A detailed view taller than the available space scrolls inside its frame; the page itself does not move.
 - **At the bottom, the fader bank**.
-- **On the right, the mix bar**: front of house, monitors or effects on the faders, DCA, Clr Solo, mute groups, auto mix.
+- **On the right, explanations and the mix bar**: front of house, monitors or effects on the faders, DCA, Clr Solo, mute groups, auto mix, and the master fader.
 
 **? Explications** shows, next to each view, what each setting does in plain (French) language. The [console guide](GUIDE_CONSOLE.md) collects these explanations with screenshots and all 61 effects.
 
@@ -218,6 +218,8 @@ The **Expert** switch shows the whole mixer, organised like X-AIR Edit.
 **Always protected**: phantom power, routing and effect changes require confirmation, with preview and automatic backup. Changing the input socket or linking two channels also asks first.
 
 The **Préréglages par instrument** (instrument presets), **Bibliothèque d’effets** (effects library) and **Tous les paramètres** (all parameters) tabs remain above the Expert console.
+
+**Start from a blank scene.** The button to the right of these tabs, **Partir d’une scène vierge**, resets the whole mixer to neutral, like a new console. Names and colours are cleared. Low cut, compressors, gates and inserts are switched off. EQs go flat, pan goes to centre and sends are closed. **Every level is pulled down**, so nothing comes out loud. **48 V**, preamp **gains**, **routing** and **effects** are left alone. As always, a window first shows what will change, and **Revenir à avant** (go back) undoes it in one click. The same button exists in Mon ingé son, step 2.
 
 ## 9. Monitors on each musician’s phone
 
@@ -304,7 +306,7 @@ To report a problem: **Réglages › Télécharger le journal de diagnostic** (d
 ## 13. Backups, updates and limits
 
 - **Backups**: export important scenes and copy the app’s data folder before updating.
-- **Updates**: download the new installer from [GitHub releases](https://github.com/herve8940/xr18-studio-/releases/latest), close XR18 Studio, then install. There is no automatic updater.
+- **Updates**: download the new installer from [GitHub releases](https://github.com/herve8940/xr18-studio/releases/latest), close XR18 Studio, then install. There is no automatic updater.
 - **Limits**:
   - the app receives settings and levels, **not audio**;
   - solo and meter rate still need validation on a physical mixer;
