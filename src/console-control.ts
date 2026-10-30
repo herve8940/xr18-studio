@@ -7,7 +7,7 @@ export class ConsoleControl {
  private previews=new Map<string,{values:Record<string,Value>;before:Record<string,Value>;identity:string;expires:number}>();
  constructor(private xr:XR18,private library:LibraryStore){}
  identity(){const s=this.xr.status();return JSON.stringify([s.mode,s.host,s.port,s.writesEnabled]);}
- catalog(prefix:string){return Object.values(PARAMETERS).filter(p=>p.address.startsWith(prefix)).map(p=>({...p,...(this.xr.parameterState()[p.address]?{state:{...this.xr.parameterState()[p.address]!,display:fromWire(p.address,this.xr.parameterState()[p.address]!.value)}}:{})}));}
+ catalog(prefix:string){const state=this.xr.parameterState();return Object.values(PARAMETERS).filter(p=>p.address.startsWith(prefix)).map(p=>({...p,...(state[p.address]?{state:{...state[p.address]!,display:fromWire(p.address,state[p.address]!.value)}}:{})}));}
  validateScene(input:unknown):CompleteScene {
   const s=input as CompleteScene;
   if(!s||s.version!==2||s.scope!=='console'||!s.values||typeof s.values!=='object'||Array.isArray(s.values)||!Object.keys(s.values).length||!Array.isArray(s.fx)||s.fx.length!==4||s.fx.some((f,i)=>f.slot!==i+1))throw Error('Scène complète invalide');
@@ -22,7 +22,7 @@ export class ConsoleControl {
   return {version:2,scope:'console',values,fx};
  }
  async preview(input:unknown,wire=false){
-  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length<1||Object.keys(input).length>500)throw Error('1 à 500 paramètres requis');
+  if(!input||typeof input!=='object'||Array.isArray(input)||Object.keys(input).length<1||Object.keys(input).length>1000)throw Error('1 à 1000 paramètres requis');
   const values:Record<string,Value>={},before:Record<string,Value>={};
   for(const [a,v] of Object.entries(input))values[a]=wire?validateWire(a,v):toWire(a,v);
   const identity=this.identity();
@@ -31,14 +31,14 @@ export class ConsoleControl {
   this.previews.set(token,{values,before,identity,expires:Date.now()+60000});
   return {token,changes:Object.entries(values).map(([address,v])=>({address,before:fromWire(address,before[address]!),after:fromWire(address,v),sensitive:descriptor(address).sensitive})),phantom:Object.keys(values).some(a=>a.endsWith('/phantom'))};
  }
- async apply(token:unknown,allowPhantom=false){
+ async apply(token:unknown,allowPhantom=false,tolerant=false){
   const p=typeof token==='string'?this.previews.get(token):undefined;
   if(!p||p.expires<Date.now()||p.identity!==this.identity())throw Error('Prévisualisation expirée ou connexion modifiée');
   this.previews.delete(token as string);
   if(Object.keys(p.values).some(a=>a.endsWith('/phantom'))&&!allowPhantom)throw Error('Confirmation 48 V requise');
   for(const [a,v] of Object.entries(p.before)){const current=await this.xr.readParameter(a);if(typeof v==='number'&&typeof current==='number'?Math.abs(v-current)>.003:current!==v)throw Error('État modifié : prévisualiser à nouveau');}
   const backup=this.library.save('parameter-backup','Avant modification console',p.before);
-  try{await this.xr.applyParameters(p.values,allowPhantom);return {ok:true,backupId:backup.id,readbackCompared:this.xr.mode==='real'};}
+  try{const {failed}=await this.xr.applyParameters(p.values,allowPhantom,tolerant);return {ok:failed.length===0,backupId:backup.id,readbackCompared:this.xr.mode==='real',written:Object.keys(p.values).length-failed.length,failed};}
   catch(e){throw Error(`Modification potentiellement partielle ; sauvegarde ${backup.id} : ${(e as Error).message}`);}
  }
  async recall(input:unknown,allowPhantom=false){

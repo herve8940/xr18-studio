@@ -1,7 +1,39 @@
 {
   "name": "xr18-studio",
+  "version": "2.0.0",
+  "description": "Free app for the Behringer XR18 / X18 / MR18 mixer: guided sound engineer for beginners, X-AIR Edit style graphical console, in-ear monitors on each musician's phone.",
+  "keywords": [
+    "behringer",
+    "xr18",
+    "x18",
+    "mr18",
+    "x-air",
+    "xair",
+    "x-air-edit",
+    "midas",
+    "mixer",
+    "digital-mixer",
+    "osc",
+    "live-sound",
+    "sound-engineer",
+    "in-ear-monitor",
+    "monitor-mix",
+    "electron",
+    "react"
+  ],
+  "homepage": "https://herve8940.github.io/xr18-studio/",
+  "bugs": {
+    "url": "https://github.com/herve8940/xr18-studio/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/herve8940/xr18-studio.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Hervé Naessens"
+  },
   "private": true,
-  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -21,11 +53,13 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.0",
     "better-sqlite3": "^12.11.1",
+    "qrcode": "^1.5.4",
     "ws": "^8.18.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^22.0.0",
+    "@types/qrcode": "^1.5.5",
     "@types/ws": "^8.5.0",
     "concurrently": "^9.1.2",
     "electron": "^33.4.11",
@@ -69,7 +103,14 @@
         "dmg"
       ],
       "category": "public.app-category.music",
-      "artifactName": "XR18-Studio-macOS-${version}-${arch}.${ext}"
+      "artifactName": "XR18-Studio-macOS-${version}-${arch}.${ext}",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "XR18 Studio communique avec ta table Behringer XR18 sur le réseau local (OSC/UDP) et partage les retours avec les téléphones des musiciens.",
+        "NSBonjourServices": [
+          "_osc._udp",
+          "_http._tcp"
+        ]
+      }
     },
     "linux": {
       "target": [
@@ -86,10 +127,5 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }
-  },
-  "homepage": "https://github.com/herve8940/xr18-studio-",
-  "description": "Guided mixing assistant and desktop controller for Behringer XR18",
-  "author": {
-    "name": "Hervé Naessens"
   }
 }

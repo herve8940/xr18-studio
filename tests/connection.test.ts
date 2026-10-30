@@ -4,7 +4,7 @@ import dgram from 'node:dgram';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {broadcastTargets,parseIdentity,discoverXR18} from '../src/discovery.js';
+import {broadcastTargets,discoveryTargets,parseIdentity,discoverXR18} from '../src/discovery.js';
 import {connectionConfig,ConnectionManager,loadConnection} from '../src/connection.js';
 import {XR18} from '../src/xr18.js';
 import {encodeOsc,decodeOsc,oscFloat} from '../src/osc.js';
@@ -68,4 +68,18 @@ test('physical XR18V2 firmware 1.23 identity captures are accepted',()=>{
  const xinfo=Buffer.from('/xinfo\0\0,ssss\0\0\0'+'192.168.50.10\0\0\0XR18-AA-BB-CC\0\0\0XR18V2\0\0'+'1.23\0\0\0\0','binary');
  for(const packet of [info,xinfo])assert.deepEqual(parseIdentity(packet,'192.168.50.10',10024),{host:'192.168.50.10',port:10024,name:'XR18-AA-BB-CC',model:'XR18'});
  for(const model of ['XR16V2','XR18V3','XR18V2-other'])assert.equal(parseIdentity(encodeOsc('/info',['V','Other',model,'1']),'127.0.0.1',10024),null);
+});
+test('X18 and MR18 share the XR18 OSC map, as in X-AIR Edit 1.8.1',()=>{
+ for(const model of ['X18','X18V2','MR18','MR18V2','xr18'])assert.equal(parseIdentity(encodeOsc('/info',['V0.04','Rack',model,'1.23']),'10.0.0.2',10024)?.model,'XR18');
+});
+test('unreachable network gets a plain explanation with the macOS Local Network fix',async()=>{
+ const {unreachableMessage}=await import('../src/connection.js');
+ const m=unreachableMessage('192.168.68.94',10024,['send EHOSTUNREACH 192.168.68.94:10024']);
+ assert.match(m,/Réseau local/);assert.match(m,/Détecter et connecter/);assert.match(m,/EHOSTUNREACH/);
+ assert.match(unreachableMessage('10.0.0.2',10024,[]),/ne répond pas/);
+});
+test('discovery also uses the limited broadcast, like X-AIR Edit',()=>{
+ const t=discoveryTargets({en0:[{family:'IPv4',address:'192.168.68.20',netmask:'255.255.252.0',internal:false,cidr:'192.168.68.20/22',mac:'00:00:00:00:00:00'}]});
+ assert.deepEqual(t,['192.168.71.255','255.255.255.255']);
+ assert.deepEqual(discoveryTargets({}),[]);
 });

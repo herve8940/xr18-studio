@@ -5,11 +5,20 @@ import {isIPv4} from 'node:net';
 import {XR18,type Mode} from './xr18.js';
 import {discoverXR18} from './discovery.js';
 export interface ConnectionConfig {mode:Mode;host:string;port:number;enableWrites:boolean}
+/** Plain-language explanation of why the console cannot be reached, from the socket error codes. */
+export function unreachableMessage(host:string,port:number,errors:string[]){
+ const text=errors.join(' ');
+ if(/EHOSTUNREACH|ENETUNREACH|EACCES|EPERM/.test(text))return `L’ordinateur n’arrive pas à joindre ${host} (réseau injoignable). Causes les plus fréquentes : `+
+  `1) sur Mac, XR18 Studio n’a pas l’autorisation « Réseau local » : Réglages Système › Confidentialité et sécurité › Réseau local, active XR18 Studio puis relance l’application ; `+
+  `2) la XR18 a changé d’adresse ou est éteinte : clique « Détecter et connecter ma XR18 » ; `+
+  `3) l’ordinateur n’est pas sur le même réseau que la table (Wi-Fi invité, VPN actif). Détail technique : ${errors.join('; ')}`;
+ return `La XR18 ne répond pas aux demandes /info et /xinfo à ${host}:${port} après plusieurs essais.${errors.length?' Erreur réseau : '+errors.join('; '):' Vérifie que la table est allumée, sur le même réseau, et l’autorisation Réseau local / pare-feu de XR18 Studio.'}`;
+}
 export function connectionConfig(value:unknown):ConnectionConfig {
  if(!value||typeof value!=='object')throw Error('Configuration de connexion invalide');
  const d=value as Record<string,unknown>;
  if(d.mode!=='real'&&d.mode!=='simulation')throw Error('Mode invalide');
- const host=d.host??'192.168.1.100',port=d.port??10024;
+ const host=d.host??'192.168.1.1',port=d.port??10024;
  if(typeof host!=='string'||!isIPv4(host)||host==='0.0.0.0'||Number(host.split('.')[0])>=224)throw Error('Adresse IPv4 invalide');
  if(typeof port!=='number'||!Number.isInteger(port)||port<1||port>65535)throw Error('Port invalide');
  if(d.enableWrites!==undefined&&typeof d.enableWrites!=='boolean')throw Error('Option de contrôle invalide');
@@ -35,7 +44,7 @@ export class ConnectionManager {
    if(next.mode==='real'){
     const diagnostics={received:0,unrecognized:0,sendErrors:[] as string[]};
     const devices=await discoverXR18(2500,[next.host],next.port,diagnostics);
-    if(!devices.some(d=>d.host===next.host))throw Error(diagnostics.received?`Réponse UDP reçue de ${next.host}:${next.port}, mais identité XR18 non reconnue (${diagnostics.unrecognized} réponse(s)).`:`La XR18 ne répond pas aux demandes /info et /xinfo à ${next.host}:${next.port} après plusieurs essais.${diagnostics.sendErrors.length?' Erreur réseau : '+diagnostics.sendErrors.join('; '):' Vérifie l’autorisation Réseau local et le pare-feu de XR18 Studio.'}`);
+    if(!devices.some(d=>d.host===next.host))throw Error(diagnostics.received?`Réponse UDP reçue de ${next.host}:${next.port}, mais identité XR18 non reconnue (${diagnostics.unrecognized} réponse(s)).`:unreachableMessage(next.host,next.port,diagnostics.sendErrors));
    }
    switched=true;await this.xr.reconnect(next);
    if(next.mode==='real'){

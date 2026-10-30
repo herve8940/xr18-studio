@@ -1,7 +1,9 @@
-import {InputGainPanel} from './InputGainPanel';
-import {SoundCoach} from "./SoundCoach";
-import {MonitorPanel} from "./MonitorPanel";
+import {SoundCoach,PlanDialog,type Plan} from "./SoundCoach";
+import {EarsSharePanel} from "./EarsSharePanel";
 import {ConsolePanel} from "./ConsolePanel";
+import {XAirMixer} from "./XAirMixer";
+import {SimpleMixer} from "./SimpleMixer";
+import "./theme.css";
 import {FxConsole} from "./FxConsole";
 import "./console-panel.css";
 import {ConnectionPanel} from "./ConnectionPanel";
@@ -9,7 +11,7 @@ import {StudioControl} from "./StudioControl";
 import { PROCESSING_PRESETS, PROCESSING_SOURCES, type ProcessingPreset } from "./processingPresets";
 import { FX_PRESETS, type FxFamily } from "./fxPresets";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, AudioLines, BookOpen, Cable, Check, ChevronDown, CircleAlert, Disc3, FolderOpen, Headphones, ListMusic, Mic2, Music2, Plus, Save, Settings2, ShieldCheck, SlidersHorizontal, Trash2, Wifi, WifiOff, Zap } from "lucide-react";
+import { Eraser, Undo2, PanelLeftClose, PanelLeftOpen, Activity, AudioLines, Power, Gauge, Wrench, BookOpen, Cable, Check, ChevronDown, CircleAlert, Disc3, FolderOpen, Headphones, ListMusic, Mic2, Music2, Plus, Save, Settings2, ShieldCheck, SlidersHorizontal, Trash2, Wifi, WifiOff, Zap } from "lucide-react";
 import "./studio.css";
 import "./fx-library.css";
 import "./processing.css";
@@ -36,9 +38,25 @@ const MENU: { page: Page; name: string; icon: typeof AudioLines }[] = [
   { page:"rehearsals", name:"Répétitions", icon:Music2 }, { page:"setlists", name:"Setlists", icon:ListMusic },
   { page:"scenes", name:"Snapshots", icon:Disc3 }, { page:"settings", name:"Configuration", icon:Settings2 },
 ];
+type Space = "play" | "prep" | "setup";
+const SPACES: { id: Space; name: string; hint: string; icon: typeof AudioLines; pages: Page[] }[] = [
+  { id:"play", name:"Jouer", hint:"Console, retours et coach", icon:SlidersHorizontal, pages:["console","ears","coach"] },
+  { id:"prep", name:"Préparer", hint:"Setlists, répétitions, scènes", icon:ListMusic, pages:["setlists","rehearsals","scenes"] },
+  { id:"setup", name:"Réglages", hint:"Connexion et système", icon:Settings2, pages:["settings"] },
+];
+const PAGE_INFO: Record<Page, { name: string; hint: string; icon: typeof AudioLines }> = {
+  console: { name:"Console", hint:"Volumes, mutes et réglages de chaque source", icon:SlidersHorizontal },
+  ears: { name:"Retours", hint:"Chaque musicien règle son retour sur son téléphone (QR code)", icon:Headphones },
+  coach: { name:"Mon ingé son", hint:"Préparer, écouter et corriger pas à pas", icon:Zap },
+  setlists: { name:"Setlists", hint:"Répertoire et ordre de passage", icon:ListMusic },
+  rehearsals: { name:"Répétitions", hint:"Objectifs et notes de répétition", icon:BookOpen },
+  scenes: { name:"Scènes", hint:"Sauvegarder et rappeler les réglages", icon:Disc3 },
+  settings: { name:"Connexion & système", hint:"Trouver la XR18, comptes et sécurité", icon:Wrench },
+};
+const spaceOf = (page: Page) => SPACES.find(sp => sp.pages.includes(page))!.id;
+function storedMode(): "simple" | "expert" { try { return localStorage.getItem("xr18-console-mode") === "expert" ? "expert" : "simple"; } catch { return "simple"; } }
 const TABS: { id: Tab; name: string }[] = [
-  {id:"controls",name:"Contrôles"},{id:"mixer",name:"Mixage"},{id:"eq",name:"EQ"},{id:"dynamics",name:"Dynamics"},
-  {id:"sends",name:"Envois"},{id:"fx",name:"Effets"},{id:"routing",name:"Routage"},{id:"dca",name:"DCA"},
+  {id:"mixer",name:"Console"},{id:"eq",name:"Préréglages par instrument"},{id:"fx",name:"Bibliothèque d’effets"},{id:"controls",name:"Tous les paramètres"},
 ];
 export default function App() {
   const [page, setPage] = useState<Page>("coach");
@@ -65,8 +83,20 @@ export default function App() {
   const [advancedValue,setAdvancedValue]=useState<Record<string,string>>({});
   const [advancedReadback,setAdvancedReadback]=useState<Record<string,{value:number|string;updatedAt:string}>>({});
   const [selected, setSelected] = useState(1);
+  const [consoleMode, setConsoleModeState] = useState<"simple" | "expert">(storedMode);
+  const [expertTab, setExpertTab] = useState<"mixer" | "eq" | "comp" | "gate" | "sends" | "input">("mixer");
+  const setConsoleMode = (mode: "simple" | "expert") => { setConsoleModeState(mode); try { localStorage.setItem("xr18-console-mode", mode); } catch { /* per-viewer convenience */ } };
   const [store, setStore] = useState<Stored>(load);
   const [notice, setNotice] = useState("");
+  // "Partir d'une scène vierge": preview → confirm → apply, with a one-click way back.
+  const [blankPlan, setBlankPlan] = useState<Plan | null>(null), [blankBusy, setBlankBusy] = useState(false), [lastBackup, setLastBackup] = useState<string | null>(null);
+  const startBlank = async () => { setBlankBusy(true); try { setBlankPlan(await api<Plan>("/api/console/blank", "POST", {})); } catch (e) { setNotice((e as Error).message); } finally { setBlankBusy(false); } };
+  const undoBlank = async () => { if (!lastBackup) return; setBlankBusy(true); try { setBlankPlan(await api<Plan>("/api/console/restore", "POST", { backupId: lastBackup })); } catch (e) { setNotice((e as Error).message); } finally { setBlankBusy(false); } };
+  const applyBlank = async () => { if (!blankPlan) return; setBlankBusy(true); try { const r = await api<{ backupId: string; failed?: string[] }>("/api/console/apply", "POST", { token: blankPlan.token, confirm: true, tolerant: true }); const undo = blankPlan.title === "Revenir à avant"; setBlankPlan(null); setLastBackup(undo ? null : r.backupId); setNotice(r.failed?.length ? `${r.failed.length} réglage(s) non confirmé(s) par la console : relance pour réessayer.` : undo ? "Réglages d’avant remis en place." : "Console remise à neutre. Tous les volumes sont en bas : monte d’abord le volume général (Main), puis chaque canal. « Revenir à avant » annule."); } catch (e) { setNotice((e as Error).message); } finally { setBlankBusy(false); } };
+  // Menu: compact (icons) automatically on the console so every strip fits; the user can force it either way.
+  const [railPref, setRailPrefState] = useState<"auto" | "full" | "compact">(() => { try { const v = localStorage.getItem("xr18-rail"); return v === "full" || v === "compact" ? v : "auto"; } catch { return "auto"; } });
+  const railCompact = railPref === "compact" || (railPref === "auto" && page === "console");
+  const toggleRail = () => { const next = railCompact ? "full" : "compact"; setRailPrefState(next); try { localStorage.setItem("xr18-rail", next); } catch { /* per-viewer convenience */ } };
   const [sceneName, setSceneName] = useState("");
   const [songTitle, setSongTitle] = useState("");
   const [songArtist, setSongArtist] = useState("");
@@ -234,7 +264,7 @@ export default function App() {
     try{
       const song=await api<Song>("/api/songs","POST",{title:songTitle.trim(),artist:songArtist.trim(),bpm:songBpm});
       setStore(s=>({...s,songs:[...s.songs,song]}));setSongTitle("");setSongArtist("");setSongBpm(120);
-      setNotice("Morceau enregistré dans SQLite.");
+      setNotice("Morceau ajouté au répertoire.");
     }catch(e){setNotice((e as Error).message);}
   }
   async function deleteSong(songId:string){
@@ -244,7 +274,7 @@ export default function App() {
   }
   async function saveSetlist(){
     if(!setlistName.trim()||store.setlist.length===0){setNotice("Renseigne un nom et ajoute au moins un morceau.");return;}
-    try{await api("/api/setlists","POST",{name:setlistName.trim(),songIds:store.setlist});setSetlistName("");await refreshLibrary();setNotice("Setlist enregistrée dans SQLite.");}
+    try{await api("/api/setlists","POST",{name:setlistName.trim(),songIds:store.setlist});setSetlistName("");await refreshLibrary();setNotice("Setlist enregistrée.");}
     catch(e){setNotice((e as Error).message);}
   }
   async function refreshEarProfiles(){
@@ -254,69 +284,75 @@ export default function App() {
     if(!musicianName.trim()){setNotice("Renseigne le nom du musicien.");return;}
     try{
       await api("/api/ears/profiles","POST",{id:selectedEarProfile||undefined,musician:musicianName.trim(),bus:earBus,levels:(earValues[earBus]??Array(16).fill(50)).map(x=>x/100)});
-      await refreshEarProfiles();setNotice("Profil in-ear enregistré en SQLite. Aucun OSC envoyé.");
+      await refreshEarProfiles();setNotice("Profil de retour enregistré (rien n’est envoyé à la console).");
     }catch(e){setNotice((e as Error).message);}
   }
   useEffect(()=>{if(page==="ears")void refreshEarProfiles();},[page]);
     async function saveRehearsal(){
     if(!rehearsalTitle.trim()||!rehearsalDate){setNotice("Renseigne le nom et la date de répétition.");return;}
-    try{await api("/api/rehearsals","POST",{title:rehearsalTitle.trim(),startsAt:new Date(rehearsalDate).toISOString(),notes:store.notes});setRehearsalTitle("");await refreshLibrary();setNotice("Répétition enregistrée dans SQLite.");}
+    try{await api("/api/rehearsals","POST",{title:rehearsalTitle.trim(),startsAt:new Date(rehearsalDate).toISOString(),notes:store.notes});setRehearsalTitle("");await refreshLibrary();setNotice("Répétition enregistrée.");}
     catch(e){setNotice((e as Error).message);}
   }
   const setlist = useMemo(()=>store.setlist.map(key=>store.songs.find(s=>s.id===key)).filter((s):s is Song=>Boolean(s)),[store]);
   const isSim = status.mode === "simulation";
   const current = channels[selected-1] ?? channels[0]!;
   const visibleChannels=useMemo(()=>channels.filter(ch=>`${ch.channel} ${labelFor(ch.channel)}`.toLocaleLowerCase("fr").includes(mixerFilter.trim().toLocaleLowerCase("fr"))),[channels,mixerFilter,metadata,status.mode]);
-  return <div className="studio">
-    <aside className="studio-side">
-      <div className="studio-logo"><span className="logo-mark"><AudioLines size={22}/></span><div><b>XR18 <em>Studio</em></b><small>Mixage · Répétitions · MCP</small></div></div>
-      <div className="side-section">ESPACE DE TRAVAIL</div>
-      {MENU.map(item=><button key={item.page} className={page===item.page?"side-link active":"side-link"} onClick={()=>setPage(item.page)}><item.icon size={18}/>{item.name}</button>)}
-      <div className="side-spacer"/>
-      <div className="side-health"><span className={status.connected?"led":"led offline"}/><div><b>{status.connected?"XR18 "+(isSim?"Simulation":"connectée"):"XR18 déconnectée"}</b><small>{isSim?"Aucune commande matérielle":"OSC / UDP"}</small></div></div>
-      <div className="side-info"><div><span>Mode</span><b>{isSim?"Simulation":"Matériel"}</b></div><div><span>WebSocket</span><b>{socketOk?"Actif":"Hors ligne"}</b></div><div><span>Écriture</span><b>{canWrite?"Autorisée":"Bloquée"}</b></div></div>
+  const space = spaceOf(page);
+  const info = PAGE_INFO[page];
+  const muteAll = () => { if (confirm("Couper les 16 entrées de la console ?")) void api("/api/console/mute-all","POST",{confirm:true}).then(()=>setNotice("Les 16 entrées sont coupées.")).catch(e=>setNotice((e as Error).message)); };
+  return <div className={`studio app2${railCompact ? " rail-compact" : ""}`}>
+    <aside className="rail" aria-label="Navigation principale">
+      <div className="rail-logo"><span className="logo-mark"><AudioLines size={20}/></span><div><b>XR18 <em>Studio</em></b><small>Ton ingé son de poche</small></div></div>
+      <nav className="rail-nav">{SPACES.map(sp=><div key={sp.id} className={space===sp.id?"rail-space active":"rail-space"}>
+        <button type="button" className="rail-space-btn" onClick={()=>setPage(sp.pages[0]!)} aria-current={space===sp.id?"true":undefined}><sp.icon size={20}/><span><b>{sp.name}</b><small>{sp.hint}</small></span></button>
+        {space===sp.id&&sp.pages.length>1&&<div className="rail-pages">{sp.pages.map(pg=>{const P=PAGE_INFO[pg];return <button key={pg} type="button" className={page===pg?"active":""} onClick={()=>setPage(pg)}><P.icon size={16}/>{P.name}</button>;})}</div>}
+      </div>)}</nav>
+      <div className="rail-foot">
+        <button type="button" className="rail-toggle" onClick={toggleRail} title={railCompact ? "Agrandir le menu" : "Réduire le menu pour gagner de la place"} aria-label={railCompact ? "Agrandir le menu" : "Réduire le menu"}>{railCompact ? <PanelLeftOpen size={18}/> : <><PanelLeftClose size={18}/><span>Réduire le menu</span></>}</button>
+        <button type="button" className={`conn-card ${status.connected?(isSim?"sim":"ok"):"off"}`} onClick={()=>setPage("settings")} title="Ouvrir la connexion">
+          {status.connected?<Wifi size={18}/>:<WifiOff size={18}/>}
+          <span><b>{status.connected?(isSim?"Simulation":"XR18 connectée"):"XR18 déconnectée"}</b><small>{isSim?"Aucune commande envoyée":canWrite?"Contrôle activé":"Lecture seule"}</small></span>
+        </button>
+      </div>
     </aside>
-    <main className="studio-main">
-      <header className="studio-top"><div className="top-brand"><span className={socketOk?"led":"led offline"}/><b>{socketOk?"Application connectée":"Application hors ligne"}</b><small>{onlineSince && socketOk?`Depuis ${onlineSince}`:"Mode local"}</small></div><div className="top-right"><span className="safety-pill"><ShieldCheck size={14}/>{isSim?"SIMULATION":"XR18 RÉELLE"}</span><button className="top-button" onClick={()=>setPage("scenes")}><Save size={16}/> Sauvegarder</button><button className="top-button" onClick={()=>setPage("scenes")}><FolderOpen size={16}/> Charger</button><button className="icon-top" title="Configuration" onClick={()=>setPage("settings")}><Settings2 size={19}/></button></div></header>
+    <div className={page === "console" ? "app2-main fit" : "app2-main"}>
+      <header className="topbar">
+        <div className="topbar-title"><h1>{info.name}</h1><p>{info.hint}</p></div>
+        <div className="topbar-actions">
+          {page==="console"&&<div className="seg" role="group" aria-label="Niveau d’affichage">
+            <button type="button" className={consoleMode==="simple"?"active":""} onClick={()=>setConsoleMode("simple")} title="Volumes, mutes et retours, en gros">Simple</button>
+            <button type="button" className={consoleMode==="expert"?"active":""} onClick={()=>setConsoleMode("expert")} title="Toute la console, comme X-AIR Edit">Expert</button>
+          </div>}
+          <span className={`pill ${isSim?"sim":status.connected?"ok":"off"}`}><ShieldCheck size={14}/>{isSim?"Simulation":status.connected?"XR18 réelle":"Déconnectée"}</span>
+          {space==="play"&&<button type="button" className="btn danger" disabled={!canWrite} onClick={muteAll} title="Couper les 16 entrées"><Power size={16}/><span>Tout couper</span></button>}
+          <button type="button" className="btn ghost" onClick={()=>setPage("scenes")} title="Sauvegarder ou rappeler une scène"><Save size={16}/><span>Scènes</span></button>
+        </div>
+        {SPACES.find(sp=>sp.id===space)!.pages.length>1&&<nav className="subnav" aria-label="Pages">{SPACES.find(sp=>sp.id===space)!.pages.map(pg=><button key={pg} type="button" className={page===pg?"active":""} onClick={()=>setPage(pg)}>{PAGE_INFO[pg].name}</button>)}</nav>}
+      </header>
+      {blankPlan && <PlanDialog plan={blankPlan} busy={blankBusy} canApply={canWrite} mode={isSim ? "simulation" : "real"} onClose={() => setBlankPlan(null)} onApply={() => void applyBlank()}/>}
       {notice && <div className="studio-alert" role="alert"><CircleAlert size={16}/><span>{notice}</span><button onClick={()=>setNotice("")}>Fermer</button></div>}
-      {page==="coach" ? <SoundCoach status={status} online={socketOk} onConnect={()=>setPage("settings")} onMonitors={()=>setPage("ears")} onExpert={()=>{setPage("console");setTab("mixer");}}/> : page==="console" ? <>
-        <div className="studio-tabs">{TABS.map(t=><button key={t.id} className={tab===t.id?"active":""} onClick={()=>setTab(t.id)}>{t.name}</button>)}</div>
+      {page==="coach" ? <SoundCoach status={status} online={socketOk} onConnect={()=>setPage("settings")} onMonitors={()=>setPage("ears")} onExpert={()=>{setPage("console");setTab("mixer");setConsoleMode("expert");}}/> : page==="console" ? consoleMode==="simple" ? <div className="content"><SimpleMixer canWrite={canWrite} onExpert={ch=>{if(ch)setSelected(ch);setExpertTab(ch?"eq":"mixer");setTab("mixer");setConsoleMode("expert");}}/></div> : <>
+        <div className="studio-tabs">{TABS.map(t=><button key={t.id} className={tab===t.id?"active":""} onClick={()=>setTab(t.id)}>{t.name}</button>)}<span className="tabs-spacer"/>{lastBackup&&<button className="blank-btn" disabled={!canWrite||blankBusy} onClick={()=>void undoBlank()} title="Annuler la remise à zéro"><Undo2 size={15}/> Revenir à avant</button>}<button className="blank-btn" disabled={!canWrite||blankBusy} onClick={()=>void startBlank()} title="Remettre toute la console à neutre (sans toucher au 48 V, aux gains ni au routage)"><Eraser size={15}/> Partir d’une scène vierge</button></div>
         <div className="studio-work">
           {tab==="mixer" ? <>
-            <div className="mixer-head"><div><span className="eyebrow-studio">CONSOLE NUMÉRIQUE · 16 ENTRÉES</span><h1>Console de mixage</h1></div><div className="read-status"><span className={canWrite?"led":"led offline"}/>{canWrite?"Faders actifs":"Lecture seule / déconnecté"}</div></div>
-            <div className="mixer-toolbar"><span title="Les niveaux affichés sont des positions de fader, pas des mesures audio">Niveaux de fader ≠ vumètres audio</span>{lastOscUpdate&&<span>Dernière synchronisation : {new Date(lastOscUpdate).toLocaleTimeString("fr-BE")}</span>}<label className="mixer-search"><span>Rechercher un canal</span><input type="search" aria-label="Rechercher un canal" placeholder="Ex. chant, guitare, batterie…" value={mixerFilter} onChange={e=>setMixerFilter(e.target.value)}/></label><button type="button" aria-pressed={compactMixer} onClick={()=>setCompactMixer(v=>!v)}>{compactMixer?"Affichage normal":"Vue compacte"}</button><span>{visibleChannels.length} / {channels.length} entrées</span></div><div className="pro-mixer-scroll"><div className={compactMixer?"pro-mixer compact":"pro-mixer"}>
-              {visibleChannels.map(c=><div key={c.channel} className={selected===c.channel?"pro-channel picked":"pro-channel"} style={{"--ch-color":colorFor(c.channel)} as React.CSSProperties}>
-                <button className="pro-ch-select" onClick={()=>setSelected(c.channel)}><span>{c.channel}</span><Mic2 size={17}/><b>{labelFor(c.channel)}</b></button>
-                <button className="ch-mute" title="Réglages du gain, de la polarité et du coupe-bas" onClick={()=>{setSelected(c.channel);document.getElementById('input-gain-details')?.scrollIntoView({behavior:'smooth',block:'center'});}}>Entrée / Gain</button>
-                <span className="ch-type">{c.channel<=4?"INSTRUMENT":c.channel<=10?"BATTERIE":"ENTRÉE"}</span>
-                <button className={c.on?"ch-mute":"ch-mute muted"} disabled={!canWrite||busy} aria-label={`${c.on?"Couper":"Réactiver"} ${labelFor(c.channel)}`} aria-pressed={!c.on} title={c.on?"Couper le canal":"Réactiver le canal"} onClick={()=>toggleChannelOn(c)}>{c.on?"M":"MUTED"}</button>
-                <div className="ch-fader-area"><div className="ch-meter" title={meterState.available ? "Niveau reçu par OSC (dBFS)" : "Aucune mesure reçue"}><span>{meterState.available ? `${Math.round(meterState.channels[c.channel-1] ?? -128)} dB` : "—"}</span></div><input aria-label={`Fader ${labelFor(c.channel)}`} type="range" className="ch-slider" title="Double-cliquer pour revenir à 50 % en simulation uniquement" onDoubleClick={()=>resetFader(c.channel)} min="0" max="1" step=".01" value={c.fader} disabled={!canWrite||busy} onChange={e=>changeSlider(c.channel,Number(e.target.value))} onPointerUp={()=>commitSlider(c.channel)} onPointerCancel={()=>commitSlider(c.channel)} onBlur={()=>commitSlider(c.channel)} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))commitSlider(c.channel);}}/></div>
-                <span className="ch-value">{normalized(c.fader)}%</span><span className="ch-fader-hint">{c.fader===0?"−∞":`${(20*Math.log10(Math.max(c.fader,0.00001))).toFixed(1)} dB relatif`}</span><span className="ch-on">{c.on?"ON":"OFF"}</span><div className="ch-color"/>
-              </div>)}
-              <div className="pro-channel master"><div className="pro-ch-select"><span>MAIN</span><Activity size={20}/><b>Main L/R</b></div><span className="ch-type">SORTIE</span><button disabled={!canWrite||busy} className={mainState.on?"ch-mute":"ch-mute muted"} onClick={toggleMainOn} aria-pressed={!mainState.on} title="Mute principal">{mainState.on?"M":"MUTED"}</button><div className="ch-fader-area"><div className="ch-meter"><span>—</span></div><input aria-label="Fader principal L/R" type="range" className="ch-slider" min="0" max="1" step=".01" value={mainState.fader} disabled={!canWrite||busy} onChange={e=>setMainState(s=>({...s,fader:Number(e.target.value)}))} onPointerUp={e=>void writeMixValue("/api/main/fader",Number(e.currentTarget.value))} onKeyUp={e=>{if(["ArrowUp","ArrowDown","Home","End","PageUp","PageDown"].includes(e.key))void writeMixValue("/api/main/fader",Number(e.currentTarget.value));}}/></div><span className="ch-value">{normalized(mainState.fader)}%</span><span className="ch-on">{mainState.on?"ON":"MUTE"}</span><div className="ch-color"/></div>
-            </div></div>
-            <div className="studio-bottom-grid">
-              <div id="input-gain-details"><InputGainPanel key={`${selected}-${status.mode}-${status.host??''}`} channel={selected} name={labelFor(selected)} canWrite={canWrite} onEq={()=>setTab('eq')} onDynamics={()=>setTab('dynamics')} onSends={()=>setTab('sends')}/></div>
-              <section className="studio-panel"><div className="panel-title"><div><b>Vumètres</b><small>Mesures en temps réel</small></div><Activity size={17}/></div><div className="meter-empty">{status.mode==="real"&&status.connected&&meterState.available&&meterState.updatedAt&&Date.now()-Date.parse(meterState.updatedAt)<5000?<div style={{width:"100%",display:"grid",gridTemplateColumns:"repeat(8,minmax(0,1fr))",gap:6}}>{meterState.channels.map((db,i)=><div key={i} title={`Canal ${i+1}: ${db.toFixed(1)} dBFS`} style={{minWidth:0}}><div style={{height:76,display:"flex",alignItems:"end",background:"#142334",borderRadius:4,overflow:"hidden"}}><div style={{width:"100%",height:`${Math.max(0,Math.min(100,(db+80)/80*100))}%`,background:db>-6?"#f87171":db>-18?"#eab44d":"#34d399"}}/></div><small>{i+1}</small></div>)}</div>:<><Activity size={30}/><b>Vumètres indisponibles</b><span>En attente de mesures OSC réelles récentes.</span></>}</div></section>
-              <section className="studio-panel"><div className="panel-title"><div><b>Scènes rapides</b><small>Snapshots locaux</small></div><Save size={16}/></div><div className="quick-scenes">{store.scenes.slice(0,4).map(s=><button key={s.id} onClick={()=>void recallScene(s)}><Disc3 size={16}/>{s.name}</button>)}{store.scenes.length===0&&<p>Aucune scène enregistrée.</p>}<button className="quick-add" onClick={()=>setPage("scenes")}><Plus size={16}/> Nouvelle scène</button></div></section>
-            </div>
+            <XAirMixer key={expertTab} initialTab={expertTab} canWrite={canWrite} selectedChannel={selected} onSelectChannel={setSelected}/>
           </> : <section className="studio-panel tab-panel"><div className="tab-heading"><div><span className="eyebrow-studio">CANAL {selected} · {labelFor(selected)}</span><h1>{TABS.find(t=>t.id===tab)?.name}</h1></div><span className="safety-pill"><ShieldCheck size={14}/> Démonstration</span></div>
             {(tab==="eq" || tab==="dynamics") ? <div className="processing-library"><ConsolePanel initial={`/ch/${String(selected).padStart(2,"0")}`} connected={socketOk}/><div className="processing-intro"><b>Préréglages EQ · Compresseur · Gate</b><p>Choisis un instrument, puis consulte ou ajuste les paramètres. Les seuils de compression et de gate doivent être réglés à l'oreille sur les niveaux réels.</p></div><div className="processing-filter"><label>Instrument <select value={processingFilter} onChange={e=>setProcessingFilter(e.target.value)}>{["Tous",...new Set(PROCESSING_PRESETS.map(p=>p.instrument))].map(name=><option key={name}>{name}</option>)}</select></label><label>Préréglage <select value={processingChoice} onChange={e=>{setProcessingChoice(e.target.value);setProcessingDraft(null);}}>{PROCESSING_PRESETS.filter(p=>processingFilter==="Tous"||p.instrument===processingFilter).map(p=><option value={p.id} key={p.id}>{p.name}</option>)}</select></label></div>{(()=>{const preset=processingDraft??PROCESSING_PRESETS.find(p=>p.id===processingChoice)??PROCESSING_PRESETS[0];return <div className="processing-detail"><div className="processing-header"><div><h2>{preset.name}</h2><p>{preset.description}</p></div><button onClick={()=>{setProcessingDraft(null);setNotice("Préréglage réinitialisé à sa valeur de départ.");}}>Réinitialiser</button></div><div className="processing-columns"><section><h3>Égaliseur 4 bandes</h3><label>Filtre coupe-bas (Hz)<input type="number" min="20" max="400" value={preset.hpfHz??20} onChange={e=>setProcessingDraft({...preset,hpfHz:Number(e.target.value)})}/></label>{preset.eq.map((band,i)=><div className="processing-band" key={i}><b>Bande {i+1} · {band.type}</b><label>Fréquence (Hz)<input type="number" min="20" max="20000" value={band.frequencyHz} onChange={e=>setProcessingDraft({...preset,eq:preset.eq.map((x,j)=>j===i?{...x,frequencyHz:Number(e.target.value)}:x)})}/></label><label>Gain (dB)<input type="number" min="-15" max="15" step=".5" value={band.gainDb} onChange={e=>setProcessingDraft({...preset,eq:preset.eq.map((x,j)=>j===i?{...x,gainDb:Number(e.target.value)}:x)})}/></label><label>Q<input type="number" min=".1" max="10" step=".1" value={band.q} onChange={e=>setProcessingDraft({...preset,eq:preset.eq.map((x,j)=>j===i?{...x,q:Number(e.target.value)}:x)})}/></label></div>)}</section><section><h3>Compresseur</h3><label className="processing-toggle"><input type="checkbox" checked={preset.compressor.enabled} onChange={e=>setProcessingDraft({...preset,compressor:{...preset.compressor,enabled:e.target.checked}})}/> Activé (préparation)</label>{([["ratio","Ratio"],["attackMs","Attack (ms)"],["releaseMs","Release (ms)"],["makeupDb","Makeup (dB)"]] as const).map(([key,label])=><label key={key}>{label}<input type="number" step=".5" value={preset.compressor[key]} onChange={e=>setProcessingDraft({...preset,compressor:{...preset.compressor,[key]:Number(e.target.value)}})}/></label>)}<p>Seuil : <strong>à calibrer</strong></p><p>Réduction visée : {preset.compressor.targetReductionDb}</p><h3>Gate / Expander</h3><label className="processing-toggle"><input type="checkbox" checked={preset.gate.enabled} onChange={e=>setProcessingDraft({...preset,gate:{...preset.gate,enabled:e.target.checked}})}/> Activé (préparation)</label>{([["attackMs","Attack (ms)"],["holdMs","Hold (ms)"],["releaseMs","Release (ms)"],["rangeDb","Range (dB)"]] as const).map(([key,label])=><label key={key}>{label}<input type="number" step="1" value={preset.gate[key]} onChange={e=>setProcessingDraft({...preset,gate:{...preset.gate,[key]:Number(e.target.value)}})}/></label>)}<p>Mode : {preset.gate.mode} · seuil à calibrer</p></section></div><div className="processing-actions"><button disabled={!canWrite} onClick={()=>void saveProcessing()}><Save size={15}/> Appliquer les traitements</button><button disabled={!isSim||!socketOk||!processingApplied} onClick={()=>void undoProcessing()}>Annuler la dernière application</button><span>Canal {selected} · Révision {processingRevision} · {isSim?"Simulation":"Lecture comparée"}</span></div><div className="processing-advice"><b>Conseil de réglage</b><p>{preset.advice}</p><button onClick={()=>{navigator.clipboard?.writeText(JSON.stringify(preset,null,2)).then(()=>setNotice("Réglages copiés au format JSON.")).catch(()=>setNotice("Copie indisponible dans ce navigateur."));}}>Copier le préréglage (JSON)</button></div></div>;})()}<div className="processing-sources"><b>Sources consultées</b>{PROCESSING_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.name} ↗</a>)}</div><p className="disclaimer">Les préréglages sont des points de départ. En mode réel, application après prévisualisation, sauvegarde et lecture comparée. Les seuils non renseignés restent inchangés.</p></div> : tab==="fx" ? <div className="fx-library"><FxConsole/><ConsolePanel initial="/fxsend/1" connected={socketOk}/><StudioControl section="fx"/><div className="fx-filter"><input aria-label="Rechercher un preset" placeholder="Rechercher un preset..." value={fxSearch} onChange={e=>setFxSearch(e.target.value)}/><div className="fx-families">{(["Tous","Voix","Guitare","Basse","Batterie","Clavier","Global"] as const).map(f=><button key={f} className={fxFamily===f?"active":""} onClick={()=>setFxFamily(f)}>{f}</button>)}</div></div><div className="fx-grid">{FX_PRESETS.filter(p=>(fxFamily==="Tous"||p.family===fxFamily)&&(`${p.name} ${p.type} ${p.use}`).toLowerCase().includes(fxSearch.toLowerCase())).map(p=><article key={p.id} className={selectedFx===p.id?"fx-card selected":"fx-card"}><div className="fx-card-head"><span>{p.family}</span><small>FX {p.slotSuggestion} suggéré</small></div><h3>{p.name}</h3><p>{p.use}</p><div className="fx-type">{p.type}</div><div className="fx-params">{p.parameters.map(param=><div key={param.label}><span>{param.label}</span><b>{param.value}</b></div>)}</div><p className="fx-notes">{p.notes}</p><div className="fx-actions"><button onClick={()=>setSelectedFx(p.id)}>{selectedFx===p.id?"Sélectionné":"Sélectionner"}</button><a href={p.sourceUrl} target="_blank" rel="noopener noreferrer">Source ↗</a></div></article>)}</div><p className="disclaimer">Suggestions musicales pour préparer les effets. Les valeurs sont des suggestions de départ et non des presets officiels Behringer. Les cartes de suggestions restent consultatives ; le panneau Processeurs FX permet de lire, éditer et rappeler les réglages matériels. La XR18 dispose de quatre slots FX partagés.</p></div> : <ConsolePanel initial={tab==="routing"?"/routing":tab==="dca"?"/dca/1":tab==="sends"?`/ch/${String(selected).padStart(2,"0")}`:"/ch/01"} connected={socketOk}/>}
           </section>}
         </div>
-      </> : <div className="studio-work other-page">
-        <div className="page-heading-studio"><span className="eyebrow-studio">XR18 STUDIO</span><h1>{MENU.find(x=>x.page===page)?.name}</h1><p>{page==="ears"?"Mix personnel par musicien":page==="rehearsals"?"Notes et préparation de répétition":page==="setlists"?"Répertoire et ordre de passage":page==="scenes"?"Sauvegarde locale des réglages simulés":"Connexion et sécurité"}</p></div>
-        {page==="ears" && <MonitorPanel/>}
-        {page==="rehearsals" && <section className="studio-panel pad"><div className="panel-title"><div><b>Préparation de répétition</b><small>Notes sauvegardées localement dans le navigateur</small></div><BookOpen size={18}/></div><label className="field">Objectifs et notes<textarea rows={9} value={store.notes} onChange={e=>setStore(s=>({...s,notes:e.target.value}))} placeholder="Ex. travailler le refrain de Plug In Baby, préparer le mix sans chanteur..."/></label><div className="rehearsal-form"><input placeholder="Nom de la répétition" value={rehearsalTitle} onChange={e=>setRehearsalTitle(e.target.value)}/><input aria-label="Date et heure" type="datetime-local" value={rehearsalDate} onChange={e=>setRehearsalDate(e.target.value)}/><button onClick={()=>void saveRehearsal()}><Save size={15}/> Enregistrer dans SQLite</button></div><div className="song-list">{rehearsals.map(r=><div key={r.id}><div><b>{r.title}</b><small>{new Date(r.startsAt).toLocaleString("fr-BE")} · {r.notes.slice(0,100)}</small></div></div>)}</div><span className="disclaimer">Les répétitions enregistrées sont conservées sur le serveur SQLite. Le brouillon de notes reste stocké dans ce navigateur.</span></section>}
+      </> : <div className="studio-work other-page content">
+        
+        {page==="ears" && <EarsSharePanel/>}
+        {page==="rehearsals" && <section className="studio-panel pad"><div className="panel-title"><div><b>Préparation de répétition</b><small>Notes sauvegardées localement dans le navigateur</small></div><BookOpen size={18}/></div><label className="field">Objectifs et notes<textarea rows={9} value={store.notes} onChange={e=>setStore(s=>({...s,notes:e.target.value}))} placeholder="Ex. travailler le refrain de Plug In Baby, préparer le mix sans chanteur..."/></label><div className="rehearsal-form"><input placeholder="Nom de la répétition" value={rehearsalTitle} onChange={e=>setRehearsalTitle(e.target.value)}/><input aria-label="Date et heure" type="datetime-local" value={rehearsalDate} onChange={e=>setRehearsalDate(e.target.value)}/><button onClick={()=>void saveRehearsal()}><Save size={15}/> Enregistrer</button></div><div className="song-list">{rehearsals.map(r=><div key={r.id}><div><b>{r.title}</b><small>{new Date(r.startsAt).toLocaleString("fr-BE")} · {r.notes.slice(0,100)}</small></div></div>)}</div><span className="disclaimer">Les répétitions sont enregistrées sur cet ordinateur. Le brouillon de notes reste dans ce navigateur.</span></section>}
         {page==="setlists" && <div className="two-panels"><section className="studio-panel pad"><div className="panel-title"><div><b>Répertoire</b><small>{store.songs.length} morceaux</small></div><Music2 size={18}/></div><div className="song-form"><input placeholder="Titre du morceau" value={songTitle} onChange={e=>setSongTitle(e.target.value)}/><input placeholder="Artiste" value={songArtist} onChange={e=>setSongArtist(e.target.value)}/><input type="number" min="20" max="300" value={songBpm} onChange={e=>setSongBpm(Number(e.target.value))}/><button onClick={addSong}><Plus size={16}/> Ajouter</button></div><div className="song-list">{store.songs.map(song=><div key={song.id}><div><b>{song.title}</b><small>{song.artist} · {song.bpm} BPM</small></div><button onClick={()=>setStore(s=>({...s,setlist:[...s.setlist,song.id]}))}>+ Setlist</button><button title="Supprimer" onClick={()=>void deleteSong(song.id)}><Trash2 size={15}/></button></div>)}</div></section><section className="studio-panel pad"><div className="panel-title"><div><b>Setlist active</b><small>{setlist.length} morceaux</small></div><ListMusic size={18}/></div><div className="song-list">{setlist.map((song,i)=><div key={i}><span className="song-order">{i+1}</span><div><b>{song.title}</b><small>{song.artist}</small></div><button onClick={()=>setStore(s=>({...s,setlist:s.setlist.filter((_,j)=>j!==i)}))}><Trash2 size={15}/></button></div>)}{setlist.length===0&&<p>Ajoute des morceaux depuis le répertoire.</p>}</div><div className="rehearsal-form"><input placeholder="Nom de la setlist" value={setlistName} onChange={e=>setSetlistName(e.target.value)}/><button onClick={()=>void saveSetlist()}><Save size={15}/> Sauvegarder</button></div><div className="song-list">{savedSetlists.map(s=><div key={s.id}><div><b>{s.name}</b><small>{s.songIds.length} morceaux</small></div><button onClick={()=>setStore(old=>({...old,setlist:s.songIds}))}>Charger</button><button title="Supprimer" onClick={async()=>{if(!window.confirm("Supprimer la setlist enregistrée ?"))return;try{await api("/api/setlists/"+s.id,"DELETE");await refreshLibrary();}catch(e){setNotice((e as Error).message);}}}><Trash2 size={15}/></button></div>)}</div></section></div>}
         {page==="scenes" && <StudioControl section="scene"/>}
         {page==="settings" && <ConnectionPanel status={status}/>}
         {page==="settings" && <StudioControl section="settings"/>}
         {page==="settings" && <section className="studio-panel pad"><div className="panel-title"><div><b>État du système</b><small>Paramètres de sécurité</small></div><Cable size={18}/></div><div className="settings-rows"><div><span>Mode d'exécution</span><b>{isSim?"Simulation":"Console réelle"}</b></div><div><span>WebSocket</span><b>{socketOk?"Connecté":"Déconnecté"}</b></div><div><span>Réponse OSC</span><b>{status.connected?"Reçue / simulation":"Non confirmée"}</b></div><div><span>Écritures matérielles</span><b>{!isSim&&status.writesEnabled?"Activées sur backend":"Désactivées"}</b></div><div><span>Accès multiappareils</span><b>HTTPS configurable</b></div></div><p className="disclaimer">Utilise le panneau de connexion pour détecter la XR18, activer le contrôle ou revenir en simulation.</p></section>}
       </div>}
-      {page!=="coach"&&<div className="studio-control"><button disabled={!canWrite} onClick={()=>{if(confirm('Couper les 16 entrées de la console ?'))void api('/api/console/mute-all','POST',{confirm:true}).then(()=>setNotice('Les 16 entrées sont coupées.')).catch(e=>setNotice(e.message));}}>Couper toutes les entrées</button></div>}
-      <footer className="studio-footer"><span>XR18 STUDIO · Prototype de développement</span><span>{isSim?"Simulation sans matériel":"Console réelle — expérimental"} · {meterState.available?"Vumètres OSC actifs":"Aucune mesure OSC reçue"}</span></footer>
-    </main>
+
+    </div>
+    <nav className="bottombar" aria-label="Espaces">{SPACES.map(sp=><button key={sp.id} type="button" className={space===sp.id?"active":""} onClick={()=>setPage(sp.pages[0]!)}><sp.icon size={22}/><span>{sp.name}</span></button>)}</nav>
   </div>;
 }
 

@@ -49,13 +49,19 @@ export class Access {
 export function permitted(user:User,method:string,path:string){
  if(user.role==='admin')return true;
  if(path.startsWith('/api/mixer-sync')||path==='/api/diagnostics/log'||path==='/api/discovery'||path==='/api/connection')return false;
- if(path.startsWith('/api/users')||path==='/api/audit'||path.startsWith('/api/reacue'))return false;
+ if(path.startsWith('/api/users')||path==='/api/audit'||path.startsWith('/api/reacue')||path.startsWith('/api/ears-share'))return false;
  if(method==='GET')return true;
  // A musician can change only assigned monitor sends, never FOH or another bus.
  const profile=/^\/api\/monitor\/([1-6])\/profiles(?:\/[a-f0-9-]+\/apply)?$/.exec(path);
  if(profile)return user.role==='musician'&&method==='POST'&&user.buses.includes(Number(profile[1]));
  const send=/^\/api\/monitor\/([1-6])\/channels\/(\d+)$/.exec(path);
  return user.role==='musician'&&method==='POST'&&!!send&&user.buses.includes(Number(send[1]));
+}
+/** Direct control from the graphical mixer: admins everything allowed live, musicians only their own monitor sends. */
+export function liveControlPermitted(user:User,address:string){
+ if(user.role==='admin')return true;
+ const send=/^\/(?:ch\/(?:0[1-9]|1[0-6])|rtn\/(?:[1-4]|aux))\/mix\/0([1-6])\/level$/.exec(address);
+ return user.role==='musician'&&!!send&&user.buses.includes(Number(send[1]));
 }
 export function sameOrigin(req:IncomingMessage){
  const host=req.headers.host??'';

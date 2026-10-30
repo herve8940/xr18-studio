@@ -19,7 +19,7 @@ export function ConnectionPanel({status}:{status:Status}){
   setDevices([]);setMessage('Recherche de ta XR18 sur le réseau local…');
   const result=await request('/api/discovery');setDevices(result.devices);
   if(result.devices.length===1)await connect(result.devices[0]);
-  else setMessage(result.devices.length?'Plusieurs XR18 détectées : choisis ta console.':'Aucune XR18 trouvée. Vérifie que le PC et la console sont sur le même réseau et que le pare-feu autorise XR18 Studio.');
+  else setMessage(result.devices.length?'Plusieurs XR18 détectées : choisis ta console.':'Aucune XR18 trouvée. Vérifie que la table est allumée et sur le même réseau que l’ordinateur. Sur Mac : Réglages Système › Confidentialité et sécurité › Réseau local › active XR18 Studio, puis relance l’application. Sur Windows : autorise XR18 Studio dans le pare-feu (réseaux privés).');
  });
  return <section className="studio-panel pad studio-control"><h2>Connexion à ma XR18</h2>
   <p>{status.mode==='simulation'?'Mode simulation':`${status.connected?'Connectée':'Connexion perdue / en attente'} · ${status.host??''} · ${status.writesEnabled?'Contrôle activé':'Lecture seule'}`}</p>
@@ -35,7 +35,7 @@ export function ConnectionPanel({status}:{status:Status}){
    void run(async()=>{await request('/api/connection',{mode:'real',host:status.host,port:status.port,enableWrites});setMessage(enableWrites?'Contrôle activé.':'Lecture seule activée.');});
   }}>{status.writesEnabled?'Désactiver le contrôle':'Activer le contrôle'}</button>}
   <MixerSyncPanel status={status}/>
-  <details><summary>Connexion manuelle si la recherche est bloquée</summary><form onSubmit={e=>{e.preventDefault();void run(()=>connect({host,port:10024,name:'XR18',model:'XR18'}));}}><fieldset disabled={working}><label>Adresse IP<input required placeholder="192.168.1.100" value={host} onChange={e=>setHost(e.target.value)}/></label><button>Se connecter</button></fieldset></form></details>
+  <details><summary>Connexion manuelle si la recherche est bloquée</summary><form onSubmit={e=>{e.preventDefault();void run(()=>connect({host,port:10024,name:'XR18',model:'XR18'}));}}><fieldset disabled={working}><label>Adresse IP<input required placeholder="192.168.1.1 (point d’accès XR18)" value={host} onChange={e=>setHost(e.target.value)}/></label><button>Se connecter</button></fieldset></form></details>
   <p><a href="/api/diagnostics/log" download="xr18-studio-diagnostic.log">Télécharger le journal de diagnostic</a></p>
   <p>Après un essai de connexion, télécharge ce fichier pour le joindre au support. Il contient les adresses IP locales et les réponses d’identité de la console, sans clé API ni mot de passe.</p>
   <p>La connexion ne modifie aucun réglage audio. Le mode et l’adresse sont conservés au prochain démarrage.</p></>:<p>La connexion à la console est gérée par l’administrateur.</p>}

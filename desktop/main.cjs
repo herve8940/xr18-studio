@@ -14,7 +14,7 @@ app.whenReady().then(async () => {
     const aiPath=path.join(dataPath,"ai-credentials.json");
     if(!smoke&&!process.env.XR18_OPENAI_API_KEY){const saved=loadAI(aiPath,safeStorage);if(saved){process.env.XR18_OPENAI_API_KEY=saved.apiKey;process.env.XR18_OPENAI_MODEL=saved.model;}}
     const configPath=path.join(dataPath,smoke?"smoke-connection.json":"connection.json");
-    let config={mode:"simulation",host:"192.168.1.100",enableWrites:false};
+    let config={mode:"simulation",host:"192.168.1.1",enableWrites:false};
     try { const saved=JSON.parse(readFileSync(configPath,"utf8")); if(saved.mode==="real" && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(saved.host)) config={mode:"real",host:saved.host,enableWrites:saved.enableWrites===true}; } catch {}
     if(smoke)config={mode:"simulation",host:"127.0.0.1",enableWrites:false};
     if(smoke)writeFileSync(configPath,JSON.stringify(config));

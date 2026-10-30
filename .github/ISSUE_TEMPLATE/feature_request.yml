@@ -1,0 +1,13 @@
+name: 💡 Proposer une idée / Suggest an idea
+description: Une fonction qui t’aiderait pendant tes répétitions ou concerts / A feature that would help at rehearsals or shows
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Ton besoin / Your need
+      description: Décris la situation (répétition, concert, retours…) et ce qui te manque. / Describe the situation and what is missing.
+    validations: {required: true}
+  - type: textarea
+    id: idea
+    attributes: {label: Ton idée / Your idea}

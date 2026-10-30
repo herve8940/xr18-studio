@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XR18 Studio — free app for the Behringer XR18, X18 and MR18 mixer (X-AIR Edit alternative)</title>
+<meta name="description" content="XR18 Studio: free app to control a Behringer XR18, X18 or MR18. Guided sound engineer for beginners, X-AIR Edit style console, in-ear monitor mixes on each musician's phone. Windows, macOS, Linux.">
+<meta name="keywords" content="Behringer XR18, XR18 app, X18, MR18, X Air, X-AIR Edit alternative, XR18 software, digital mixer, in-ear monitor app, sound engineer, soundcheck, OSC">
+<meta name="author" content="Hervé Naessens">
+<meta name="theme-color" content="#0b1018">
+<link rel="canonical" href="https://herve8940.github.io/xr18-studio/en.html">
+<link rel="alternate" hreflang="fr" href="https://herve8940.github.io/xr18-studio/">
+<link rel="alternate" hreflang="en" href="https://herve8940.github.io/xr18-studio/en.html">
+<link rel="alternate" hreflang="x-default" href="https://herve8940.github.io/xr18-studio/en.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="XR18 Studio">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="fr_FR">
+<meta property="og:title" content="XR18 Studio — a pocket sound engineer for the Behringer XR18">
+<meta property="og:description" content="Free app for XR18, X18 and MR18: guided sound engineer for beginners, X-AIR Edit style console, in-ear mixes on phones.">
+<meta property="og:url" content="https://herve8940.github.io/xr18-studio/en.html">
+<meta property="og:image" content="https://herve8940.github.io/xr18-studio/images/social-preview.png">
+<meta property="og:image:width" content="1280"><meta property="og:image:height" content="640">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://herve8940.github.io/xr18-studio/images/social-preview.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"SoftwareApplication","name":"XR18 Studio","applicationCategory":"MultimediaApplication","applicationSubCategory":"Audio mixer controller","operatingSystem":"Windows, macOS, Linux","softwareVersion":"2.0.0","inLanguage":["fr","en"],"isAccessibleForFree":true,"license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"EUR"},"description":"Free app to control a Behringer XR18, X18 or MR18 digital mixer: guided sound engineer for beginners, X-AIR Edit style graphical console, in-ear monitor mixes on each musician's phone.","url":"https://herve8940.github.io/xr18-studio/en.html","downloadUrl":"https://github.com/herve8940/xr18-studio/releases/latest","codeRepository":"https://github.com/herve8940/xr18-studio","screenshot":"https://herve8940.github.io/xr18-studio/images/hero.png","author":{"@type":"Person","name":"Hervé Naessens"}},
+{"@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Does XR18 Studio replace X-AIR Edit?","acceptedAnswer":{"@type":"Answer","text":"It offers the same views (Mixer, Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing, Meters) and adds a beginner assistant and monitors on phones. Both can be used on the same console."}},
+{"@type":"Question","name":"Is it free?","acceptedAnswer":{"@type":"Answer","text":"Yes. XR18 Studio is free and open source (MIT licence)."}},
+{"@type":"Question","name":"Does it work with an X18 or MR18?","acceptedAnswer":{"@type":"Answer","text":"Yes: XR18, X18, MR18 and their V2 versions are detected automatically."}},
+{"@type":"Question","name":"Do musicians need to install an app?","acceptedAnswer":{"@type":"Answer","text":"No. Each one scans their QR code and adjusts their mix in their phone browser, on the same Wi-Fi."}},
+{"@type":"Question","name":"Is Internet needed?","acceptedAnswer":{"@type":"Answer","text":"No. Everything runs on the console's or the band's local network."}}]}
+]}
+</script>
+<style>
+:root{--bg:#0b0f15;--surface:#121821;--surface-2:#18212c;--line:#253241;--text:#eef4f8;--text-2:#a9bccb;--accent:#3ee0e0;--accent-2:#2b7cf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+img{max-width:100%;height:auto;display:block;border-radius:12px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 20px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:19px;color:var(--text);text-decoration:none}
+.mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#04191b;font-weight:900}
+.top nav{display:flex;gap:16px;flex-wrap:wrap;font-size:14px}.top nav a{color:var(--text-2);text-decoration:none}.top nav a:hover{color:var(--text)}
+.hero{padding:40px 0 30px;text-align:center}
+.hero h1{font-size:clamp(32px,5vw,54px);line-height:1.1;letter-spacing:-1.2px;margin:0 0 16px}
+.hero h1 span{color:var(--accent)}
+.hero p.lead{font-size:clamp(17px,2vw,20px);color:var(--text-2);max-width:760px;margin:0 auto 26px}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:12px;font-weight:700;text-decoration:none;border:1px solid var(--line);color:var(--text);background:var(--surface-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04191b}
+.small{font-size:14px;color:var(--text-2)}
+.shot{margin:30px auto 0;max-width:min(1100px,100%);box-shadow:0 30px 80px #000a}
+section{padding:56px 0;border-top:1px solid var(--line)}
+section h2{font-size:clamp(24px,3vw,34px);letter-spacing:-.6px;margin:0 0 10px}
+section > .wrap > p.intro{color:var(--text-2);max-width:760px;margin:0 0 28px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.card h3{margin:14px 0 6px;font-size:19px}.card p{margin:0;color:var(--text-2);font-size:15px}
+.steps{counter-reset:s;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;list-style:none;padding:0;margin:0}
+.steps li{counter-increment:s;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px 16px 58px;position:relative}
+.steps li:before{content:counter(s);position:absolute;left:16px;top:16px;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#04191b;font-weight:800;display:grid;place-items:center}
+.steps b{display:block;margin-bottom:3px}.steps span{color:var(--text-2);font-size:14.5px}
+.split{display:grid;grid-template-columns:1.6fr 1fr;gap:28px;align-items:center}
+ul.ticks{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+ul.ticks li{padding-left:28px;position:relative;color:var(--text-2)}ul.ticks li:before{content:"✓";position:absolute;left:0;color:var(--accent);font-weight:800}
+ul.ticks b{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:15px}td,th{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}th{color:var(--text-2);font-weight:600}
+code{background:var(--surface-2);padding:2px 6px;border-radius:6px;font-size:13.5px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:10px}
+summary{cursor:pointer;font-weight:700}details p{color:var(--text-2);margin:10px 0 0}
+footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--text-2);font-size:14px}
+footer .links{display:flex;flex-wrap:wrap;gap:8px 20px;margin-bottom:14px}
+@media (max-width:860px){.grid3,.steps,.split{grid-template-columns:1fr}.top nav{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="brand" href="./"><span class="mark">≡</span>XR18 Studio</a>
+  <nav aria-label="Navigation"><a href="#coach">Sound engineer</a><a href="#console">Console</a><a href="#retours">Monitors</a><a href="#installer">Install</a><a href="#faq">FAQ</a><a href="./" hreflang="fr" lang="fr">🇫🇷 Français</a></nav>
+</header>
+</div>
+
+<main>
+<div class="wrap hero">
+  <h1>A pocket sound engineer for the <span>Behringer XR18</span></h1>
+  <p class="lead">XR18 Studio is a <b>free</b> app to control your XR18, X18 or MR18. An assistant guides you step by step to make your band sound good. The console is complete, X-AIR Edit style. Each musician adjusts their in-ear mix on their own phone.</p>
+  <div class="cta">
+    <a class="btn primary" href="https://github.com/herve8940/xr18-studio/releases/latest">⬇ Free download</a>
+    <a class="btn" href="TUTO_MON_INGE_SON_EN.html">📘 Beginner tutorial</a>
+    <a class="btn" href="https://github.com/herve8940/xr18-studio">GitHub</a>
+  </div>
+  <p class="small">Windows · macOS (Intel and Apple Silicon) · Linux — no account, no subscription, no Internet needed</p>
+  <img class="shot" src="images/hero.png" width="1600" height="900" alt="XR18 Studio: the whole XR18 console on screen and a musician’s monitor page on a phone">
+</div>
+
+<section>
+<div class="wrap">
+  <h2>For bands without a sound engineer</h2>
+  <p class="intro">Rehearsals, small venues, bars, parties: you have a Behringer XR18, mics and musicians, and you want a good sound without learning the jargon.</p>
+  <div class="grid3">
+    <article class="card"><img src="images/tuto-coach-batterie.png" width="1440" height="1000" alt="Mon ingé son assistant: complete setup of each instrument" loading="lazy"><h3>🎧 “Mon ingé son”</h3><p>It sets up each instrument with live best practice, sets the gains with you and prepares the monitor mixes.</p></article>
+    <article class="card"><img src="images/tuto-simple.png" width="1440" height="900" alt="XR18 console in Simple mode, all tracks visible" loading="lazy"><h3>🎚️ A clear console</h3><p>Every track visible at once. Simple mode for the show, full X-AIR Edit style Expert mode.</p></article>
+    <article class="card"><img src="images/tuto-share.png" width="1440" height="900" alt="QR codes for each musician’s in-ear mix" loading="lazy"><h3>📱 Monitors on phones</h3><p>Each musician scans their QR code and adjusts <b>their own</b> in-ear mix. There is no app to install.</p></article>
+  </div>
+</div>
+</section>
+
+<section id="coach">
+<div class="wrap">
+  <h2>🎧 “Mon ingé son”: a soundcheck in 6 steps</h2>
+  <p class="intro">Nothing changes without your OK: every change goes through a before/after window, a backup is made, and one button undoes it all.</p>
+  <ol class="steps">
+    <li><b>Connect</b><span>The XR18 is found automatically, like in X-AIR Edit.</span></li>
+    <li><b>Who is plugged in where</b><span>Vocals, guitars, bass, detailed drums (kick, snare, 3 toms, 2 overheads)… Each instrument gets its complete setting: high-pass, EQ, compressor, gate, stereo.</span></li>
+    <li><b>Set the gain</b><span>Each musician plays loud. The coach measures, proposes the right gain and fits compressor and gate to your real signal.</span></li>
+    <li><b>Listen and fix</b><span>“It’s muddy”, “it squeals”… Say what bothers you and it suggests a small correction.</span></li>
+    <li><b>Prepare monitors</b><span>A pre-fader mix per musician based on their role, then QR codes in one click.</span></li>
+    <li><b>Keep the good setting</b><span>The whole mix is saved as a scene, ready for the next show.</span></li>
+  </ol>
+  <p style="margin-top:22px"><a class="btn primary" href="TUTO_MON_INGE_SON_EN.html">See the illustrated step-by-step tutorial</a></p>
+</div>
+</section>
+
+<section id="console">
+<div class="wrap split">
+  <img src="images/tuto-expert.png" width="1440" height="900" alt="XR18 console in Expert mode, X-AIR Edit style: overview, fader bank and mix bar" loading="lazy">
+  <div>
+    <h2>🎚️ The whole console at a glance</h2>
+    <ul class="ticks">
+      <li><b>Every track on screen</b>, no scrolling: 16 inputs, Aux and effect returns.</li>
+      <li><b>The X-AIR Edit views</b>: Mixer, Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing, Meters.</li>
+      <li><b>Every control explained</b> in plain words (in French), with all 61 effects described.</li>
+      <li><b>Start from a blank scene</b> in one click, without touching 48 V, gains or routing.</li>
+      <li><b>Always protected</b>: 48 V, routing and effects ask for confirmation, with a backup.</li>
+    </ul>
+  </div>
+</div>
+</section>
+
+<section id="retours">
+<div class="wrap split">
+  <div>
+    <h2>📱 Each musician’s in-ear mix, on their phone</h2>
+    <ul class="ticks">
+      <li><b>A personal QR code</b> per musician, scanned with the phone camera.</li>
+      <li><b>Only their own mix</b>: each instrument level, volume, mute, saved settings.</li>
+      <li><b>Ears protected</b>: capped volume, rises in small steps.</li>
+      <li><b>Lost link?</b> A new one is created in one click and the old one stops working.</li>
+    </ul>
+  </div>
+  <img src="images/tuto-inge/17-telephone.png" width="390" height="844" alt="A musician’s monitor page on their phone" loading="lazy" style="max-width:300px;margin:auto">
+</div>
+</section>
+
+<section id="installer">
+<div class="wrap">
+  <h2>⬇️ Install XR18 Studio</h2>
+  <p class="intro">Download the file for your computer from the <a href="https://github.com/herve8940/xr18-studio/releases/latest">releases page</a>. Everything is included.</p>
+  <table>
+    <tr><th>Computer</th><th>File</th></tr>
+    <tr><td>Windows</td><td><code>XR18-Studio-Windows-….exe</code></td></tr>
+    <tr><td>Apple Silicon Mac (M1, M2, M3, M4)</td><td><code>XR18-Studio-macOS-…-arm64.dmg</code></td></tr>
+    <tr><td>Intel Mac</td><td><code>XR18-Studio-macOS-…-x64.dmg</code></td></tr>
+    <tr><td>Ubuntu / Debian</td><td><code>.deb</code></td></tr>
+    <tr><td>Other Linux</td><td><code>.AppImage</code></td></tr>
+  </table>
+  <p class="small">Mac: the first time, right-click › Open, then allow Local Network. Windows: if SmartScreen appears, “More info › Run anyway”. <a href="USER_GUIDE_EN.html">Full guide</a></p>
+</div>
+</section>
+
+<section id="faq">
+<div class="wrap">
+  <h2>FAQ</h2>
+  <details><summary>Does XR18 Studio replace X-AIR Edit?</summary><p>It offers the same views (Mixer, Channel, Input, Gate, EQ, Comp, Sends, Main, Effects, Routing, Meters). It adds a beginner assistant and monitors on phones. You can use both on the same console.</p></details>
+  <details><summary>Is it free?</summary><p>Yes, free and open source (MIT licence).</p></details>
+  <details><summary>Does it work with an X18 or MR18?</summary><p>Yes: XR18, X18, MR18 and their V2 versions are detected automatically.</p></details>
+  <details><summary>Do musicians need to install an app?</summary><p>No. Each one scans their QR code and adjusts their mix in their phone browser, on the same Wi-Fi.</p></details>
+  <details><summary>Is Internet needed?</summary><p>No. Everything runs on the console’s or the band’s local network.</p></details>
+  <details><summary>Does the coach hear the sound?</summary><p>No. It reads the console’s settings and levels, not the audio. Its listening advice comes from your description. Proposed values are starting points: your ears have the final say.</p></details><details><summary>Is the app in English?</summary><p>The interface is in French. The guides and the tutorial are available in English, with every French button name translated.</p></details>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+  <div class="links"><a href="TUTO_MON_INGE_SON_EN.html">Tutorial</a><a href="USER_GUIDE_EN.html">Full guide</a><a href="RELEASE_NOTES.html">Release notes</a><a href="https://github.com/herve8940/xr18-studio">Source code</a><a href="https://github.com/herve8940/xr18-studio/issues">Report a problem</a><a href="./" hreflang="fr" lang="fr">Français</a></div>
+  <p>XR18 Studio by Hervé Naessens — MIT licence. Independent project, not affiliated with Behringer / Music Tribe. XR18, X18, MR18 and X-AIR are trademarks of their respective owners.</p>
+</div>
+</footer>
+</body>
+</html>

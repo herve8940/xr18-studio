@@ -1,0 +1,62 @@
+/* Page « Mon retour » pour téléphone : même thème sombre pro que l’application. */
+:root{--bg:#0b0d10;--surface:#12151a;--surface-2:#181c22;--surface-3:#20252d;--line:#262c35;--text:#e8ecf1;--text-2:#8f9aa8;--accent:#3ee0e0;--ok:#34d399;--warn:#f5b83d;--danger:#f0524f;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button,input{font:inherit}
+.ea{max-width:640px;margin:0 auto;padding:calc(16px + env(safe-area-inset-top)) 16px calc(32px + env(safe-area-inset-bottom));display:grid;gap:16px}
+.ea-center{min-height:100vh;place-content:center;text-align:center;color:var(--text-2)}
+.ea-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px}
+.ea-card h1{color:var(--text);margin:0 0 8px}
+.ea-loader{width:36px;height:36px;margin:0 auto;border-radius:50%;border:3px solid var(--surface-3);border-top-color:var(--accent);animation:ea-spin 1s linear infinite}
+@keyframes ea-spin{to{transform:rotate(360deg)}}
+.ea-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.ea-eyebrow{margin:0;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--accent)}
+.ea-head h1{margin:2px 0 0;font-size:28px;letter-spacing:-.5px}
+.ea-conn{flex:0 0 auto;font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;background:#f5b83d1a;color:var(--warn)}
+.ea-conn.online{background:#34d3991a;color:var(--ok)}
+.ea-conn.online::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px;box-shadow:0 0 8px var(--ok)}
+.ea-banner{margin:0;padding:12px 14px;border-radius:14px;background:#f5b83d14;border:1px solid #f5b83d44;color:#ffe2a8;font-size:14px}
+.ea-master{background:linear-gradient(160deg,#10292b,var(--surface) 70%);border:1px solid #23474a;border-radius:20px;padding:18px;display:grid;gap:14px}
+.ea-master.muted{background:linear-gradient(160deg,#2a1414,var(--surface) 70%);border-color:#5a2626}
+.ea-master-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.ea-master-top b{display:block;font-size:15px}
+.ea-master-top span{display:block;font-size:30px;font-weight:700;letter-spacing:-.8px;font-variant-numeric:tabular-nums}
+.ea-mute{min-height:52px;min-width:108px;border-radius:14px;border:1px solid #f0524f66;background:#f0524f1f;color:#ffb4b2;font-weight:700;font-size:16px}
+.ea-mute.on{background:var(--danger);color:#fff;border-color:var(--danger)}
+.ea-slider{--c:var(--accent);position:relative;height:52px;border-radius:14px;background:var(--surface-3);touch-action:pan-y;cursor:pointer;outline:none;user-select:none}
+.ea-slider:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.ea-slider.disabled{opacity:.45;cursor:not-allowed}
+.ea-slider-fill{position:absolute;inset:0 auto 0 0;border-radius:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 35%,transparent),color-mix(in srgb,var(--c) 75%,transparent))}
+.ea-slider-thumb{position:absolute;top:6px;bottom:6px;width:10px;margin-left:-5px;border-radius:6px;background:#fff;box-shadow:0 2px 8px #0009}
+.ea-meter{height:5px;border-radius:3px;background:var(--surface-3);overflow:hidden}
+.ea-meter i{display:block;height:100%;background:var(--ok);transition:width .08s linear}
+.ea-meter i.warm{background:var(--warn)}.ea-meter i.hot{background:var(--danger)}
+.ea-list{display:grid;gap:10px}
+.ea-list-head{display:flex;justify-content:space-between;align-items:center}
+.ea-list-head h2,.ea-profiles h2{margin:0;font-size:17px}
+.ea-list-head label{display:flex;align-items:center;gap:8px;color:var(--text-2);font-size:14px}
+.ea-list-head input{width:20px;height:20px;accent-color:var(--accent)}
+.ea-row{--c:#6b7280;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:grid;gap:10px}
+.ea-row-top{display:flex;align-items:center;gap:10px}
+.ea-row-top b{font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ea-row-top em{font-style:normal;font-size:11px;color:var(--warn);background:#f5b83d14;padding:2px 6px;border-radius:6px}
+.ea-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;background:var(--c);box-shadow:0 0 8px var(--c)}
+.ea-db{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.ea-db small{color:var(--text-2);font-weight:500}
+.ea-empty{margin:0;color:var(--text-2);font-size:14px}
+.ea-profiles{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:grid;gap:12px}
+.ea-profiles form{display:flex;gap:8px}
+.ea-profiles input{flex:1;min-width:0;min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);padding:0 14px;font-size:16px}
+.ea-profiles button{min-height:48px;padding:0 16px;border-radius:12px;border:1px solid #3ee0e066;background:#3ee0e01a;color:var(--accent);font-weight:700}
+.ea-profiles button.ghost{border-color:var(--line);background:none;color:var(--text-2);padding:0 14px;font-size:20px}
+.ea-profiles button:disabled{opacity:.4}
+.ea-profiles ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ea-profiles li{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 14px;border-radius:14px;background:var(--surface-2)}
+.ea-profiles li span{flex:1;min-width:0}.ea-profiles li b{display:block}.ea-profiles li small{color:var(--text-2);font-size:12px}
+.ea-foot{color:var(--text-2);font-size:12.5px;text-align:center;padding:0 12px}
+.ea-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:calc(100% - 32px);background:#1f2630;border:1px solid var(--line);color:var(--text);padding:12px 16px;border-radius:14px;box-shadow:0 10px 30px #0008;font-size:14px}
+@media (prefers-reduced-motion:reduce){.ea-loader{animation:none}.ea-meter i{transition:none}}
+.ea{grid-template-columns:minmax(0,1fr)}
+.ea>*,.ea-row,.ea-master{min-width:0}
+.ea-row-top b{min-width:0}
+.ea-profiles,.ea-list{grid-template-columns:minmax(0,1fr)}

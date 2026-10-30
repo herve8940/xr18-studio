@@ -1,0 +1,66 @@
+/* Mode Simple : grosses tranches lisibles et utilisables au doigt. */
+.sm{display:flex;flex-direction:column;gap:12px;min-width:0}
+.sm-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.sm-head h2{margin:0;font-size:22px;letter-spacing:-.3px}
+.sm-head h2 span{color:var(--accent)}
+.sm-head p{margin:4px 0 0;color:var(--text-2);font-size:14px}
+.sm-status{font-size:12px;font-weight:700;padding:6px 12px;border-radius:999px;background:var(--danger-soft);color:var(--danger)}
+.sm-status.ok{background:var(--ok-soft);color:var(--ok)}.sm-status.ro{background:var(--warn-soft);color:var(--warn)}
+.sm-mixes{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.sm-mixes button{--c:var(--accent);display:flex;align-items:center;gap:8px;flex:0 0 auto;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);color:var(--text);font-weight:600;font-size:14px}
+.sm-mixes button.active{background:var(--accent);border-color:var(--accent);color:#04191b}
+.sm-dot{width:9px;height:9px;border-radius:50%;background:var(--c);flex:0 0 auto;box-shadow:0 0 8px var(--c)}
+.sm-mixes button.active .sm-dot{background:#04191b;box-shadow:none}
+.sm-message{display:flex;justify-content:space-between;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:13px}
+.sm-message button{background:none;border:0;color:inherit;font-size:18px}
+.sm-board{flex:1;min-height:0;display:flex;gap:10px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:10px}
+/* Toutes les tranches se partagent la largeur : elles rétrécissent au lieu de déborder. */
+.sm-strips{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(44px,1fr);gap:5px;overflow-x:auto;overflow-y:hidden;flex:1;min-width:0;min-height:0;scrollbar-width:thin}
+.sm-master{display:flex;padding-left:10px;border-left:1px solid var(--line);min-height:0}
+.sm-strip{--c:#6b7280;container:strip/inline-size;min-width:0;min-height:0;display:flex;flex-direction:column;gap:8px;padding:8px 3px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line);position:relative;overflow:hidden}
+.sm-strip::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--c)}
+.sm-strip.master{width:clamp(84px,7vw,112px);background:linear-gradient(180deg,var(--surface-3),var(--surface-2))}
+.sm-strip.muted{opacity:.62}
+.sm-name{display:grid;justify-items:start;gap:2px;text-align:left;background:none;border:0;color:var(--text);padding:2px 0;cursor:pointer;min-height:44px}
+.sm-name .sm-dot{margin-bottom:2px}
+.sm-name b{font-size:15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-name small{font-size:11px;color:var(--text-2)}
+.sm-name:hover b{color:var(--accent)}
+.sm-db{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.sm-db small{font-size:11px;color:var(--text-2);font-weight:500}
+.sm-db.send{color:var(--accent)}
+.sm-fader{display:flex;justify-content:center;gap:4px;flex:1;min-height:110px;padding:16px 0}
+.sm-fader .xm-fader-track{width:40px}
+.sm-fader .xm-fader-cap{width:40px;height:46px;border-radius:8px}
+.sm-fader .xm-fader-scale{width:20px;font-size:11px;color:var(--text-2)}
+.sm-fader .xm-meter-bar{width:9px;border-radius:3px}
+.sm-buttons{display:grid;gap:8px}
+.sm-btn{min-height:48px;border-radius:12px;border:1px solid var(--line);background:var(--surface-3);color:var(--text);font-weight:700;font-size:15px}
+.sm-btn.mute.on{background:var(--danger);border-color:var(--danger);color:#fff}
+.sm-btn.solo.on{background:var(--warn);border-color:var(--warn);color:#1a1300}
+.sm-btn:disabled{opacity:.45}
+.sm-foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--text-2);font-size:13px}
+.sm-check{display:flex;align-items:center;gap:8px;cursor:pointer}
+.sm-check input{width:18px;height:18px;accent-color:var(--accent)}
+/* Tranches étroites : on garde l’essentiel (nom, valeur, fader, Mute/Solo). */
+@container strip (max-width:96px){
+  .sm-name{min-height:36px}.sm-name b{font-size:12px;line-height:1.15;white-space:normal;overflow-wrap:normal;hyphens:auto;-webkit-hyphens:auto;text-overflow:clip;display:block;max-height:2.3em;overflow:hidden;letter-spacing:-.2px}.sm-name small{display:none}
+  .sm-db{font-size:15px;letter-spacing:-.3px}.sm-db small{display:none}
+  .sm-fader .xm-fader-scale{display:none}
+  .sm-fader .xm-fader-track,.sm-fader .xm-fader-cap{width:28px}.sm-fader .xm-fader-cap{height:38px}
+  .sm-fader .xm-meter-bar{width:6px}
+  .sm-btn{min-height:38px;font-size:12px;border-radius:9px;padding:0}
+}
+@container strip (max-width:66px){
+
+  .sm-name b{font-size:11px}.sm-db{font-size:13px}
+  .sm-fader .xm-fader-track,.sm-fader .xm-fader-cap{width:22px}
+  .sm-btn{font-size:10.5px;letter-spacing:-.2px}
+}
+@media (max-width:760px){
+  .sm-board{flex-direction:column}
+  .sm-strips{grid-auto-columns:96px}
+  .sm-master{border-left:0;border-top:1px solid var(--line);padding:12px 0 0}
+  .sm-strip{height:470px}
+  .sm-strip.master{width:auto}
+}

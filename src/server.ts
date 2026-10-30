@@ -10,12 +10,14 @@ import { readFile, stat } from "node:fs/promises";
 import { resolve, extname, sep } from "node:path";
 import { WebSocketServer, WebSocket } from "ws";
 import {discoverXR18} from "./discovery.js";
+import {EarsShare} from "./ears.js";
+import {blankSceneValues,BLANK_SCENE_TEXT} from "./blank-scene.js";
 import {ConnectionManager,loadConnection} from "./connection.js";
 import {dirname,join} from "node:path";
 import { XR18 } from "./xr18.js";
 import { ProcessingStore } from "./processing.js";
 import { StudioDatabase } from "./database.js";
-import { Access, permitted, sameOrigin } from "./access.js";
+import { Access, permitted, sameOrigin, liveControlPermitted } from "./access.js";
 import { LibraryStore } from "./library-store.js";
 import { ShowControl } from "./show-control.js";
 import { StudioApi, body } from "./studio-api.js";
@@ -26,7 +28,7 @@ const diagnostics=new DiagnosticLog(join(dirname(dbPath),'logs','xr18-studio.log
 setDiagnosticLogger(diagnostics);
 diagnostic('startup',{version:process.env.XR18_APP_VERSION??'source',platform:process.platform,arch:process.arch,node:process.version});
 const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
-const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.100',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
+const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.1',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
 const xr18 = new XR18(config);
 const connection=new ConnectionManager(xr18,configPath,config);
 let discoveryPending:ReturnType<typeof discoverXR18>|undefined;
@@ -36,6 +38,8 @@ const mixerSync=new MixerSync(xr18,show.console,library);
 const coach=new SoundCoach(xr18,show.console,library);
 let aiRequestAt=0;
 const studioApi=new StudioApi(xr18,access,library,show);
+// Musicians' monitor mixes on the local network (QR links). Off until started from the app.
+const ears=new EarsShare(dbPath,xr18,()=>process.env.XR18_WEB_DIST,()=>studioApi.busy?'Une opération est en cours sur l’ordinateur, réessaie dans un instant':null,()=>show.manualOverride());
 const listenHost=process.env.XR18_HTTP_HOST??'127.0.0.1';
 const tls=process.env.XR18_TLS_CERT&&process.env.XR18_TLS_KEY?{cert:await readFile(process.env.XR18_TLS_CERT),key:await readFile(process.env.XR18_TLS_KEY)}:undefined;
 if(!['127.0.0.1','localhost'].includes(listenHost)&&(!tls||!access.enabled()))throw Error('Accès réseau : HTTPS et comptes configurés requis.');
@@ -57,14 +61,31 @@ const handler: http.RequestListener = async (req, res) => {
   const user=access.user(req);
   if(path.startsWith('/api/')&&(!user||!permitted(user,req.method??'GET',path))){res.writeHead(user?403:401);res.end(JSON.stringify({error:user?'Droits insuffisants':'Connexion requise'}));return;}
   if(path==='/api/reacue/stop'&&req.method==='POST'){show.arm(false);access.log(user!,'Arrêt ReaCue');res.end(JSON.stringify({ok:true}));return;}
-  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/undo'].includes(path);
+  const readOnlyCoach=['/api/coach/ask','/api/coach/advice','/api/coach/measure','/api/coach/suggest','/api/coach/prepare','/api/coach/ears','/api/coach/gain','/api/coach/bleed','/api/coach/calibration','/api/coach/undo'].includes(path);
   if(path.startsWith('/api/')&&req.method!=='GET'&&!readOnlyCoach){
-    const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply');
+    const coachMetadata=(path.startsWith('/api/coach/')&&path!=='/api/coach/apply')||(path.startsWith('/api/mixer-sync')&&path!=='/api/mixer-sync/apply')||path.startsWith('/api/ears-share');
     if(studioApi.busy&&!path.startsWith('/api/reacue')&&!coachMetadata){show.manualOverride();}
     if(studioApi.busy){res.writeHead(409);res.end(JSON.stringify({error:'Une opération est déjà en cours'}));return;}
     studioApi.busy=true;ownsWriteLock=true;
     access.log(user!,`${req.method} ${path}`);
     if(!path.startsWith('/api/reacue')&&!path.startsWith('/api/library')&&!coachMetadata)show.manualOverride();
+  }
+  if(path.startsWith('/api/ears-share')){
+   try{
+    const m=/^\/api\/ears-share(?:\/(start|stop|musicians)(?:\/([a-f0-9-]{36})(?:\/(regenerate|qr))?)?)?$/.exec(path);
+    if(!m){res.writeHead(404);res.end(JSON.stringify({error:'Introuvable'}));return;}
+    let result:unknown;
+    if(req.method==='GET'&&!m[1])result=ears.status();
+    else if(req.method==='POST'&&m[1]==='start')result=await ears.start();
+    else if(req.method==='POST'&&m[1]==='stop')result=await ears.stop();
+    else if(req.method==='POST'&&m[1]==='musicians'&&!m[2]){const d=await body(req);ears.create(d.name,d.bus);result=ears.status();}
+    else if(req.method==='POST'&&m[3]==='regenerate'){ears.regenerate(m[2]!);result=ears.status();}
+    else if(req.method==='DELETE'&&m[2]&&!m[3]){ears.remove(m[2]);result=ears.status();}
+    else if(req.method==='GET'&&m[3]==='qr')result=await ears.qr(m[2]!,new URL(req.url!,'http://localhost').searchParams.get('host')??undefined);
+    else{res.writeHead(405);res.end(JSON.stringify({error:'Méthode non autorisée'}));return;}
+    res.end(JSON.stringify(result));
+   }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}
+   return;
   }
   if(path==='/api/mixer-sync'&&req.method==='GET'){res.end(JSON.stringify(mixerSync.status()));return;}
   if(path.startsWith('/api/mixer-sync/')&&req.method==='POST'){
@@ -97,6 +118,16 @@ const handler: http.RequestListener = async (req, res) => {
     try{const d=await body(req);let result:unknown;
       if(path==='/api/coach/profile')result=coach.saveProfile(d.profile);
       else if(path==='/api/coach/prepare')result=await coach.prepare(d.channel===undefined?undefined:Number(d.channel));
+      else if(path==='/api/coach/gain')result=await coach.gainCheck(Number(d.channel));
+      else if(path==='/api/coach/bleed')result=await coach.bleedCheck(Number(d.channel));
+      else if(path==='/api/coach/calibration')result=await coach.calibrationStatus();
+      else if(path==='/api/coach/ears')result=await coach.prepareEars(d.bus===undefined?undefined:Number(d.bus));
+      else if(path==='/api/coach/ears/share'){
+        // Personal QR link for every musician that has none yet on its bus.
+        const musicians=coach.profile().musicians??[];let created=0;
+        for(const m of musicians)if(!ears.list().some(s=>s.bus===m.bus)){ears.create(m.name,m.bus);created++;}
+        result={created,status:ears.status()};
+      }
       else if(path==='/api/coach/suggest')result=await coach.suggest(Number(d.channel),String(d.symptom));
       else if(path==='/api/coach/apply'){if(d.confirm!==true)throw Error('Confirmation requise');result=await coach.apply(d.token,d.confirm);}
       else if(path==='/api/coach/undo')result=await coach.undo();
@@ -122,8 +153,15 @@ const handler: http.RequestListener = async (req, res) => {
   if(path==='/api/console/preview'&&req.method==='POST'){
     try{const d=await body(req);res.end(JSON.stringify(await show.console.preview(d.values)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
+  if(path==='/api/console/blank'&&req.method==='POST'){
+    try{res.end(JSON.stringify({...await show.console.preview(blankSceneValues(),true),...BLANK_SCENE_TEXT,inputs:[]}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
+  if(path==='/api/console/restore'&&req.method==='POST'){
+    // Preview going back to the values saved just before an apply (undo).
+    try{const d=await body(req);const saved=library.get(String(d.backupId));if(saved.kind!=='parameter-backup')throw Error('Sauvegarde incompatible');res.end(JSON.stringify({...await show.console.preview(saved.data,true),title:'Revenir à avant',explanation:'Les réglages modifiés reprennent les valeurs sauvegardées juste avant le changement.',inputs:[]}));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+  }
   if(path==='/api/console/apply'&&req.method==='POST'){
-    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
+    try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');res.end(JSON.stringify(await show.console.apply(d.token,d.allowPhantom===true,d.tolerant===true)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
   if(path==='/api/console/mute-all'&&req.method==='POST'){
     try{const d=await body(req);if(d.confirm!==true)throw Error('Confirmation requise');const values:Record<string,Value>={};for(let i=1;i<=16;i++)values[`/ch/${String(i).padStart(2,'0')}/mix/on`]=0;const p=await show.console.preview(values,true);res.end(JSON.stringify(await show.console.apply(p.token)));}catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
@@ -281,7 +319,24 @@ const handler: http.RequestListener = async (req, res) => {
 const server=tls?https.createServer(tls,handler):http.createServer(handler);
 const wss = new WebSocketServer({ server, path: "/ws", verifyClient:({req},done)=>done(sameOrigin(req)&&!!access.user(req),401) });
 const wsRequests=new WeakMap<WebSocket,http.IncomingMessage>();
-wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState(),parameters:xr18.parameterState() }));});
+// Live control channel for the graphical mixer (fader drags, knobs, mute, solo), like X-AIR Edit.
+function handleLive(ws:WebSocket,req:http.IncomingMessage,raw:Buffer){
+  let message:{type?:unknown;address?:unknown;value?:unknown};
+  try{if(raw.length>2048)throw Error();message=JSON.parse(raw.toString('utf8'));}catch{return;}
+  const reply=(data:unknown)=>{if(ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(data));};
+  const user=access.user(req);if(!user){ws.terminate();return;}
+  if(message.type==='sync'){void xr18.syncLiveView().catch(e=>reply({type:'live-error',error:(e as Error).message}));return;}
+  if(message.type!=='set'||typeof message.address!=='string')return;
+  const address=message.address,value=message.value;
+  try{
+    if(!liveControlPermitted(user,address))throw Error('Droits insuffisants pour '+address);
+    if(studioApi.busy)throw Error('Une opération est déjà en cours');
+    if(typeof value!=='number'&&typeof value!=='string')throw Error('Valeur invalide');
+    show.manualOverride();
+    xr18.liveSet(address,value);
+  }catch(e){reply({type:'live-error',address,error:(e as Error).message});}
+}
+wss.on("connection", (ws,req) => {wsRequests.set(ws,req);ws.on('message',raw=>handleLive(ws,req,raw as Buffer));ws.send(JSON.stringify({ type: "snapshot", channels: xr18.listChannels(), status: xr18.status(), main: xr18.mainState(), meters:xr18.meterState(),parameters:xr18.parameterState() }));});
 xr18.on('reset',()=>{const message=JSON.stringify({type:'snapshot',channels:xr18.listChannels(),status:xr18.status(),main:xr18.mainState(),meters:xr18.meterState(),parameters:xr18.parameterState()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on('parameter',state=>{const message=JSON.stringify({type:'parameter',state});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);});
 xr18.on("state", state => { const message = JSON.stringify({ type: "channel", state, status:xr18.status() }); for (const ws of wss.clients) if (ws.readyState === WebSocket.OPEN) ws.send(message); });
@@ -295,7 +350,7 @@ const port = Number(process.env.HTTP_PORT ?? 3000);
 server.listen(port, listenHost, () => console.log(`XR18 Studio API on ${tls?"https":"http"}://${listenHost}:${port} (${xr18.mode})`));
 const statusTimer=setInterval(()=>{for(const ws of wss.clients){const req=wsRequests.get(ws);if(!req||!access.user(req))ws.terminate();}const message=JSON.stringify({type:"status",status:xr18.status()});for(const ws of wss.clients)if(ws.readyState===WebSocket.OPEN)ws.send(message);},2000);
 statusTimer.unref();
-function shutdown(){clearInterval(statusTimer);xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
+function shutdown(){clearInterval(statusTimer);ears.close();xr18.close();database.close();access.close();library.close();for(const ws of wss.clients)ws.terminate();wss.close();server.close();}
 process.once("SIGINT",shutdown);
 process.once("SIGTERM",shutdown);
 

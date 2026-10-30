@@ -1,21 +1,71 @@
-# Mon ingé son — XR18 Studio 0.3
+# Mon ingé son — XR18 Studio 2.0
+
+> Ce document décrit le fonctionnement détaillé. Pour apprendre à t’en servir, suis le **[tuto illustré](TUTO_MON_INGE_SON.md)**.
 
 L’accueil propose un parcours pour préparer le groupe sans connaître les noms des paramètres OSC. Le mode avancé et les fonctions de console restent accessibles.
 
 ## Commencer
 
 1. **Brancher et connecter** : vérifier les câbles et la connexion, avec les sorties à faible volume pendant la préparation.
-2. **Dire qui est branché où** : adapter les entrées et noms aux vrais branchements. Le modèle fourni prévoit chant, deux guitares, basse et TD-27 stéréo. Il ne détecte pas les instruments et ne crée pas automatiquement de lien stéréo.
-3. **Faire jouer un musicien à la fois** : observer environ cinq secondes de niveaux reçus. La simulation ne fabrique ni mesure ni diagnostic audio. Un niveau reçu ne permet pas de localiser l’étage qui sature.
+2. **Dire qui est branché où** : partir d’un modèle (rock + TD-27, rock + batterie acoustique détaillée, acoustique/duo) ou ajouter la batterie détaillée (kick, snare, tom 1, tom 2, tom 3, OH 1, OH 2), puis adapter entrées et noms aux vrais branchements. Choisir un instrument propose aussitôt sa configuration complète. L’application ne détecte pas les instruments et ne crée pas de lien stéréo.
+3. **Régler le gain de chaque instrument** : mesure de la crête (5 s), proposition de gain pour viser −6 dBFS (au plus +6 dB par étape, jamais de 48 V), nouvelle mesure ; pour kick, snare et toms, mesure de la repisse ; puis seuils du compresseur et du gate calculés sur ces mesures. La simulation ne fabrique aucune mesure.
 4. **Écouter et corriger** : choisir une gêne (« brouillon », « agressif », « notes coupées »…) ou la décrire avec ses mots. Le conseiller distingue observations OSC, description de l’utilisateur et hypothèses à écouter.
-5. **Préparer les retours** : rejoindre les mixes in-ear autorisés, ajuster un instrument à la fois et sauvegarder les profils.
+5. **Préparer les retours** : un musicien par bus (Aux 1 à 6), avec rôle et instruments personnels ; mix de départ pré-fader selon le rôle, puis lien QR personnel pour affiner depuis le téléphone.
 6. **Garder le bon réglage** : sauvegarder une scène complète. Une nouvelle salle ou un changement de micros nécessite une nouvelle vérification.
 
 Les coches du parcours indiquent les étapes confirmées par l’utilisateur, pas une qualification automatique de la balance. La préparation et ces coches sont conservées dans SQLite.
 
-## Base douce et corrections
+## Configuration complète par instrument
 
-La base propose noms, couleurs, coupe-bas et quatre bandes d’EQ avec gains limités à ±2 dB ; elle désactive compresseur et gate pour commencer. Les réglages de traitement concernés sont remplacés après confirmation. Elle ne modifie pas les gains de préampli, 48 V, faders, mutes, pan, routages ou liens stéréo.
+Chaque instrument reçoit nom, couleur, coupe-bas, égaliseur 4 bandes, compresseur (taux, attaque, relâchement, seuil de départ, genou doux, détection RMS), gate et position stéréo. Les seuils du tableau sont des **points de départ** ; dès que le gain d’un instrument est mesuré (étape 3), ils sont remplacés par des seuils calculés sur le signal réel.
+
+| Instrument | Coupe-bas | Compresseur (départ) | Gate (départ) | Pan |
+|---|---|---|---|---|
+| Chant principal | 100 Hz | 3:1 dès −20 dB | — | centre |
+| Chœurs | 120 Hz | 2,5:1 dès −22 dB | — | 15 % G |
+| Guitare rythmique | 85 Hz | 2:1 dès −16 dB | — | 35 % G |
+| Guitare solo | 85 Hz | 2,5:1 dès −18 dB | — | 35 % D |
+| Basse (DI) | 40 Hz | 4:1 dès −20 dB | — | centre |
+| Kick | 35 Hz | 4:1 dès −16 dB | gate −40 dB | centre |
+| Snare | 90 Hz | 4:1 dès −16 dB | expandeur −45 dB | centre |
+| Tom 1 / 2 / 3 | 80 / 65 / 45 Hz | 3:1 dès −18 dB | gate −42 / −42 / −44 dB | 30 % G / 10 % D / 45 % D |
+| OH 1 / OH 2 | 180 Hz | 2:1 dès −18 dB | — | 70 % G / 70 % D |
+| Charleston | 300 Hz | 1,5:1 dès −18 dB | — | 45 % G |
+| Batterie électronique L/R | 35 Hz | désactivé | — | 100 % G / D |
+| Clavier | 80 Hz | 2:1 dès −20 dB | — | 20 % D |
+
+Le placement de la batterie suit la perspective du batteur (charleston et tom aigu à gauche). Les gains d’entrée, le 48 V, les faders, mutes et routages ne sont jamais modifiés. **Appliquer** configure une ligne, **Appliquer à tout le groupe** configure tous les instruments ; si la console ne confirme pas une valeur, l’application la réessaie, poursuit avec les autres et liste celles à relancer.
+
+## Gain et seuils calés sur la mesure
+
+| Mesure | Règle |
+|---|---|
+| Crête entre −9 et −3 dBFS | gain correct, mesure enregistrée avec le gain du préampli |
+| Crête plus basse / plus haute | gain proposé vers −6 dBFS, au plus +6 dB ou −12 dB par étape, arrondi à 0,5 dB |
+| Crête ≥ −1 dBFS | saturation probable : −6 dB puis nouvelle mesure |
+| Crête < −55 dBFS | pas de signal : aucune hausse, vérifier câble, entrée, 48 V |
+| Préampli en butée / retour USB | aucune proposition, régler à la source |
+| Compresseur | crête − 8 dB (voix, chœurs, basse), − 6 dB (guitares, fûts, clavier), − 4 dB (cymbales) |
+| Gate avec repisse mesurée | repisse + 4 dB, sans dépasser crête − 12 dB (coups doux) ; sinon à mi-chemin, avec conseil de placement micro |
+| Gate sans repisse mesurée | crête − 24 dB (estimation signalée) |
+
+Une mesure n’est valable que pour le gain avec lequel elle a été faite : si le gain du préampli change (application, X-AIR Edit, table), l’instrument passe en « à refaire » et la configuration complète revient aux seuils de départ avec un avertissement. Les mesures sont conservées côté serveur ; une sauvegarde du groupe depuis le navigateur ne les efface pas.
+
+## Retours par musicien
+
+Le mix de départ est envoyé en **pré-fader** (indépendant de la façade). Les instruments du musicien sont à −3 dB ; le reste suit son rôle :
+
+| Rôle | Voix | Guitares | Basse | Kick | Snare | Toms | Cymbales |
+|---|---|---|---|---|---|---|---|
+| Chanteur·se | −3 | −16 | −14 | −10 | −14 | −24 | −26 |
+| Guitariste | −8 | −12 | −14 | −10 | −12 | −24 | −26 |
+| Bassiste | −10 | −16 | −4 | −5 | −10 | −20 | −26 |
+| Batteur·se | −8 | −15 | −5 | −6 | −14 | −22 | coupé |
+| Claviériste | −8 | −15 | −12 | −10 | −12 | −24 | −26 |
+
+Pour un batteur sur batterie acoustique, ses propres micros suivent ce tableau (il entend déjà son kit) ; sur batterie électronique, le kit passe devant. Le bus est nommé, retiré de la façade (LR off) et démarré à −10 dB. Les retours d’effets ne sont pas modifiés. **Créer les QR codes des musiciens** crée un lien personnel par bus qui n’en a pas encore.
+
+## Corrections à l’écoute
 
 Les corrections sont des essais bornés : une réduction EQ ciblée ou la désactivation du gate d’un canal. Une bande utilisant un autre type de filtre n’est pas remplacée à l’aveugle. Une bande déjà très réduite ne continue pas à être creusée. Les fréquences proposées sont des hypothèses musicales, pas le résultat d’une analyse du signal.
 

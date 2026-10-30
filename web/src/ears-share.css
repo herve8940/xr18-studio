@@ -1,0 +1,53 @@
+.es{display:grid;gap:16px}
+.es-hero{display:flex;flex-wrap:wrap;align-items:center;gap:18px;padding:22px;border-radius:var(--radius-lg);border:1px solid #23474a;background:linear-gradient(120deg,#0f2a2c,var(--surface) 70%)}
+.es-hero-icon{width:56px;height:56px;border-radius:16px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:0 0 auto}
+.es-hero-text{flex:1;min-width:260px}
+.es-hero-text h2{margin:0 0 6px;font-size:20px}
+.es-hero-text p{margin:0;color:var(--text-2);line-height:1.5}
+.es-hero-text p b{color:var(--text)}
+.es-addr{margin-top:8px!important;color:var(--accent)!important}
+.es-addr select{margin-left:6px;min-height:30px!important}
+.es-hero-actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#04191b;font-weight:700}
+.btn.primary:hover:not(:disabled){background:#6ff0f0}
+.es-message{margin:0;padding:10px 14px;border-radius:12px;background:var(--warn-soft);border:1px solid #f5b83d44;color:#ffe2a8}
+.es-add{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px;border-radius:var(--radius-lg);background:var(--surface);border:1px solid var(--line);color:var(--text-2)}
+.es-add input{flex:1;min-width:180px;min-height:42px;padding:0 12px}
+.es-add select{min-height:42px;padding:0 10px}
+.es-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.es-card{--c:var(--accent);display:grid;gap:12px;padding:16px;border-radius:var(--radius-lg);background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--c)}
+.es-card header{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.es-card header b{display:block;font-size:18px}
+.es-bus{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
+.es-bus i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.es-live{font-size:11px;font-weight:700;padding:4px 8px;border-radius:999px;background:var(--surface-3);color:var(--text-2);white-space:nowrap}
+.es-live.on{background:var(--ok-soft);color:var(--ok)}
+.es-qr{aspect-ratio:1;border-radius:14px;background:#fff;padding:10px;display:grid}
+.es-qr svg{width:100%;height:100%;display:block}
+.es-qr-off{display:grid;place-content:center;justify-items:center;gap:10px;text-align:center;color:#6b7280;font-size:13px;padding:16px}
+.es-hint{margin:0;font-size:12px;color:var(--text-2)}
+.es-url{display:flex;gap:6px;align-items:center}
+.es-url code{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text-2);background:var(--surface-2);padding:6px 8px;border-radius:8px}
+.es-url button,.es-actions button{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 10px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--text);font-size:13px;font-weight:600;cursor:pointer}
+.es-actions{display:flex;gap:8px;flex-wrap:wrap}
+.es-actions button.danger{color:#ffb4b2;border-color:#f0524f55}
+.es-empty{color:var(--text-2);margin:0}
+.es-help{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:14px 16px}
+.es-help summary{cursor:pointer;font-weight:700;color:var(--accent)}
+.es-help ul{margin:10px 0 0;padding-left:18px;color:var(--text-2);line-height:1.6}
+.es-help li b{color:var(--text)}
+@media print{
+  body *{visibility:hidden}
+  .es-grid,.es-grid *{visibility:visible}
+  .es-grid{position:absolute;left:0;top:0;width:100%;grid-template-columns:repeat(2,1fr);gap:18mm}
+  .es-card{background:#fff!important;color:#000!important;border:1px solid #999;break-inside:avoid}
+  .es-card .es-actions,.es-card .es-url button,.es-live{display:none}
+  .es-card header b,.es-hint,.es-url code{color:#000!important;background:none!important}
+}
+.es,.es-grid{min-width:0}
+.es-grid{grid-template-columns:repeat(auto-fill,minmax(min(260px,100%),1fr))}
+.es-card,.es-qr>div{min-width:0}
+.es-qr svg{width:100%!important;height:auto!important}
+.es-hint{overflow-wrap:anywhere}
+.es{grid-template-columns:minmax(0,1fr)}
+.es-card{grid-template-columns:minmax(0,1fr)}.es-card header>div{min-width:0}

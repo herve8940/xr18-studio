@@ -1,10 +1,10 @@
 import {createHash,randomUUID} from 'node:crypto';
-import {PARAMETERS,fromWire,type Value} from './parameters.js';
+import {PARAMETERS,fromWire,readbackTolerance,type Value} from './parameters.js';
 import {ConsoleControl,type CompleteScene} from './console-control.js';
 import type {XR18} from './xr18.js';
 import type {LibraryStore} from './library-store.js';
 import {diagnostic} from './diagnostics.js';
-const same=(a:Value|undefined,b:Value)=>typeof a==='number'&&typeof b==='number'?Math.abs(a-b)<=.003:a===b;
+const same=(a:Value|undefined,b:Value,address?:string)=>typeof a==='number'&&typeof b==='number'?Math.abs(a-b)<=(address&&PARAMETERS[address]?readbackTolerance(address):.003):a===b;
 const digest=(s:CompleteScene)=>createHash('sha256').update(JSON.stringify([Object.entries(s.values).sort(([a],[b])=>a.localeCompare(b)),s.fx])).digest('hex');
 type Plan={identity:string;before:string;expires:number;values:Record<string,Value>;fx:CompleteScene['fx'];sourceId:string;phantom:boolean};
 export class MixerSync {
@@ -19,7 +19,7 @@ export class MixerSync {
   const desired=this.control.validateScene(e.data);if(Object.keys(desired.values).length!==Object.keys(PARAMETERS).length)throw Error('État PC incomplet : choisir une capture complète récente');
   for(const f of desired.fx)if(desired.values[`/fx/${f.slot}/type`]!==f.algorithm)throw Error('État PC incohérent : algorithme FX différent de son vecteur');
   const identity=this.control.identity(),before=await this.control.capture();if(identity!==this.control.identity())throw Error('Connexion modifiée');
-  const values=Object.fromEntries(Object.entries(desired.values).filter(([a,v])=>(includePhantom||!a.endsWith('/phantom'))&&!same(before.values[a],v)));
+  const values=Object.fromEntries(Object.entries(desired.values).filter(([a,v])=>(includePhantom||!a.endsWith('/phantom'))&&!same(before.values[a],v,a)));
   const fx=desired.fx.filter((f,i)=>JSON.stringify(f)!==JSON.stringify(before.fx[i]));
   const token=randomUUID(),phantom=Object.keys(values).some(a=>a.endsWith('/phantom'));
   if(this.plans.size>20)this.plans.clear();this.plans.set(token,{identity,before:digest(before),expires:Date.now()+120000,values,fx,sourceId,phantom});

@@ -1,4 +1,11 @@
-import {PARAMETERS,descriptor,validateWire,defaultWire,type Value} from "./parameters.js";
+import {PARAMETERS,descriptor,validateWire,defaultWire,readbackTolerance,type Value} from "./parameters.js";
+
+/** Solo switches (X-AIR Edit /-stat/solosw/NN): not part of scenes, live control only. */
+const SOLO=/^\/-stat\/solosw\/(0[1-9]|1[0-6])$/;
+/** Live control never touches 48 V or routing: those keep their confirmed preview flow. */
+export function liveAllowed(address:string){return SOLO.test(address)||(!!PARAMETERS[address]&&!address.endsWith('/phantom')&&!address.startsWith('/routing/')&&!/^\/fx\/[1-4]\/type$/.test(address));}
+/** /meters/1 order (40 values): ch1-16, aux L/R, fx return 1-4 L/R, bus 1-6, fx send 1-4, main L/R, monitor L/R. */
+export const METER_LAYOUT={channels:0,aux:16,fxReturns:18,buses:26,fxSends:32,main:36,monitor:38,count:40} as const;
 import dgram from "node:dgram";
 import { EventEmitter } from "node:events";
 import { decodeOsc, decodeXAirMeterBlob, encodeOsc, oscFloat, type OutgoingOscArg, type OscMessage } from "./osc.js";
@@ -63,25 +70,35 @@ export class XR18 extends EventEmitter {
     this.send(address,[p.type==='f'?oscFloat(checked as number):checked]);
     const observed=await this.readParameter(address);
     if(generation!==this.generation)throw Error('Connexion modifiée pendant écriture');
-    if(typeof observed==='number'&&typeof checked==='number'?Math.abs(observed-checked)>.003:observed!==checked)throw Error('Lecture différente : '+address);
+    // The console quantizes floats (e.g. 201 steps for EQ frequency): compare within half a step.
+    if(typeof observed==='number'&&typeof checked==='number'?Math.abs(observed-checked)>readbackTolerance(address):observed!==checked)throw Error('Lecture différente : '+address);
     return observed;
   }
-  async applyParameters(values:Record<string,Value>,allowPhantom=false){
+  async applyParameters(values:Record<string,Value>,allowPhantom=false,tolerant=false){
     for(const [a,v] of Object.entries(values)){validateWire(a,v);if(a.endsWith('/phantom')&&!allowPhantom)throw Error('Confirmation 48 V requise');}
     const generation=this.generation,operation=this.operationEpoch;
-    for(const [a,v] of Object.entries(values)){if(generation!==this.generation||operation!==this.operationEpoch)throw Error('Opération interrompue');await this.writeParameter(a,v,allowPhantom);}
+    const failed:string[]=[];
+    for(const [a,v] of Object.entries(values)){
+      if(generation!==this.generation||operation!==this.operationEpoch)throw Error('Opération interrompue');
+      if(!tolerant){await this.writeParameter(a,v,allowPhantom);continue;}
+      // Tolerant mode (guided set-up of many channels): one value the console reads back
+      // differently must not stop the remaining instruments. Retry once, then report it.
+      try{await this.writeParameter(a,v,allowPhantom);}
+      catch(e){if(/Lecture différente|Pas de réponse XR18/.test((e as Error).message)){try{await this.writeParameter(a,v,allowPhantom);}catch{failed.push(a);}}else throw e;}
+    }
+    return {failed};
   }
   private connected = false;
   private lastReplyAt: number | null = null;
   private readonly staleAfterMs = 18000;
   private readonly channels = new Map<number, ChannelState>();
-  private meters:{channels:number[];updatedAt:string}|null=null;
-  meterState(){return this.meters&&Date.now()-Date.parse(this.meters.updatedAt)<5000?{...this.meters,available:true}:{channels:[],updatedAt:null,available:false};}
+  private meters:{channels:number[];all:number[];updatedAt:string}|null=null;
+  meterState(){return this.meters&&Date.now()-Date.parse(this.meters.updatedAt)<5000?{...this.meters,available:true}:{channels:[],all:[],updatedAt:null,available:false};}
   private readonly advanced = new Map<string,{value:number|string;updatedAt:string}>();
   private readonly advancedAddresses = new Set<string>();
   private main: ChannelState = {channel:0,fader:0.5,on:true,updatedAt:null};
-  constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean }) {
-    super(); this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
+  constructor(opts: { mode: Mode; host: string; port: number; enableWrites: boolean; autoSync?: boolean }) {
+    super(); this.autoSync = opts.autoSync !== false; this.currentMode = opts.mode; this.host = opts.host; this.port = opts.port;
     this.writes = opts.mode === "real" && opts.enableWrites;
     for (let i = 1; i <= 16; i++) this.channels.set(i, { channel: i, fader: 0.5, on: true, updatedAt: null });
     if (this.mode === "simulation") this.connected = true;
@@ -102,6 +119,58 @@ export class XR18 extends EventEmitter {
     if(this.mode!=='real'||!this.writes||!this.isLive())throw Error('Real XR18 connection and write opt-in required');
     if(!this.advancedAddresses.has(address)||address.startsWith('/fx/'))throw Error('OSC parameter not allowlisted');
     validateWire(address,value);const p=descriptor(address);this.send(address,[p.type==='f'?oscFloat(value):value]);
+  }
+  private pendingLocal=new Map<string,number>();
+  private readbackTimers=new Map<string,NodeJS.Timeout>();
+  /**
+   * Immediate control like X-AIR Edit (fader drag, knob, mute, solo): no preview, no blocking readback.
+   * The value is shown at once, then re-read from the console 300 ms after the last move to show
+   * the quantized value actually stored by the XR18.
+   */
+  liveSet(address:string,value:number|string){
+    if(!liveAllowed(address))throw Error('Paramètre non autorisé en contrôle direct : '+address);
+    const checked:Value=SOLO.test(address)?(value===1||value===0?value:(()=>{throw Error('Solo 0 ou 1');})()):validateWire(address,value);
+    if(this.mode==='simulation'){this.applyLocal(address,checked);return checked;}
+    if(!this.writes||!this.isLive())throw Error('Écritures désactivées ou XR18 déconnectée');
+    const p=PARAMETERS[address];
+    this.send(address,[p?.type==='f'?oscFloat(checked as number):checked]);
+    this.pendingLocal.set(address,Date.now()+250);
+    this.applyLocal(address,checked);
+    clearTimeout(this.readbackTimers.get(address));
+    const generation=this.generation;
+    const timer=setTimeout(()=>{this.readbackTimers.delete(address);this.pendingLocal.delete(address);if(generation===this.generation)this.send(address);},300);
+    timer.unref();this.readbackTimers.set(address,timer);
+    return checked;
+  }
+  /** Update caches and legacy channel/main state without pretending it is a console reply. */
+  private applyLocal(address:string,value:Value){
+    this.remember(address,value);
+    const now=new Date().toISOString();
+    const c=/^\/ch\/(0[1-9]|1[0-6])\/mix\/(fader|on)$/.exec(address);
+    if(c&&typeof value==='number'){const state=this.channels.get(Number(c[1]))!;if(c[2]==='fader')state.fader=value;else state.on=value!==0;state.updatedAt=now;this.emit('state',{...state});}
+    if((address==='/lr/mix/fader'||address==='/lr/mix/on')&&typeof value==='number'){if(address.endsWith('fader'))this.main.fader=value;else this.main.on=value!==0;this.main.updatedAt=now;this.emit('main',{...this.main});}
+    if(this.advancedAddresses.has(address)){const state={value,updatedAt:now};this.advanced.set(address,state);this.emit('advanced',{address,...state});}
+  }
+  private syncing=false;
+  private autoSync=true;
+  /** Full pull of the console state, as X-AIR Edit does on "Mixer -> PC" synchronisation. */
+  async syncLiveView(){
+    const addresses=[...Object.keys(PARAMETERS),...Array.from({length:16},(_,i)=>`/-stat/solosw/${String(i+1).padStart(2,'0')}`)];
+    if(this.mode==='simulation'){
+      for(const a of addresses){if(this.parameterValues.has(a))continue;const v=PARAMETERS[a]?await this.readParameter(a):0;this.remember(a,v);}
+      return {requested:addresses.length};
+    }
+    if(this.syncing||!this.socket)return {requested:0};
+    this.syncing=true;const generation=this.generation;
+    try{
+      // ~800 requests per second: gentle on the console's network stack (full pull in ~3 s).
+      for(let i=0;i<addresses.length;i+=8){
+        if(generation!==this.generation)break;
+        for(const a of addresses.slice(i,i+8))this.send(a);
+        await new Promise(r=>setTimeout(r,10));
+      }
+    }finally{this.syncing=false;}
+    return {requested:addresses.length};
   }
   refreshFx(){if(this.mode!=="real"||!this.isLive())return;for(const address of this.advancedAddresses)if(address.startsWith("/fx/"))this.send(address);}
   async start(): Promise<void> {
@@ -132,18 +201,26 @@ export class XR18 extends EventEmitter {
       for(const suffix of ['config/name','config/color','mix/pan'])this.send(`/ch/${String(i).padStart(2,'0')}/${suffix}`);
       this.send(`/headamp/${String(i).padStart(2,'0')}/gain`);
     }
+    // Then pull everything else in the background so the graphical mixer shows the real console.
+    const generation=this.generation;
+    if(this.autoSync)setTimeout(()=>{if(generation===this.generation)void this.syncLiveView().catch(e=>this.emit('warning',String(e)));},400).unref();
   }
   private send(address: string, args: OutgoingOscArg[] = []) {
     if (!this.socket) return;
     const b = encodeOsc(address, args);
     this.socket.send(b, this.port, this.host, err => { if (err) this.emit("warning", err.message); });
   }
+  /** Any well-formed reply from the console proves the link is alive (not only faders/meters). */
+  private markAlive(){const was=this.isLive();this.connected=true;this.lastReplyAt=Date.now();if(!was)this.emit("connection",{connected:true});}
   private handle(msg: OscMessage) {
     this.emit("osc-reply",msg);
+    this.markAlive();
+    if(this.pendingLocal.has(msg.address)&&Date.now()<this.pendingLocal.get(msg.address)!)return;
+    if(SOLO.test(msg.address)&&typeof msg.args[0]==="number"){this.remember(msg.address,msg.args[0]?1:0);return;}
     if(PARAMETERS[msg.address]){try{this.remember(msg.address,validateWire(msg.address,msg.args[0]));}catch{return;}}
     if(msg.address==="/meters/1"&&Buffer.isBuffer(msg.args[0])){
-      const levels=decodeXAirMeterBlob(msg.args[0],40);
-      this.meters={channels:levels.slice(0,16),updatedAt:new Date().toISOString()};
+      const levels=decodeXAirMeterBlob(msg.args[0],METER_LAYOUT.count);
+      this.meters={channels:levels.slice(0,16),all:levels,updatedAt:new Date().toISOString()};
       this.connected=true;this.lastReplyAt=Date.now();this.emit("meters",this.meterState());return;
     }
     const match = /^\/ch\/(0[1-9]|1[0-6])\/mix\/(fader|on)$/.exec(msg.address);
@@ -261,6 +338,7 @@ export class XR18 extends EventEmitter {
   close() {
     this.generation++;this.emit("transport-closed");
     if(this.timer)clearInterval(this.timer);this.timer=undefined;
+    for(const t of this.readbackTimers.values())clearTimeout(t);this.readbackTimers.clear();this.pendingLocal.clear();
     const socket=this.socket;this.socket=undefined;
     if(socket){socket.removeAllListeners('message');try{socket.close();}catch{}}
     this.connected=false;
