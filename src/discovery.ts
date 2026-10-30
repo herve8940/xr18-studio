@@ -31,7 +31,9 @@ export function parseIdentity(data:Buffer,host:string,port:number):DiscoveredXR1
 }
 /** Optional targets/port are for deterministic UDP transport tests. HTTP never accepts them. */
 export interface DiscoveryDiagnostics {received:number;unrecognized:number;sendErrors:string[]}
-export async function discoverXR18(timeoutMs=2500,targets=broadcastTargets(),port=10024,diagnostics:DiscoveryDiagnostics={received:0,unrecognized:0,sendErrors:[]}):Promise<DiscoveredXR18[]> {
+/** Like X-AIR Edit: subnet broadcasts plus the limited broadcast 255.255.255.255 (works on any subnet, e.g. a mesh router's 192.168.68.x). */
+export function discoveryTargets(interfaces=interfacesSafe()){const subnet=broadcastTargets(interfaces);return subnet.length?[...subnet,'255.255.255.255']:[];}
+export async function discoverXR18(timeoutMs=2500,targets=discoveryTargets(),port=10024,diagnostics:DiscoveryDiagnostics={received:0,unrecognized:0,sendErrors:[]}):Promise<DiscoveredXR18[]> {
  diagnostic('discovery.start',{targets,port,timeoutMs});
  if(!targets.length){diagnostic('discovery.no_interfaces');return [];}
  const socket=dgram.createSocket('udp4');const found=new Map<string,DiscoveredXR18>();

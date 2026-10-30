@@ -4,7 +4,7 @@ import dgram from 'node:dgram';
 import {mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {broadcastTargets,parseIdentity,discoverXR18} from '../src/discovery.js';
+import {broadcastTargets,discoveryTargets,parseIdentity,discoverXR18} from '../src/discovery.js';
 import {connectionConfig,ConnectionManager,loadConnection} from '../src/connection.js';
 import {XR18} from '../src/xr18.js';
 import {encodeOsc,decodeOsc,oscFloat} from '../src/osc.js';
@@ -77,4 +77,9 @@ test('unreachable network gets a plain explanation with the macOS Local Network 
  const m=unreachableMessage('192.168.68.94',10024,['send EHOSTUNREACH 192.168.68.94:10024']);
  assert.match(m,/Réseau local/);assert.match(m,/Détecter et connecter/);assert.match(m,/EHOSTUNREACH/);
  assert.match(unreachableMessage('10.0.0.2',10024,[]),/ne répond pas/);
+});
+test('discovery also uses the limited broadcast, like X-AIR Edit',()=>{
+ const t=discoveryTargets({en0:[{family:'IPv4',address:'192.168.68.20',netmask:'255.255.252.0',internal:false,cidr:'192.168.68.20/22',mac:'00:00:00:00:00:00'}]});
+ assert.deepEqual(t,['192.168.71.255','255.255.255.255']);
+ assert.deepEqual(discoveryTargets({}),[]);
 });
