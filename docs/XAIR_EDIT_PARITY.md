@@ -1,12 +1,14 @@
-# Alignement sur X-AIR Edit 1.8.1
+# Compatibilité avec la XR18 et X-AIR Edit
 
-Analyse du binaire macOS de X-AIR Edit 1.8.1 (Intel, JUCE). Les chaînes OSC ont été comparées au catalogue de `scene-schema.ts`.
+XR18 Studio est un logiciel **indépendant**, écrit de zéro. Il pilote la console avec le protocole réseau OSC qu’elle propose, comme d’autres applications tierces. Son comportement a été comparé à celui de la console et de l’application officielle X-AIR Edit, utilisées côte à côte, pour que les deux restent **compatibles** sur une même XR18.
+
+Le projet ne contient **aucun code, fichier, image, logo ni autre élément** provenant de Behringer / Music Tribe ou de X-AIR Edit. Les noms de modèles et de fonctions ne sont cités que pour indiquer avec quel matériel l’application fonctionne.
 
 ## Ce qui a été vérifié
 
-- Les 689 nœuds OSC du catalogue existent tous dans X-AIR Edit (`/ch`, `/rtn`, `/bus`, `/fxsend`, `/lr`, `/dca`, `/fx`, `/headamp`, `/routing`, `/config`). Aucune adresse inventée.
-- X-AIR Edit utilise en plus `/xremotenfb`, `/batchsubscribe`, `/renew`, `/unsubscribe`, `/meters/0…7`, `/-stat/solosw/NN`, `/-snap/NN` et `/-prefs/...`.
-- Modèles reconnus par X-AIR Edit pour la carte à 18 canaux : XR18, X18, MR18 et leurs versions V2.
+- Les 689 nœuds OSC du catalogue de `scene-schema.ts` correspondent aux adresses utilisées par la console et X-AIR Edit (`/ch`, `/rtn`, `/bus`, `/fxsend`, `/lr`, `/dca`, `/fx`, `/headamp`, `/routing`, `/config`). Aucune adresse inventée.
+- Adresses de service également utilisées : `/xremotenfb`, `/batchsubscribe`, `/renew`, `/unsubscribe`, `/meters/0…7`, `/-stat/solosw/NN`, `/-snap/NN` et `/-prefs/...`.
+- Modèles de la famille 18 canaux reconnus : XR18, X18, MR18 et leurs versions V2, comme dans X-AIR Edit.
 
 ## Corrections
 
@@ -22,10 +24,14 @@ Analyse du binaire macOS de X-AIR Edit 1.8.1 (Intel, JUCE). Les chaînes OSC ont
 
 ## Console graphique
 
-Le menu **Console**, onglet **Console**, reproduit les vues de X-AIR Edit : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite. Chaque option est expliquée dans l’application (« ? Explications ») et dans le [guide de la console](GUIDE_CONSOLE.md).
+Le menu **Console**, onglet **Console**, propose une organisation familière aux utilisateurs de X-AIR Edit, avec une interface et des graphismes propres à XR18 Studio : Mixer, Canal, Entrée, Gate, EQ, Comp, Envois, Main, Effets, Routage et Vumètres. La banque de faders est en bas et la barre de mix à droite. Chaque option est expliquée dans l’application (« ? Explications ») et dans le [guide de la console](GUIDE_CONSOLE.md).
 
 Le contrôle direct passe par le WebSocket (`{type:'set'}`), comme les gestes de X-AIR Edit : la valeur est envoyée immédiatement, puis relue 300 ms après le dernier mouvement. Le 48 V, le routage et le type d’effet passent par la prévisualisation avec confirmation (`/api/console/preview` puis `/api/console/apply`). Un musicien ne peut régler que les envois de ses propres bus.
 
-Les noms complets des 61 algorithmes d’effet ont été relevés dans le binaire de X-AIR Edit (Hall Reverb, Stereo Delay, Modulation Delay…).
+Les 61 algorithmes d’effet portent les noms affichés par la console et X-AIR Edit (Hall Reverb, Stereo Delay, Modulation Delay…), pour que l’utilisateur les retrouve.
 
 À vérifier sur la XR18 physique : le mapping solo `/-stat/solosw/01-16` et la cadence des vumètres.
+
+## Marques
+
+Behringer, Music Tribe, X AIR, X-AIR Edit, XR18, X18 et MR18 sont des marques de leurs propriétaires respectifs. XR18 Studio est un projet indépendant, gratuit et open source (licence MIT), **non affilié, non approuvé et non soutenu** par Behringer / Music Tribe.
