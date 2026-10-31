@@ -60,3 +60,20 @@ test("QR link: snapshot, capped control, refusal outside the bus, revocation",as
   if(qr)assert.match(qr.svg,/<svg/);
  }finally{await ears.stop();ears.close();xr.close();}
 });
+
+test("phone: a saved monitor profile can be deleted (and only by its own link)",async()=>{
+ const dir=mkdtempSync(join(tmpdir(),"ears-"));
+ const xr=new XR18({mode:"simulation",host:"127.0.0.1",port:10024,enableWrites:false});
+ const ears=new EarsShare(join(dir,"db.sqlite"),xr,()=>undefined,()=>null,()=>{});
+ try{
+  const mine=ears.create("Hervé",1),other=ears.create("Pascal",2);
+  const {port}=await ears.start(0),base=`http://127.0.0.1:${port}/ears-api`;
+  const saved=await (await fetch(`${base}/${mine.token}/profiles`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:"Concert"})})).json() as {id:string};
+  assert.ok(saved.id);
+  const foreign=await fetch(`${base}/${other.token}/profiles/${saved.id}`,{method:"DELETE"});
+  assert.equal(foreign.status,200);assert.equal(((await foreign.json()) as {deleted:number}).deleted,0,"another musician cannot delete it");
+  const r=await fetch(`${base}/${mine.token}/profiles/${saved.id}`,{method:"DELETE"});
+  assert.equal(r.status,200);assert.deepEqual(await r.json(),{ok:true,deleted:1});
+  assert.deepEqual(await (await fetch(`${base}/${mine.token}/profiles`)).json(),[]);
+ }finally{await ears.stop();ears.close();xr.close();}
+});

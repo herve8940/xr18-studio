@@ -24,7 +24,7 @@ app.whenReady().then(async () => {
     process.env.XR18_ENABLE_WRITES=String(config.enableWrites);
     Menu.setApplicationMenu(Menu.buildFromTemplate([{label:"Connexion",submenu:[
       {label:"Détecter et connecter ma XR18",click:()=>{if(win)void win.webContents.executeJavaScript("window.dispatchEvent(new Event('xr18-open-connection'))");}},
-      {type:"separator"},{role:"quit",label:"Quitter"}
+      {type:"separator"},{role:"about",label:"À propos de XR18 Studio"},{type:"separator"},{role:"quit",label:"Quitter"}
     ]},{label:"Affichage",submenu:[{role:"reload"},{role:"togglefullscreen"}]}]));
     const port = await new Promise((resolve,reject)=>{
       const probe=net.createServer();

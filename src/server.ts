@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import {MixerSync} from './mixer-sync.js';
 import {DiagnosticLog,setDiagnosticLogger,diagnostic} from './diagnostics.js';
 import {SoundCoach,identifySymptom} from "./sound-coach.js";
@@ -26,7 +27,9 @@ const processing = new ProcessingStore();
 const dbPath=process.env.XR18_DB_PATH??"data/xr18-studio.db";
 const diagnostics=new DiagnosticLog(join(dirname(dbPath),'logs','xr18-studio.log'));
 setDiagnosticLogger(diagnostics);
-diagnostic('startup',{version:process.env.XR18_APP_VERSION??'source',platform:process.platform,arch:process.arch,node:process.version});
+// Version shown in Réglages and written in the diagnostic log (set by the desktop app, else package.json).
+const APP_VERSION=process.env.XR18_APP_VERSION??(()=>{try{return JSON.parse(readFileSync(new URL('../../package.json',import.meta.url),'utf8')).version as string;}catch{return 'source';}})();
+diagnostic('startup',{version:APP_VERSION,platform:process.platform,arch:process.arch,node:process.version});
 const configPath=process.env.XR18_CONNECTION_PATH??join(dirname(dbPath),'connection.json');
 const config=await loadConnection(configPath,{mode:process.env.XR18_MODE==='real'?'real':'simulation',host:process.env.XR18_HOST??'192.168.1.1',port:Number(process.env.XR18_PORT??10024),enableWrites:process.env.XR18_ENABLE_WRITES==='true'});
 const xr18 = new XR18(config);
@@ -98,6 +101,7 @@ const handler: http.RequestListener = async (req, res) => {
     res.end(JSON.stringify(result));
    }catch(e){res.writeHead(400);res.end(JSON.stringify({error:(e as Error).message}));}return;
   }
+  if(path==='/api/version'&&req.method==='GET'){res.end(JSON.stringify({version:APP_VERSION}));return;}
   if(path==='/api/diagnostics/log'&&req.method==='GET'){
     try{res.setHeader('Content-Type','text/plain; charset=utf-8');res.setHeader('Content-Disposition','attachment; filename="xr18-studio-diagnostic.log"');res.end(diagnostics.read());}
     catch{res.writeHead(503);res.end('Journal indisponible : vérifier les droits du dossier de données.');}return;
