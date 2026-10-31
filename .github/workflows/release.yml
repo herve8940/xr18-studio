@@ -34,7 +34,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm --prefix web ci
-      - run: npm test
+      - name: Backend tests
+        shell: bash
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt || { grep -E "^not ok|^\s+(error|expected|actual|code|message):" test-output.txt | head -40 | sed 's/^/::error title=Test::/'; exit 1; }
       - run: npm run desktop:package
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

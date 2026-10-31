@@ -34,10 +34,11 @@ test('complete simulation scene roundtrip covers routing, DCA, names, FX, bus an
 
 test('real OSC emulator verifies floats including 0/1, int ratios, names, routing, FX and failed readback',async()=>{
  const peer=dgram.createSocket('udp4');await new Promise<void>(r=>peer.bind(0,'127.0.0.1',r));
- const wire=new Map<string,number|string>(),writes:{address:string;tags?:string}[]=[];let mismatch=false;
+ const wire=new Map<string,number|string>(),writes:{address:string;tags?:string}[]=[];let mismatch=false;const fxPar:number[]=[1,1];
  peer.on('message',(data,remote)=>{const m=decodeOsc(data);const reply=(a:string,args:OutgoingOscArg[])=>peer.send(encodeOsc(a,args),remote.port,remote.address);
   if(m.address==='/lr/mix/fader'){reply(m.address,[oscFloat(.5)]);return;}
-  if(m.address==='/fx/1/par'){if(m.args.length){writes.push({address:m.address,tags:m.tags});reply(m.address,m.args.map((v,i)=>m.tags?.[i]==='f'?oscFloat(v as number):v));}else reply(m.address,[oscFloat(1),1]);return;}
+  if(m.address==='/fx/1/par'){reply(m.address,[oscFloat(fxPar[0] as number),fxPar[1]!]);return;}
+  const fxp=/^\/fx\/1\/par\/(\d\d)$/.exec(m.address);if(fxp){if(m.args.length){writes.push({address:m.address,tags:m.tags});fxPar[Number(fxp[1])-1]=m.args[0] as number;}return;}
   const p=PARAMETERS[m.address];if(!p)return;
   if(m.args.length){writes.push({address:m.address,tags:m.tags});wire.set(m.address,m.args[0] as number|string);}
   const v=mismatch ? .123 :wire.get(m.address)??defaultWire(p);reply(m.address,[p.type==='f'?oscFloat(v as number):v]);
@@ -47,7 +48,7 @@ test('real OSC emulator verifies floats including 0/1, int ratios, names, routin
   await xr.start();for(let i=0;i<100&&!xr.status().connected;i++)await new Promise(r=>setTimeout(r,5));
   const p=await control.preview({'/ch/01/config/name':'Basse','/ch/01/dyn/ratio':'4.0','/ch/01/eq/1/g':15,'/routing/usb/01/src':4});await control.apply(p.token);
   assert.deepEqual(writes.map(w=>w.tags),['s','i','f','i']);assert.equal(wire.get('/ch/01/dyn/ratio'),6);assert.equal(wire.get('/ch/01/eq/1/g'),1);
-  const fx=await xr.readFx(1);assert.deepEqual(fx.parameters,[{type:'f',value:1},{type:'i',value:1}]);await xr.applyFx(fx);assert.equal(writes.at(-1)?.tags,'fi');
+  const fx=await xr.readFx(1);assert.deepEqual(fx.parameters,[{type:'f',value:1},{type:'i',value:1}]);await xr.applyFx(fx);assert.deepEqual(writes.slice(-2).map(w=>[w.address,w.tags]),[['/fx/1/par/01','f'],['/fx/1/par/02','i']]);
   mismatch=true;await assert.rejects(xr.writeParameter('/ch/01/eq/1/g',.8),/Lecture différente/);
   const before=writes.length;await assert.rejects(xr.writeParameter('/headamp/01/phantom',1),/48 V/);assert.equal(writes.length,before);
   xr.close();await assert.rejects(xr.writeParameter('/dca/1/fader',.5),/déconnectée/);

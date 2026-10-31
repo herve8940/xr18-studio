@@ -306,7 +306,12 @@ export class XR18 extends EventEmitter {
     if(this.mode==='simulation')return structuredClone(this.fxValues.get(slot)??{slot,algorithm:0,parameters:[]});
     const algorithm=await this.readParameter(`/fx/${slot}/type`);const reply=await this.query(`/fx/${slot}/par`);
     if(typeof algorithm!=='number'||!reply.args.length||reply.args.length>64||!reply.tags||!/^[fi]+$/.test(reply.tags))throw Error('Vecteur FX typé absent');
-    const parameters=reply.args.map((v,i)=>{if(typeof v!=='number'||!Number.isFinite(v))throw Error('Paramètre FX invalide');return {type:reply.tags![i] as 'f'|'i',value:v};});
+    // The XR18 always answers 64 values; the slots the effect does not use come back as NaN.
+    // Keep only the used parameters (everything before the first NaN).
+    const used=reply.args.findIndex(v=>typeof v!=='number'||!Number.isFinite(v));
+    const args=used<0?reply.args:reply.args.slice(0,used);
+    if(!args.length)throw Error('Paramètre FX invalide');
+    const parameters=args.map((v,i)=>({type:reply.tags![i] as 'f'|'i',value:v as number}));
     const result={slot,algorithm,parameters};this.fxValues.set(slot,result);return structuredClone(result);
   }
   async applyFx(f:{slot:number;algorithm:number;parameters:{type:'f'|'i';value:number}[]}){
@@ -317,9 +322,15 @@ export class XR18 extends EventEmitter {
     await this.writeParameter(`/fx/${f.slot}/type`,f.algorithm);
     if(f.parameters.length){
       if(operation!==this.operationEpoch)throw Error('FX interrompu');
-      this.send(`/fx/${f.slot}/par`,f.parameters.map(p=>p.type==='f'?oscFloat(p.value):p.value));
+      // One address per parameter (/fx/N/par/01…): checked on a physical XR18, the console keeps each value.
+      for(const [i,p] of f.parameters.entries()){
+        if(operation!==this.operationEpoch||generation!==this.generation)throw Error('FX interrompu');
+        this.send(`/fx/${f.slot}/par/${String(i+1).padStart(2,'0')}`,[p.type==='f'?oscFloat(p.value):p.value]);
+        await new Promise(r=>setTimeout(r,3));
+      }
       const observed=await this.readFx(f.slot);
-      if(generation!==this.generation||observed.parameters.length<f.parameters.length||f.parameters.some((p,i)=>p.type!==observed.parameters[i]!.type||Math.abs(p.value-observed.parameters[i]!.value)>.003))throw Error('FX potentiellement partiel : lecture différente');
+      // The console rounds each FX value to its own step (e.g. 0.333 → 0.32): accept one step of 0.02.
+      if(generation!==this.generation||observed.parameters.length<f.parameters.length||f.parameters.some((p,i)=>p.type!==observed.parameters[i]!.type||Math.abs(p.value-observed.parameters[i]!.value)>(p.type==='i'?0:.021)))throw Error('FX potentiellement partiel : lecture différente');
     }
     this.fxValues.set(f.slot,structuredClone(f));
   }
