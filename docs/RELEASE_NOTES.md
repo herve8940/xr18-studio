@@ -1,4 +1,4 @@
-# XR18 Studio 2.0.3 — Testée sur une vraie XR18 / Tested on a real XR18
+# XR18 Studio 2.0.4 — Testée sur une vraie XR18 / Tested on a real XR18
 
 ![XR18 Studio](https://github.com/herve8940/xr18-studio/raw/main/docs/images/hero.png)
 
@@ -10,16 +10,17 @@
 
 | Ordinateur | Fichier |
 |---|---|
-| Windows | `XR18-Studio-Windows-2.0.3.exe` |
-| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.3-arm64.dmg` |
-| Mac Intel | `XR18-Studio-macOS-2.0.3-x64.dmg` |
-| Ubuntu / Debian | `XR18-Studio-Linux-2.0.3-amd64.deb` |
-| Autre Linux | `XR18-Studio-Linux-2.0.3-x86_64.AppImage` |
+| Windows | `XR18-Studio-Windows-2.0.4.exe` |
+| Mac Apple Silicon (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.4-arm64.dmg` |
+| Mac Intel | `XR18-Studio-macOS-2.0.4-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.4-amd64.deb` |
+| Autre Linux | `XR18-Studio-Linux-2.0.4-x86_64.AppImage` |
 
 Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau local** (*Réglages Système › Confidentialité et sécurité*). Windows : si SmartScreen s’affiche, **Informations complémentaires › Exécuter quand même**. `SHA256SUMS.txt` permet de vérifier les fichiers.
 
 ### Corrigé (trouvé en testant sur une XR18 physique)
 
+- **2.0.4 — « Paramètre FX invalide »** : la synchronisation Table → PC et la sauvegarde de scène s’arrêtaient sur les effets. La XR18 renvoie toujours 64 valeurs par effet, et les cases que l’effet n’utilise pas sont vides. L’appli garde maintenant seulement les vraies valeurs, et renvoie chaque paramètre d’effet un par un (vérifié sur une XR18 physique).
 - **2.0.3 — Toutes les valeurs de ta XR18 sont maintenant reconnues** : un script de diagnostic a lu les 2 636 réglages d’une XR18 physique. Corrigés : la source du retour Aux (USB 17/18) et l’emplacement d’effet inséré sur les canaux, bus et Main (il n’était jamais lu). La synchronisation Table → PC et la sauvegarde de scène vont au bout.
 - **2.0.3 — Téléphone** : supprimer un réglage de retour enregistré donnait une erreur. C’est réparé.
 - **2.0.3 — Numéro de version** affiché dans Réglages › Connexion et dans le menu « À propos de XR18 Studio ».
@@ -40,7 +41,7 @@ Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau l
 - **Tous les paramètres** : les valeurs sont lues tout de suite, sans afficher « Non lu ». L’étiquette « Démonstration » n’apparaît plus avec une vraie console.
 - **Scène vierge** : le bouton affiche « Lecture de la console… » pendant la préparation.
 
-**Validation** : 78 tests automatiques, parcours testés dans le navigateur contre une XR18 émulée, et corrections vérifiées à partir des erreurs relevées sur une XR18 physique.
+**Validation** : 79 tests automatiques, parcours testés dans le navigateur contre une XR18 émulée, et corrections vérifiées à partir des erreurs relevées sur une XR18 physique.
 
 ## English
 
@@ -48,16 +49,17 @@ Mac : la première fois, **clic droit › Ouvrir**, puis autorise le **Réseau l
 
 | Computer | File |
 |---|---|
-| Windows | `XR18-Studio-Windows-2.0.3.exe` |
-| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.3-arm64.dmg` |
-| Intel Mac | `XR18-Studio-macOS-2.0.3-x64.dmg` |
-| Ubuntu / Debian | `XR18-Studio-Linux-2.0.3-amd64.deb` |
-| Other Linux | `XR18-Studio-Linux-2.0.3-x86_64.AppImage` |
+| Windows | `XR18-Studio-Windows-2.0.4.exe` |
+| Apple Silicon Mac (M1, M2, M3, M4) | `XR18-Studio-macOS-2.0.4-arm64.dmg` |
+| Intel Mac | `XR18-Studio-macOS-2.0.4-x64.dmg` |
+| Ubuntu / Debian | `XR18-Studio-Linux-2.0.4-amd64.deb` |
+| Other Linux | `XR18-Studio-Linux-2.0.4-x86_64.AppImage` |
 
 Mac: the first time, **right-click › Open**, then allow **Local Network** (*System Settings › Privacy & Security*). Windows: if SmartScreen appears, **More info › Run anyway**. Use `SHA256SUMS.txt` to check the files.
 
 ### Fixed (found by testing on a physical XR18)
 
+- **2.0.4 — “Paramètre FX invalide”**: Table → PC sync and scene save stopped on the effects. The XR18 always answers 64 values per effect, with empty slots for the ones the effect does not use. The app now keeps only the real values, and sends each effect parameter one by one (checked on a physical XR18).
 - **2.0.3 — Every value of your XR18 is now recognised**: a diagnostic script read all 2,636 settings of a physical XR18. Fixed: the Aux return source (USB 17/18) and the inserted-effect slot on channels, buses and Main (it was never read). Table → PC sync and scene save now complete.
 - **2.0.3 — Phone**: deleting a saved monitor profile gave an error. Fixed.
 - **2.0.3 — Version number** shown in Réglages › Connexion and in the “About XR18 Studio” menu.
@@ -78,7 +80,7 @@ Mac: the first time, **right-click › Open**, then allow **Local Network** (*Sy
 - **Tous les paramètres**: values are read straight away instead of showing “Non lu”. The “Démonstration” label no longer appears with a real console.
 - **Blank scene**: the button shows “Lecture de la console…” while it prepares.
 
-**Validation**: 78 automated tests, journeys tested in the browser against an emulated XR18, and fixes checked against the errors seen on a physical XR18.
+**Validation**: 79 automated tests, journeys tested in the browser against an emulated XR18, and fixes checked against the errors seen on a physical XR18.
 
 ---
 
