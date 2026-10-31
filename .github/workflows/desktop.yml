@@ -35,7 +35,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix web ci
       - name: Backend tests
-        run: npm test
+        shell: bash
+        # Failing test names and their first error lines are raised as annotations (readable without the raw log).
+        run: |
+          set -o pipefail
+          npm test 2>&1 | tee test-output.txt || { grep -E "^not ok|^\s+(error|expected|actual|code|message):" test-output.txt | head -40 | sed 's/^/::error title=Test::/'; exit 1; }
       - name: Build and package desktop app
         run: npm run desktop:package
         env:

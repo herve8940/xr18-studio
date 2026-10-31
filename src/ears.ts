@@ -137,7 +137,7 @@ export class EarsShare {
    const page=/^\/ears\/([A-Za-z0-9_-]{20,40})$/.exec(path);
    if(req.method==='GET'&&page)return this.serveFile(res,'ears.html',!!this.shares.get(page[1]!));
    if(req.method==='GET'&&/^\/assets\/[A-Za-z0-9._-]+$/.test(path))return this.serveFile(res,path.slice(1),true);
-   const api=/^\/ears-api\/([A-Za-z0-9_-]{20,40})\/(profiles)(?:\/([a-f0-9-]{36})\/(recall))?$/.exec(path);
+   const api=/^\/ears-api\/([A-Za-z0-9_-]{20,40})\/(profiles)(?:\/([a-f0-9-]{36})(?:\/(recall))?)?$/.exec(path);
    const share=api?this.shares.get(api[1]!):undefined;
    if(api&&!share){res.writeHead(401,{'Content-Type':'application/json'});res.end('{"error":"Lien invalide ou révoqué"}');return;}
    if(api&&share){
@@ -145,7 +145,7 @@ export class EarsShare {
     if(req.method==='GET'&&!api[3]){res.end(JSON.stringify(this.profiles(share.id)));return;}
     if(req.method==='POST'&&!api[3]){const body=await readBody(req);res.end(JSON.stringify(this.saveProfile(share,body.name)));return;}
     if(req.method==='POST'&&api[4]==='recall'){res.end(JSON.stringify(await this.recallProfile(share,api[3]!)));return;}
-    if(req.method==='DELETE'&&api[3]){this.db.prepare('DELETE FROM ear_mix_profiles WHERE id=? AND share_id=?').run(api[3],share.id);res.end('{"ok":true}');return;}
+    if(req.method==='DELETE'&&api[3]&&!api[4]){const gone=this.db.prepare('DELETE FROM ear_mix_profiles WHERE id=? AND share_id=?').run(api[3],share.id).changes;diagnostic('ears.profile_deleted',{bus:share.bus,deleted:gone});res.end(JSON.stringify({ok:true,deleted:gone}));return;}
    }
    res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Introuvable');
   }catch(e){if(!res.headersSent)res.writeHead(400,{'Content-Type':'application/json'});res.end(JSON.stringify({error:(e as Error).message}));}

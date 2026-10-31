@@ -38,3 +38,11 @@ test('a value outside the known range is skipped and listed, not fatal (ch 16 in
   assert.deepEqual(scene.missing,['/ch/16/config/insrc']);assert.equal(scene.values['/ch/16/config/insrc'],undefined);
  }finally{xr.close();library.close();}
 });
+test('values read from a physical XR18 (diagnostic of 31/10/2026) are all accepted',async()=>{
+ const {validateWire}=await import('../src/parameters.js');
+ // /rtn/aux/config "" 0 U1718 → the console sends 8 (same list as the FX returns: U0102…U1718).
+ assert.equal(validateWire('/rtn/aux/config/rtnsrc',8),8);
+ assert.equal(PARAMETERS['/rtn/aux/config/rtnsrc']!.options![8],'U1718');
+ // The insert slot leaf is "sel" (X-AIR Edit name), "fxslot" got no answer.
+ for(const p of ['/ch/01','/ch/16','/bus/3','/lr'])assert.ok(PARAMETERS[p+'/insert/sel']&&!PARAMETERS[p+'/insert/fxslot'],p);
+});

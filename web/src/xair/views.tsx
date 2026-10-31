@@ -186,7 +186,7 @@ export function InputView({ strip, values, set, canWrite, confirmed }: ViewProps
     </Block>
     <Block title="Channel Insert">
       <Toggle tone="cyan" disabled={!canWrite} on={num(values, `${p}/insert/on`) === 1} onClick={() => set(`${p}/insert/on`, num(values, `${p}/insert/on`) === 1 ? 0 : 1)}>Insert FX</Toggle>
-      <Select label="Emplacement" disabled={!canWrite} value={num(values, `${p}/insert/fxslot`)} options={["Off", "FX1 A", "FX1 B", "FX2 A", "FX2 B", "FX3 A", "FX3 B", "FX4 A", "FX4 B"]} onChange={i => set(`${p}/insert/fxslot`, i)} title="Effet inséré directement dans ce canal" />
+      <Select label="Emplacement" disabled={!canWrite} value={num(values, `${p}/insert/sel`)} options={["Off", "FX1 A", "FX1 B", "FX2 A", "FX2 B", "FX3 A", "FX3 B", "FX4 A", "FX4 B"]} onChange={i => set(`${p}/insert/sel`, i)} title="Effet inséré directement dans ce canal" />
       <p className="xm-note">Pour insérer un effet, il doit être réglé en mode Insert dans l’onglet Effets.</p>
     </Block>
   </div>;
@@ -417,7 +417,7 @@ export function FxView({ values, set, canWrite, confirmed, open }: ViewProps) {
       const rtn = INPUTS.find(s => s.id === `rtn${n}`)!;
       const senders = INPUTS.filter(s => s.kind !== "fxrtn" && num(values, `${s.prefix}/mix/${pad(n + 6)}/level`) > .01);
       // Channels whose insert points at this FX slot (Fx{n}A or Fx{n}B).
-      const inserted = INPUTS.filter(s => s.kind === "ch" && num(values, `${s.prefix}/insert/on`) === 1 && Math.ceil(num(values, `${s.prefix}/insert/fxslot`) / 2) === n);
+      const inserted = INPUTS.filter(s => s.kind === "ch" && num(values, `${s.prefix}/insert/on`) === 1 && Math.ceil(num(values, `${s.prefix}/insert/sel`) / 2) === n);
       return <section key={n} className="xm-fx-slot">
         <h4>FX {n}</h4>
         <select disabled={!canWrite} value={type} aria-label={`Type de l’effet ${n}`} onChange={e => { const next = Number(e.target.value); void confirmed({ [`/fx/${n}/type`]: next }, `Remplacer l’effet ${n} (${info?.name}) par ${FX_INFO[next]?.name} ? Tous les canaux qui l’utilisent seront concernés.`); }}>
